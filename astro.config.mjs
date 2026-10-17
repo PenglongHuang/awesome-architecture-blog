@@ -1,4 +1,5 @@
 import { defineConfig } from 'astro/config'
+import { unified } from '@astrojs/markdown-remark'
 import sitemap from '@astrojs/sitemap'
 import remarkQuiz from './src/plugins/remark-quiz.mjs'
 import remarkBaseLinks from './src/plugins/remark-base-links.mjs'
@@ -14,6 +15,8 @@ export default defineConfig({
   integrations: [sitemap()],
   markdown: {
     syntaxHighlight: false,
-    remarkPlugins: [remarkBaseLinks, remarkQuiz, remarkAsciiFigure],
+    processor: unified({
+      remarkPlugins: [remarkBaseLinks, remarkQuiz, remarkAsciiFigure],
+    }),
   },
 })

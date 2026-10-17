@@ -88,6 +88,7 @@ awesome-architecture-blog/
     "validate": "node scripts/validate-content.mjs"
   },
   "dependencies": {
+    "@astrojs/markdown-remark": "^7.3.0",
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.4",
     "@fontsource/noto-serif-sc": "^5.3.1",
@@ -108,6 +109,7 @@ awesome-architecture-blog/
 
 ```js
 import { defineConfig } from 'astro/config'
+import { unified } from '@astrojs/markdown-remark'
 import sitemap from '@astrojs/sitemap'
 import remarkQuiz from './src/plugins/remark-quiz.mjs'
 import remarkBaseLinks from './src/plugins/remark-base-links.mjs'
@@ -123,7 +125,9 @@ export default defineConfig({
   integrations: [sitemap()],
   markdown: {
     syntaxHighlight: false,
-    remarkPlugins: [remarkBaseLinks, remarkQuiz, remarkAsciiFigure],
+    processor: unified({
+      remarkPlugins: [remarkBaseLinks, remarkQuiz, remarkAsciiFigure],
+    }),
   },
 })
 ```
@@ -1338,7 +1342,9 @@ export default function remarkBaseLinks({ base = '/' } = {}) {
 ```js
 markdown: {
   syntaxHighlight: false,
-  remarkPlugins: [[remarkBaseLinks, { base: BASE }], remarkQuiz, remarkAsciiFigure],
+  processor: unified({
+    remarkPlugins: [[remarkBaseLinks, { base: BASE }], remarkQuiz, remarkAsciiFigure],
+  }),
 },
 ```
 
