@@ -1,6 +1,40 @@
 ---
+import { getCollection, render } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Toc from '../Toc.astro'
+import PostNav from '../PostNav.astro'
+import Comments from '../Comments.astro'
 import type { Post } from '../../lib/posts'
+import { getSeries, postsInSeries, seriesHref, postHref } from '../../lib/posts'
+import { readingMinutes } from '../../lib/reading-time'
+
 interface Props { post: Post }
 const { post } = Astro.props
+const { Content, headings } = await render(post)
+const series = getSeries(post.data.series)
+const all = await getCollection('posts')
+const siblings = postsInSeries(all, post.data.series)
+const idx = siblings.findIndex((p) => p.id === post.id)
+const prev = idx > 0 ? siblings[idx - 1] : undefined
+const next = idx >= 0 && idx < siblings.length - 1 ? siblings[idx + 1] : undefined
+const date = post.data.pubDate.toISOString().slice(0, 10)
 ---
-<article><h1>{post.data.title}</h1></article>
+<BaseLayout title={post.data.title} description={post.data.description}>
+  <div class="article">
+    <article>
+      <div class="crumb">
+        {series.channel === 'tutorial' ? '教程' : series.channel === 'templates' ? '架构地图' : '案例'}
+        {' / '}
+        <a href={seriesHref(series.id)}><b>{series.title}</b></a>
+        {' / '}第 {post.data.order} 篇
+      </div>
+      <h1>{post.data.title}</h1>
+      <p class="dek">{post.data.description}</p>
+      <div class="article__meta">{date} &nbsp;|&nbsp; 约 {readingMinutes(post.body ?? '')} 分钟 &nbsp;|&nbsp; 系列 {post.data.order} / {siblings.length}</div>
+      <div class="prose"><Content /></div>
+      <PostNav prev={prev} next={next} />
+      <Comments />
+    </article>
+    <Toc headings={headings} />
+  </div>
+</BaseLayout>
