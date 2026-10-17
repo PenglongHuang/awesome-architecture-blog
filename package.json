@@ -1,0 +1,31 @@
+{
+  "name": "awesome-architecture-blog",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.3.4",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && pagefind --site dist --output-subdir _pagefind",
+    "preview": "astro preview",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "import": "node scripts/import-content.mjs",
+    "validate": "node scripts/validate-content.mjs"
+  },
+  "dependencies": {
+    "@astrojs/markdown-remark": "^7.3.0",
+    "@astrojs/rss": "^4.0.19",
+    "@astrojs/sitemap": "^3.7.4",
+    "@fontsource/noto-serif-sc": "^5.3.1",
+    "astro": "^7.4.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "gray-matter": "^4.0.3",
+    "pagefind": "^1.5.2",
+    "typescript": "^5.9.3",
+    "unist-util-visit": "^5.0.0",
+    "vitest": "^5.0.5"
+  }
+}
