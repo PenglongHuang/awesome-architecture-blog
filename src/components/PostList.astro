@@ -1,0 +1,16 @@
+---
+import type { Post } from '../lib/posts'
+import { postHref, getSeries } from '../lib/posts'
+interface Props { posts: Post[]; showSeries?: boolean }
+const { posts, showSeries = true } = Astro.props
+const fmt = (d: Date) => `${String(d.getMonth() + 1).padStart(2, '0')} / ${String(d.getDate()).padStart(2, '0')}`
+---
+<ul class="post-list">
+  {posts.map((p) => (
+    <li>
+      <span class="post-list__date">{fmt(p.data.pubDate)}</span>
+      <a class="post-list__title" href={postHref(p)}>{p.data.title}</a>
+      {showSeries && <span class="post-list__series">{getSeries(p.data.series).title}</span>}
+    </li>
+  ))}
+</ul>

@@ -1,0 +1,29 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import SeriesCard from '../../components/SeriesCard.astro'
+import PostList from '../../components/PostList.astro'
+import { SERIES } from '../../data/series'
+import { sortByDateDesc, postChannel } from '../../lib/posts'
+
+const all = await getCollection('posts')
+const series = SERIES.filter((s) => s.channel === 'tutorial').sort((a, b) => a.order - b.order)
+const recent = sortByDateDesc(all.filter((p) => postChannel(p) === 'tutorial')).slice(0, 6)
+---
+<BaseLayout title="教程">
+  <div class="hero">
+    <p class="kicker">教程 · 43 篇</p>
+    <h1>像架构师一样思考</h1>
+    <p>不教你任何语言或框架,只教你一种可迁移的判断力:在写代码之前,先把系统想清楚。</p>
+  </div>
+  <div class="section">
+    <div class="section__head"><b>系列</b><i>SERIES · {series.length}</i></div>
+    <div class="series-grid">
+      {series.map((s, i) => <SeriesCard series={s} count={all.filter((p) => p.data.series === s.id).length} index={i + 1} />)}
+    </div>
+  </div>
+  <div class="section">
+    <div class="section__head"><b>最近更新</b><i>RECENT</i></div>
+    <PostList posts={recent} />
+  </div>
+</BaseLayout>

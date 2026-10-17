@@ -1,0 +1,20 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import PostList from '../PostList.astro'
+import { getSeries, postsInSeries } from '../../lib/posts'
+
+interface Props { seriesId: string }
+const { seriesId } = Astro.props
+const series = getSeries(seriesId)
+const all = await getCollection('posts')
+const posts = postsInSeries(all, seriesId)
+---
+<BaseLayout title={series.title} description={series.description}>
+  <div class="section">
+    <p class="kicker">系列 · {posts.length} 篇</p>
+    <h1 style="font-size:38px;font-weight:400;margin:10px 0 10px">{series.title}</h1>
+    <p class="dek">{series.description}</p>
+    <PostList posts={posts} showSeries={false} />
+  </div>
+</BaseLayout>

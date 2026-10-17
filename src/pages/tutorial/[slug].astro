@@ -1,0 +1,18 @@
+---
+import { getCollection } from 'astro:content'
+import { channelStaticPaths } from '../../lib/routes'
+import SeriesPage from '../../components/pages/SeriesPage.astro'
+import PostPage from '../../components/pages/PostPage.astro'
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts')
+  return channelStaticPaths('tutorial', posts)
+}
+
+const props = Astro.props as
+  | { type: 'series'; seriesId: string }
+  | { type: 'post'; post: import('../../lib/posts').Post }
+---
+{props.type === 'series'
+  ? <SeriesPage seriesId={props.seriesId} />
+  : <PostPage post={props.post} />}

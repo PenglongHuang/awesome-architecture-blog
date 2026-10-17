@@ -1,0 +1,16 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import PostList from '../../components/PostList.astro'
+import { postsInSeries } from '../../lib/posts'
+const all = await getCollection('posts')
+const posts = postsInSeries(all, 'cases')
+---
+<BaseLayout title="案例">
+  <div class="hero">
+    <p class="kicker">案例 · 6 篇</p>
+    <h1>把架构从答案写成推理过程</h1>
+    <p>模板告诉你这类系统通常长什么样;案例告诉你,在这个具体场景里,为什么最后只能这样取舍。</p>
+  </div>
+  <div class="section"><PostList posts={posts} showSeries={false} /></div>
+</BaseLayout>
