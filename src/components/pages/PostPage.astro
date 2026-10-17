@@ -29,12 +29,13 @@ const date = post.data.pubDate.toISOString().slice(0, 10)
         {' / '}第 {post.data.order} 篇
       </div>
       <h1>{post.data.title}</h1>
-      <p class="dek">{post.data.description}</p>
+      {!(post.body ?? '').trimStart().startsWith('>') && <p class="dek">{post.data.description}</p>}
       <div class="article__meta">{date} &nbsp;|&nbsp; 约 {readingMinutes(post.body ?? '')} 分钟 &nbsp;|&nbsp; 系列 {post.data.order} / {siblings.length}</div>
+      <div class="toc-mobile"><Toc headings={headings} /></div>
       <div class="prose"><Content /></div>
       <PostNav prev={prev} next={next} />
       <Comments />
     </article>
-    <Toc headings={headings} />
+    <div class="toc-desktop"><Toc headings={headings} /></div>
   </div>
 </BaseLayout>

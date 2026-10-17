@@ -7,7 +7,7 @@ test('首页 → 系列 → 文章', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '入门篇' })).toBeVisible()
   await page.getByRole('link', { name: /为什么先有架构思维/ }).click()
   await expect(page.getByRole('heading', { name: '为什么先有架构思维' })).toBeVisible()
-  await expect(page.getByText('本页目录')).toBeVisible()
+  await expect(page.locator('.toc-desktop b')).toHaveText('本页目录')
 })
 
 test('Quiz 可以判分并展开解析', async ({ page }) => {
