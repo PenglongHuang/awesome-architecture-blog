@@ -1,0 +1,46 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+---
+<BaseLayout title="搜索">
+  <div class="section">
+    <p class="kicker">Search</p>
+    <h1 style="font-size:38px;font-weight:400;margin:10px 0 18px">搜索 80 篇笔记</h1>
+    <form class="search-form" id="search-form">
+      <input id="search-input" type="search" placeholder="试试「一致性」「抢票」「RAG」" autofocus />
+      <button type="submit">搜索</button>
+    </form>
+    <p id="search-hint" class="dek">中文检索按词切分,单字与超短词召回有限,建议用 2–4 个字的短语。</p>
+    <div id="search-results"></div>
+  </div>
+
+  <script>
+    const base = import.meta.env.BASE_URL
+    const input = document.getElementById('search-input') as HTMLInputElement
+    const form = document.getElementById('search-form') as HTMLFormElement
+    const results = document.getElementById('search-results')!
+    let pagefind: any
+
+    async function load() {
+      pagefind = await import(/* @vite-ignore */ `${base}_pagefind/pagefind.js`)
+      await pagefind.init()
+    }
+
+    async function run(query: string) {
+      if (!query.trim()) { results.innerHTML = ''; return }
+      if (!pagefind) await load()
+      const search = await pagefind.search(query)
+      const hits = await Promise.all(search.results.slice(0, 20).map((r: any) => r.data()))
+      results.innerHTML = hits.length
+        ? hits.map((h: any) => (
+            '<div class="search-hit">' +
+            `<h3><a href="${h.url}">${h.meta.title ?? h.url}</a></h3>` +
+            `<p>${(h.excerpt ?? '').replace(/<[^>]+>/g, '')}</p>` +
+            '</div>'
+          )).join('')
+        : '<p class="dek">没有找到结果。</p>'
+    }
+
+    form.addEventListener('submit', (e) => { e.preventDefault(); run(input.value) })
+    input.addEventListener('input', () => run(input.value))
+  </script>
+</BaseLayout>
