@@ -1524,7 +1524,9 @@ for (const post of posts) {
   if (!bySeries.has(d.series)) bySeries.set(d.series, [])
   bySeries.get(d.series).push(post)
 
-  if (/\]\([^)]*\.md[^)]*\)/.test(post.body)) errors.push(`${post.rel}: unresolved .md link`)
+  const internalMd = [...post.body.matchAll(/\]\(([^)\s]+\.md[^)]*)\)/g)]
+    .filter((m) => !/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(m[1]))
+  if (internalMd.length) errors.push(`${post.rel}: unresolved .md link: ${internalMd[0][1]}`)
   if (!post.body.trim()) errors.push(`${post.rel}: empty body`)
 
   for (const m of post.body.matchAll(/^```(quiz|decision)\n([\s\S]*?)```/gm)) {
