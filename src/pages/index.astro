@@ -1,6 +1,36 @@
 ---
+import { getCollection } from 'astro:content'
 import BaseLayout from '../layouts/BaseLayout.astro'
+import SeriesCard from '../components/SeriesCard.astro'
+import PostList from '../components/PostList.astro'
+import { SERIES } from '../data/series'
+import { sortByDateDesc } from '../lib/posts'
+import { href } from '../lib/urls'
+
+const all = await getCollection('posts')
+const recent = sortByDateDesc(all).slice(0, 6)
+const countOf = (id: string) => all.filter((p) => p.data.series === id).length
 ---
 <BaseLayout title="架构图谱">
-  <div class="hero"><h1>先看清系统,再动手写代码。</h1></div>
+  <div class="hero">
+    <p class="kicker">Architecture Notes · Vol. 2026</p>
+    <h1>先看清系统,<br />再动手写代码。</h1>
+    <p>写代码这件事正在消失,而判断力越来越值钱。这里收集 80 篇架构笔记:40 章教程、31 张真实系统地图、6 个端到端案例 —— 只讲架构,不讲语法。</p>
+    <div class="meta">自 2026 年 1 月起 · 每周两篇 · 中文</div>
+    <div><a class="cta" href={href('/tutorial/foundations/')}>从第一章开始 →</a></div>
+  </div>
+
+  <div class="section">
+    <div class="section__head"><b>学习路径</b><i>SERIES · {SERIES.length}</i></div>
+    <div class="series-grid">
+      {SERIES.filter((s) => s.channel !== 'cases').map((s, i) => (
+        <SeriesCard series={s} count={countOf(s.id)} index={i + 1} />
+      ))}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section__head"><b>最近更新</b><i>RECENT</i></div>
+    <PostList posts={recent} />
+  </div>
 </BaseLayout>
