@@ -4,6 +4,7 @@ import sitemap from '@astrojs/sitemap'
 import remarkQuiz from './src/plugins/remark-quiz.mjs'
 import remarkBaseLinks from './src/plugins/remark-base-links.mjs'
 import remarkAsciiFigure from './src/plugins/remark-ascii-figure.mjs'
+import remarkCjkStrong from './src/plugins/remark-cjk-strong.mjs'
 
 const BASE = '/awesome-architecture-blog/'
 const SITE = 'https://penglonghuang.github.io'
@@ -16,7 +17,7 @@ export default defineConfig({
   markdown: {
     syntaxHighlight: false,
     processor: unified({
-      remarkPlugins: [[remarkBaseLinks, { base: BASE }], remarkQuiz, remarkAsciiFigure],
+      remarkPlugins: [[remarkBaseLinks, { base: BASE }], remarkCjkStrong, remarkQuiz, remarkAsciiFigure],
     }),
   },
 })
