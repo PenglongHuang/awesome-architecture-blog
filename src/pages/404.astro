@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { href } from '../lib/urls'
+---
+<BaseLayout title="页面走丢了">
+  <div class="hero">
+    <p class="kicker">404</p>
+    <h1>这一页不在图里。</h1>
+    <p>可能是链接旧了,或者这篇文章还没写。回到地图上重新出发。</p>
+    <div><a class="cta" href={href('/')}>回首页 →</a> <a class="cta" href={href('/tutorial/')}>看教程 →</a></div>
+  </div>
+</BaseLayout>
