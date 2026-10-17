@@ -16,7 +16,7 @@ export default defineConfig({
   markdown: {
     syntaxHighlight: false,
     processor: unified({
-      remarkPlugins: [remarkBaseLinks, remarkQuiz, remarkAsciiFigure],
+      remarkPlugins: [[remarkBaseLinks, { base: BASE }], remarkQuiz, remarkAsciiFigure],
     }),
   },
 })
