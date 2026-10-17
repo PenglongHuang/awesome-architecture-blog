@@ -1,0 +1,29 @@
+---
+const base = import.meta.env.BASE_URL
+const path = Astro.url.pathname
+const items = [
+  { href: `${base}tutorial/`, label: '教程', match: '/tutorial/' },
+  { href: `${base}templates/`, label: '架构地图', match: '/templates/' },
+  { href: `${base}cases/`, label: '案例', match: '/cases/' },
+  { href: `${base}about/`, label: '关于', match: '/about/' },
+  { href: `${base}search/`, label: '搜索', match: '/search/' },
+]
+---
+<header class="masthead">
+  <a class="masthead__brand" href={base}>架构图谱</a>
+  <nav class="masthead__nav">
+    {items.map((it) => (
+      <a href={it.href} aria-current={path.includes(it.match) ? 'page' : undefined}>{it.label}</a>
+    ))}
+    <button id="theme-toggle" type="button" aria-label="切换深浅色" style="background:none;border:0;color:inherit;font:inherit;cursor:pointer">◐</button>
+  </nav>
+</header>
+<div class="subrule"></div>
+<script is:inline>
+  document.getElementById('theme-toggle')?.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem('theme', next);
+    window.dispatchEvent(new CustomEvent('themechange', { detail: next }));
+  });
+</script>

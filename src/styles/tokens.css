@@ -1,0 +1,28 @@
+:root {
+  --paper: #f6f2ea;
+  --ink: #1a1814;
+  --muted: #6b6459;
+  --accent: #b03a2e;
+  --rule: #d8d0c0;
+  --code-bg: #efe9dd;
+  --soft: #f0e8d8;
+
+  --font-serif: "Noto Serif SC", "Songti SC", "Source Han Serif SC", Georgia, serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  --measure: 38em;
+
+  --step-display: 52px;
+  --step-title: 40px;
+  --step-h2: 21px;
+  --step-body: 16px;
+}
+
+[data-theme="dark"] {
+  --paper: #161513;
+  --ink: #e7e0d3;
+  --muted: #9a9284;
+  --accent: #d96a56;
+  --rule: #2e2a24;
+  --code-bg: #1f1d19;
+  --soft: #221f1a;
+}
