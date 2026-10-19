@@ -35,3 +35,31 @@ test('搜索能返回结果', async ({ page }) => {
   await page.getByPlaceholder(/一致性/).fill('一致性')
   await expect(page.locator('.search-hit').first()).toBeVisible()
 })
+
+test('搜索页被预渲染并预加载 Pagefind', async ({ page }) => {
+  await page.goto('')
+
+  const rules = page.locator('script[type="speculationrules"]')
+  await expect(rules).toHaveCount(1)
+  const json = JSON.parse((await rules.textContent()) ?? '{}')
+  const pattern = json.prerender?.[0]?.where?.href_matches
+  expect(pattern).toContain('search')
+  expect(json.prerender?.[0]?.eagerness).toBe('moderate')
+
+  const searchUrl = new URL('search/', page.url()).href
+  const matches = await page.evaluate(
+    ({ p, u }) => new (window as any).URLPattern({ pathname: p }).test(u),
+    { p: pattern, u: searchUrl }
+  )
+  expect(matches).toBe(true)
+
+  await page.goto('search/')
+  const inHead = await page.evaluate(() =>
+    Boolean(
+      document.head.querySelector(
+        'link[rel="modulepreload"][href*="_pagefind/pagefind.js"]'
+      )
+    )
+  )
+  expect(inHead).toBe(true)
+})

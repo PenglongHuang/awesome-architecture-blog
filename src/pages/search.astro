@@ -2,6 +2,11 @@
 import BaseLayout from '../layouts/BaseLayout.astro'
 ---
 <BaseLayout title="搜索">
+  <link
+    slot="head"
+    rel="modulepreload"
+    href={`${import.meta.env.BASE_URL}_pagefind/pagefind.js`}
+  />
   <div class="section">
     <p class="kicker">Search</p>
     <h1 style="font-size:38px;font-weight:400;margin:10px 0 18px">搜索 80 篇笔记</h1>

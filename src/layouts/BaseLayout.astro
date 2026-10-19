@@ -16,6 +16,7 @@ const canonicalBase = rawCanonicalBase === '/' ? '' : `/${String(rawCanonicalBas
 const rawCanonicalSite = String(useOverride ? overrideSite : (Astro.site || 'https://penglonghuang.github.io'))
 const canonicalSite = /^https?:\/\//i.test(rawCanonicalSite) ? rawCanonicalSite : `https://${rawCanonicalSite.replace(/^\/+/, '')}`
 const canonical = new URL(`${canonicalBase}${path}`, canonicalSite)
+const isSearchPage = path === '/search/' || path === '/search'
 ---
 <!doctype html>
 <html lang="zh-Hans">
@@ -26,6 +27,20 @@ const canonical = new URL(`${canonicalBase}${path}`, canonicalSite)
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    {!isSearchPage && (
+      <script
+        type="speculationrules"
+        set:html={JSON.stringify({
+          prerender: [
+            {
+              where: { href_matches: `${base}search/` },
+              eagerness: 'moderate',
+            },
+          ],
+        })}
+      />
+    )}
+    <slot name="head" />
     <script is:inline>
       (() => {
         const stored = localStorage.getItem('theme');
