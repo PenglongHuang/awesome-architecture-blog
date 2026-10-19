@@ -5,7 +5,7 @@ export function renderQuizHtml(q) {
   const opts = q.options
     .map((o, i) => `<button type="button" class="quiz__opt" data-index="${i}" aria-pressed="false"><span class="quiz__key">${String.fromCharCode(65 + i)}</span><span>${esc(o)}</span></button>`)
     .join('')
-  return `<div class="quiz" data-answer="${q.answer}">
+  return `<div class="quiz" data-pagefind-ignore data-answer="${q.answer}">
 <p class="quiz__kicker">随堂</p>
 <p class="quiz__q">${esc(q.question)}</p>
 <div class="quiz__opts">${opts}</div>
@@ -16,7 +16,7 @@ export function renderQuizHtml(q) {
 }
 
 export function renderDecisionHtml(d) {
-  return `<div class="decision">
+  return `<div class="decision" data-pagefind-ignore>
 <p class="decision__title">${esc(d.title)}</p>
 <div class="decision__cols">
 <div><h4>A · ${esc(d.a)}</h4><p>${esc(d.aDesc)}</p></div>

@@ -5,6 +5,7 @@ import remarkQuiz from './src/plugins/remark-quiz.mjs'
 import remarkBaseLinks from './src/plugins/remark-base-links.mjs'
 import remarkAsciiFigure from './src/plugins/remark-ascii-figure.mjs'
 import remarkCjkStrong from './src/plugins/remark-cjk-strong.mjs'
+import rehypeTableWrap from './src/plugins/rehype-table-wrap.mjs'
 
 const BASE = '/awesome-architecture-blog/'
 const SITE = 'https://penglonghuang.github.io'
@@ -18,6 +19,7 @@ export default defineConfig({
     syntaxHighlight: false,
     processor: unified({
       remarkPlugins: [[remarkBaseLinks, { base: BASE }], remarkCjkStrong, remarkQuiz, remarkAsciiFigure],
+      rehypePlugins: [rehypeTableWrap],
     }),
   },
 })

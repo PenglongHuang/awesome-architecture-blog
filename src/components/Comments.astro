@@ -5,7 +5,7 @@ const categoryId = import.meta.env.PUBLIC_GISCUS_CATEGORY_ID ?? ''
 const enabled = Boolean(repoId && categoryId)
 ---
 {enabled ? (
-  <section class="section" style="border-bottom:0">
+  <section class="section" style="border-bottom:0" data-pagefind-ignore>
     <div class="section__head"><b>评论</b><i>DISCUSSIONS</i></div>
     <div id="giscus-host"></div>
     <script define:vars={{ repoId, categoryId }}>
@@ -13,29 +13,48 @@ const enabled = Boolean(repoId && categoryId)
         const theme = () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light')
         const host = document.getElementById('giscus-host')
         if (!host) return
-        const s = document.createElement('script')
-        s.src = 'https://giscus.app/client.js'
-        s.async = true
-        s.crossOrigin = 'anonymous'
-        s.dataset.repo = 'PenglongHuang/awesome-architecture-blog'
-        s.dataset.repoId = repoId
-        s.dataset.category = 'Announcements'
-        s.dataset.categoryId = categoryId
-        s.dataset.mapping = 'pathname'
-        s.dataset.strict = '0'
-        s.dataset.reactionsEnabled = '1'
-        s.dataset.emitMetadata = '0'
-        s.dataset.inputPosition = 'top'
-        s.dataset.theme = theme()
-        s.dataset.lang = 'zh-CN'
-        host.appendChild(s)
-        window.addEventListener('themechange', (e) => {
-          const frame = document.querySelector('iframe.giscus-frame')
-          if (frame) frame.contentWindow?.postMessage({ giscus: { setConfig: { theme: e.detail } } }, 'https://giscus.app')
-        })
+        let loaded = false
+
+        function load() {
+          if (loaded) return
+          loaded = true
+          const s = document.createElement('script')
+          s.src = 'https://giscus.app/client.js'
+          s.async = true
+          s.crossOrigin = 'anonymous'
+          s.dataset.repo = 'PenglongHuang/awesome-architecture-blog'
+          s.dataset.repoId = repoId
+          s.dataset.category = 'Announcements'
+          s.dataset.categoryId = categoryId
+          s.dataset.mapping = 'pathname'
+          s.dataset.strict = '0'
+          s.dataset.reactionsEnabled = '1'
+          s.dataset.emitMetadata = '0'
+          s.dataset.inputPosition = 'top'
+          s.dataset.theme = theme()
+          s.dataset.lang = 'zh-CN'
+          host.appendChild(s)
+          window.addEventListener('themechange', (e) => {
+            const frame = document.querySelector('iframe.giscus-frame')
+            if (frame) frame.contentWindow?.postMessage({ giscus: { setConfig: { theme: e.detail } } }, 'https://giscus.app')
+          })
+        }
+
+        // Load only when the reader approaches the comments section.
+        if ('IntersectionObserver' in window) {
+          const io = new IntersectionObserver((entries) => {
+            if (entries.some((e) => e.isIntersecting)) {
+              io.disconnect()
+              load()
+            }
+          }, { rootMargin: '400px' })
+          io.observe(host)
+        } else {
+          load()
+        }
       })()
     </script>
   </section>
 ) : (
-  <p class="dek" style="margin-top:32px">评论尚未配置(需要设置 PUBLIC_GISCUS_REPO_ID 与 PUBLIC_GISCUS_CATEGORY_ID)。</p>
+  <p class="dek" style="margin-top:32px" data-pagefind-ignore>评论尚未配置(需要设置 PUBLIC_GISCUS_REPO_ID 与 PUBLIC_GISCUS_CATEGORY_ID)。</p>
 )}
