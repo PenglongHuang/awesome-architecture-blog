@@ -7,8 +7,8 @@ import remarkAsciiFigure from './src/plugins/remark-ascii-figure.mjs'
 import remarkCjkStrong from './src/plugins/remark-cjk-strong.mjs'
 import rehypeTableWrap from './src/plugins/rehype-table-wrap.mjs'
 
-const BASE = '/awesome-architecture-blog/'
-const SITE = 'https://penglonghuang.github.io'
+const BASE = process.env.BASE_PATH ?? '/awesome-architecture-blog/'
+const SITE = process.env.SITE_URL ?? 'https://penglonghuang.github.io'
 
 export default defineConfig({
   site: SITE,

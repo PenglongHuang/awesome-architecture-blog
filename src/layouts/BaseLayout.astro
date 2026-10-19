@@ -6,6 +6,11 @@ import Footer from '../components/Footer.astro'
 interface Props { title: string; description?: string }
 const { title, description = '专注架构思维的中文知识库:40 章教程、31 张架构地图、6 个案例。' } = Astro.props
 const fullTitle = title === '架构图谱' ? title : `${title} · 架构图谱`
+const base = import.meta.env.BASE_URL
+const path = Astro.url.pathname.replace(base, '/')
+const canonicalBase = (import.meta.env.PUBLIC_CANONICAL_BASE ?? base).replace(/\/$/, '')
+const canonicalSite = import.meta.env.PUBLIC_CANONICAL_SITE ?? Astro.site
+const canonical = new URL(`${canonicalBase}${path}`, canonicalSite)
 ---
 <!doctype html>
 <html lang="zh-Hans">
@@ -14,7 +19,7 @@ const fullTitle = title === '架构图谱' ? title : `${title} · 架构图谱`
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    <link rel="canonical" href={canonical} />
     <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} />
     <script is:inline>
       (() => {
