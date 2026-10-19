@@ -7,8 +7,21 @@ import remarkAsciiFigure from './src/plugins/remark-ascii-figure.mjs'
 import remarkCjkStrong from './src/plugins/remark-cjk-strong.mjs'
 import rehypeTableWrap from './src/plugins/rehype-table-wrap.mjs'
 
-const BASE = process.env.BASE_PATH ?? '/awesome-architecture-blog/'
-const SITE = process.env.SITE_URL ?? 'https://penglonghuang.github.io'
+function normalizeBase(value) {
+  const raw = (value ?? '').trim()
+  if (!raw || raw === '/') return '/'
+  return `/${raw.replace(/^\/+|\/+$/g, '')}/`
+}
+
+function normalizeSite(value) {
+  const raw = (value ?? '').trim()
+  if (!raw) return 'https://penglonghuang.github.io'
+  if (/^https?:\/\//i.test(raw)) return raw.replace(/\/$/, '')
+  return `https://${raw.replace(/^\/+/, '').replace(/\/$/, '')}`
+}
+
+const BASE = normalizeBase(process.env.BASE_PATH || '/awesome-architecture-blog/')
+const SITE = normalizeSite(process.env.SITE_URL)
 
 export default defineConfig({
   site: SITE,
