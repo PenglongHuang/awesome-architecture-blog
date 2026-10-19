@@ -1,0 +1,10 @@
+#!/bin/sh
+# Optional: deploy to the self-hosted server on every push to main.
+# Install with:
+#   cp scripts/pre-push.sample .git/hooks/pre-push
+#   chmod +x .git/hooks/pre-push
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_ref" = "refs/heads/main" ]; then
+    pnpm deploy:server || exit 1
+  fi
+done

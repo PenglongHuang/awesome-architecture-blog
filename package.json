@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "import": "node scripts/import-content.mjs",
-    "validate": "node scripts/validate-content.mjs"
+    "validate": "node scripts/validate-content.mjs",
+    "deploy:server": "bash scripts/deploy-server.sh"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.3.0",
