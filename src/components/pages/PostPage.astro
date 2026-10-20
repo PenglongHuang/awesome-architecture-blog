@@ -12,6 +12,8 @@ interface Props { post: Post }
 const { post } = Astro.props
 const { Content, headings } = await render(post)
 const series = getSeries(post.data.series)
+const channelLabel = series.channel === 'tutorial' ? '入门教程' : series.channel === 'templates' ? '架构地图' : '系统设计'
+const showSeriesCrumb = series.title !== channelLabel && series.title !== `${channelLabel}篇`
 const all = await getCollection('posts')
 const siblings = postsInSeries(all, post.data.series)
 const idx = siblings.findIndex((p) => p.id === post.id)
@@ -23,9 +25,13 @@ const date = post.data.pubDate.toISOString().slice(0, 10)
   <div class="article">
     <article data-pagefind-body>
       <div class="crumb" data-pagefind-ignore>
-        {series.channel === 'tutorial' ? '教程' : series.channel === 'templates' ? '架构地图' : '案例'}
-        {' / '}
-        <a href={seriesHref(series.id)}><b>{series.title}</b></a>
+        {channelLabel}
+        {showSeriesCrumb && (
+          <>
+            {' / '}
+            <a href={seriesHref(series.id)}><b>{series.title}</b></a>
+          </>
+        )}
         {' / '}第 {post.data.order} 篇
       </div>
       <h1>{post.data.title}</h1>

@@ -2,15 +2,16 @@
 const base = import.meta.env.BASE_URL
 const path = Astro.url.pathname
 const items = [
-  { href: `${base}tutorial/`, label: '教程', match: '/tutorial/' },
+  { href: `${base}tutorial/`, label: '入门教程', match: '/tutorial/' },
   { href: `${base}templates/`, label: '架构地图', match: '/templates/' },
-  { href: `${base}cases/`, label: '案例', match: '/cases/' },
+  { href: `${base}cases/`, label: '系统设计', match: '/cases/' },
+  { href: `${base}learning/`, label: '项目学习', match: '/learning/' },
   { href: `${base}about/`, label: '关于', match: '/about/' },
   { href: `${base}search/`, label: '搜索', match: '/search/' },
 ]
 ---
 <header class="masthead">
-  <a class="masthead__brand" href={base}>架构图谱</a>
+  <a class="masthead__brand" href={base}>AI架构师之路</a>
   <nav class="masthead__nav">
     {items.map((it) => (
       <a href={it.href} aria-current={path.includes(it.match) ? 'page' : undefined}>{it.label}</a>

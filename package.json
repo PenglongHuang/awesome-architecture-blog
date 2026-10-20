@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "import": "node scripts/import-content.mjs",
+    "import:course": "node scripts/import-course.mjs",
     "validate": "node scripts/validate-content.mjs",
     "deploy:server": "bash scripts/deploy-server.sh"
   },

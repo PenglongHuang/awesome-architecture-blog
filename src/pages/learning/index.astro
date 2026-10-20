@@ -1,0 +1,25 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import CourseCard from '../../components/CourseCard.astro'
+import { COURSES } from '../../data/courses'
+---
+<BaseLayout title="项目学习">
+  <div class="hero">
+    <p class="kicker">Project Learning · {COURSES.length} 门</p>
+    <h1>在真实项目里,<br />把架构走一遍</h1>
+    <p>不只读结论,而是跟着一条真实请求、一次真实部署,穿过代码、配置与边界。每门课都可以直接打开,边读边点。</p>
+  </div>
+  <div class="section">
+    <div class="section__head"><b>课程</b><i>COURSES · {COURSES.length}</i></div>
+    <div class="course-grid">
+      {COURSES.map((course, i) => <CourseCard course={course} index={i} />)}
+    </div>
+  </div>
+  <div class="section">
+    <div class="section__head"><b>怎么学</b><i>HOW IT WORKS</i></div>
+    <div class="prose">
+      <p>每门课都从一个具体问题开始:一个请求怎么被处理?一次调用怎么被计价?然后沿着真实代码路径往下走,而不是先背概念。</p>
+      <p>课程页面是独立交互页,包含可点击的架构图、逐段源码和场景解释;读完可以回到这里继续下一门。</p>
+    </div>
+  </div>
+</BaseLayout>

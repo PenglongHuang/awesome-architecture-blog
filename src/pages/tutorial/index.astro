@@ -10,9 +10,9 @@ const all = await getCollection('posts')
 const series = SERIES.filter((s) => s.channel === 'tutorial').sort((a, b) => a.order - b.order)
 const recent = sortByDateDesc(all.filter((p) => postChannel(p) === 'tutorial')).slice(0, 6)
 ---
-<BaseLayout title="教程">
+<BaseLayout title="入门教程">
   <div class="hero">
-    <p class="kicker">教程 · 43 篇</p>
+    <p class="kicker">入门教程 · 43 篇</p>
     <h1>像架构师一样思考</h1>
     <p>不教你任何语言或框架,只教你一种可迁移的判断力:在写代码之前,先把系统想清楚。</p>
   </div>

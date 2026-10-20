@@ -1,0 +1,2502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="LiteLLM 内部漫游指南:跟着一个 /v1/chat/completions 请求,走完 AI 网关的鉴权、限流、翻译、路由与计价。">
+<title>LiteLLM 内部漫游指南 · 从一次请求看懂 AI 网关</title>
+<style>
+:root {
+  --color-bg:             #FAF7F2;
+  --color-bg-warm:        #F5F0E8;
+  --color-bg-code:        #1E1E2E;
+  --color-text:           #2C2A28;
+  --color-text-secondary: #6B6560;
+  --color-text-muted:     #9E9790;
+  --color-border:         #E5DFD6;
+  --color-border-light:   #EEEBE5;
+  --color-surface:        #FFFFFF;
+  --color-surface-warm:   #FDF9F3;
+
+  --color-accent:         #D94F30;
+  --color-accent-hover:   #C4432A;
+  --color-accent-light:   #FDEEE9;
+  --color-accent-muted:   #E8836C;
+
+  --color-success:        #2D8B55;
+  --color-success-light:  #E8F5EE;
+  --color-error:          #C93B3B;
+  --color-error-light:    #FDE8E8;
+  --color-info:           #2A7B9B;
+  --color-info-light:     #E4F2F7;
+
+  --color-actor-1:        #D94F30;
+  --color-actor-2:        #2A7B9B;
+  --color-actor-3:        #7B6DAA;
+  --color-actor-4:        #D4A843;
+  --color-actor-5:        #2D8B55;
+
+  --font-display:  'Bricolage Grotesque', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --font-body:     'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --font-mono:     'JetBrains Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
+
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+  --text-3xl:  1.875rem;
+  --text-4xl:  2.25rem;
+  --text-5xl:  3rem;
+  --text-6xl:  3.75rem;
+
+  --leading-tight:  1.15;
+  --leading-snug:   1.3;
+  --leading-normal: 1.6;
+  --leading-loose:  1.8;
+
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  --content-width:      800px;
+  --content-width-wide: 1000px;
+  --nav-height:         50px;
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  16px;
+  --radius-full: 9999px;
+
+  --shadow-sm:  0 1px 2px rgba(44, 42, 40, 0.05);
+  --shadow-md:  0 4px 12px rgba(44, 42, 40, 0.08);
+  --shadow-lg:  0 8px 24px rgba(44, 42, 40, 0.1);
+  --shadow-xl:  0 16px 48px rgba(44, 42, 40, 0.12);
+
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast:   150ms;
+  --duration-normal: 300ms;
+  --duration-slow:   500ms;
+  --stagger-delay:   120ms;
+}
+
+* { box-sizing: border-box; }
+html {
+  scroll-behavior: smooth;
+  scroll-snap-type: y proximity;
+}
+body {
+  margin: 0;
+  background: var(--color-bg);
+  background-image: radial-gradient(ellipse at 20% 50%, rgba(217, 79, 48, 0.035) 0%, transparent 55%);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 { font-family: var(--font-display); line-height: var(--leading-tight); margin: 0; }
+p { margin: 0 0 var(--space-4); }
+a { color: var(--color-accent); }
+strong { font-weight: 700; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: var(--radius-full); }
+
+/* ---------- NAV ---------- */
+.nav {
+  position: fixed; inset: 0 0 auto 0; height: var(--nav-height);
+  background: rgba(250, 247, 242, 0.88);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border-light);
+  z-index: 9000;
+}
+.progress-bar {
+  position: absolute; top: 0; left: 0; height: 3px; width: 0%;
+  background: linear-gradient(90deg, var(--color-accent), var(--color-actor-4));
+  transition: width 80ms linear;
+}
+.nav-inner {
+  max-width: 1100px; height: 100%; margin: 0 auto;
+  padding: 0 var(--space-5);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+}
+.nav-title {
+  font-family: var(--font-display); font-weight: 700; font-size: var(--text-sm);
+  color: var(--color-text); white-space: nowrap;
+}
+.nav-title span { color: var(--color-accent); }
+.nav-dots { display: flex; gap: 7px; align-items: center; overflow-x: auto; padding: 4px; }
+.nav-dot {
+  width: 11px; height: 11px; border-radius: 50%;
+  border: 2px solid var(--color-text-muted); background: transparent;
+  cursor: pointer; padding: 0; flex-shrink: 0;
+  transition: all var(--duration-fast);
+}
+.nav-dot:hover { border-color: var(--color-accent); transform: scale(1.2); }
+.nav-dot.visited { background: var(--color-accent-muted); border-color: var(--color-accent-muted); }
+.nav-dot.current {
+  background: var(--color-accent); border-color: var(--color-accent);
+  box-shadow: 0 0 0 4px var(--color-accent-light);
+}
+
+/* ---------- HERO ---------- */
+.hero {
+  min-height: 100dvh;
+  display: flex; align-items: center;
+  padding: calc(var(--nav-height) + var(--space-12)) var(--space-6) var(--space-16);
+  scroll-snap-align: start;
+  position: relative; overflow: hidden;
+}
+.hero-inner { max-width: 960px; margin: 0 auto; width: 100%; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--color-accent); background: var(--color-accent-light);
+  padding: var(--space-2) var(--space-4); border-radius: var(--radius-full);
+  margin-bottom: var(--space-6);
+}
+.hero-title {
+  font-size: clamp(2.5rem, 6.4vw, 4.6rem);
+  font-weight: 800; letter-spacing: -0.03em; margin-bottom: var(--space-5);
+}
+.hero-title .accent { color: var(--color-accent); }
+.hero-subtitle {
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  color: var(--color-text-secondary); max-width: 680px;
+  line-height: var(--leading-loose); margin-bottom: var(--space-6);
+}
+.hero-meta { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-8); }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  padding: var(--space-2) var(--space-3); border-radius: var(--radius-full);
+}
+.hero-cta {
+  display: inline-flex; align-items: center; gap: var(--space-3);
+  background: var(--color-accent); color: #fff; text-decoration: none;
+  font-family: var(--font-display); font-weight: 700; font-size: var(--text-lg);
+  padding: var(--space-4) var(--space-8); border-radius: var(--radius-full);
+  box-shadow: var(--shadow-md); transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal);
+}
+.hero-cta:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); background: var(--color-accent-hover); }
+.hero-cta .arrow { transition: transform var(--duration-normal); }
+.hero-cta:hover .arrow { transform: translateX(4px); }
+.hero-note { margin-top: var(--space-5); font-size: var(--text-sm); color: var(--color-text-muted); }
+.hero-note code { font-family: var(--font-mono); font-size: 0.8rem; background: var(--color-surface-warm); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--color-border-light); }
+
+.hero-orbit {
+  position: absolute; right: -120px; top: 50%; transform: translateY(-50%);
+  width: 460px; height: 460px; border-radius: 50%;
+  border: 1px dashed var(--color-border); opacity: 0.65; pointer-events: none;
+}
+.hero-orbit::before, .hero-orbit::after {
+  content: ''; position: absolute; border-radius: 50%;
+}
+.hero-orbit::before { inset: 60px; border: 1px solid var(--color-border-light); }
+.hero-orbit::after { width: 14px; height: 14px; background: var(--color-accent); top: 40px; left: 50%; box-shadow: 0 0 0 6px var(--color-accent-light); }
+.hero-orbit-2 {
+  position: absolute; right: 40px; bottom: 8%; width: 220px; height: 220px;
+  border-radius: 50%; border: 1px solid var(--color-border-light); opacity: 0.5; pointer-events: none;
+}
+
+/* ---------- MODULES ---------- */
+.module {
+  min-height: 100dvh;
+  scroll-snap-align: start;
+  padding: var(--space-16) var(--space-6);
+  padding-top: calc(var(--nav-height) + var(--space-12));
+}
+.module:nth-of-type(even) { background: var(--color-bg-warm); }
+.module-content { max-width: var(--content-width); margin: 0 auto; }
+.module-header { margin-bottom: var(--space-12); }
+.module-number {
+  display: block; font-family: var(--font-display); font-size: var(--text-6xl);
+  font-weight: 800; line-height: 1; color: var(--color-accent); opacity: 0.18;
+  margin-bottom: calc(-1 * var(--space-4));
+}
+.module-title { font-size: var(--text-4xl); font-weight: 700; letter-spacing: -0.02em; }
+.module-subtitle { margin-top: var(--space-3); font-size: var(--text-lg); color: var(--color-text-secondary); max-width: 660px; }
+.screen { margin-bottom: var(--space-20); }
+.screen:last-child { margin-bottom: 0; }
+.screen-heading {
+  font-size: var(--text-2xl); font-weight: 700; margin-bottom: var(--space-5);
+  display: flex; align-items: baseline; gap: var(--space-3);
+}
+.screen-heading .kicker {
+  font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-accent);
+  letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500;
+}
+.lead { font-size: var(--text-lg); color: var(--color-text-secondary); line-height: var(--leading-loose); }
+.small { font-size: var(--text-sm); color: var(--color-text-secondary); }
+.muted { color: var(--color-text-muted); }
+.mono { font-family: var(--font-mono); font-size: 0.88em; }
+.inline-code {
+  font-family: var(--font-mono); font-size: 0.85em;
+  background: var(--color-surface-warm); border: 1px solid var(--color-border-light);
+  padding: 2px 6px; border-radius: 4px; white-space: nowrap;
+}
+
+/* ---------- REVEAL ---------- */
+.animate-in {
+  opacity: 0; transform: translateY(20px);
+  transition: opacity var(--duration-slow) var(--ease-out), transform var(--duration-slow) var(--ease-out);
+}
+.animate-in.visible { opacity: 1; transform: translateY(0); }
+.stagger-children > .animate-in { transition-delay: calc(var(--stagger-index, 0) * var(--stagger-delay)); }
+
+/* ---------- TERM TOOLTIPS ---------- */
+.term {
+  border-bottom: 1.5px dashed var(--color-accent-muted);
+  cursor: pointer; position: relative;
+}
+.term:hover, .term.active { border-bottom-color: var(--color-accent); color: var(--color-accent); }
+.term-tooltip {
+  position: fixed; background: var(--color-bg-code); color: #CDD6F4;
+  padding: var(--space-3) var(--space-4); border-radius: var(--radius-sm);
+  font-size: var(--text-sm); font-family: var(--font-body); line-height: var(--leading-normal);
+  width: max(200px, min(320px, 80vw)); box-shadow: var(--shadow-xl);
+  pointer-events: none; opacity: 0; transition: opacity var(--duration-fast);
+  z-index: 10000;
+}
+.term-tooltip::after {
+  content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  border: 6px solid transparent; border-top-color: var(--color-bg-code);
+}
+.term-tooltip.visible { opacity: 1; }
+.term-tooltip.flip::after { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--color-bg-code); }
+
+/* ---------- CODE / TRANSLATION ---------- */
+pre, code { white-space: pre-wrap; word-break: break-word; overflow-x: hidden; }
+.translation-block {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+  border-radius: var(--radius-md); overflow: hidden;
+  box-shadow: var(--shadow-md); margin: var(--space-8) 0;
+  border: 1px solid var(--color-border-light);
+}
+.translation-code {
+  background: var(--color-bg-code); color: #CDD6F4;
+  padding: var(--space-6); font-family: var(--font-mono);
+  font-size: var(--text-sm); line-height: 1.75; position: relative; min-width: 0;
+}
+.translation-code pre, .translation-code code { white-space: pre-wrap; word-break: break-word; overflow-x: hidden; margin: 0; }
+.translation-code::-webkit-scrollbar, pre::-webkit-scrollbar { display: none; }
+.translation-english {
+  background: var(--color-surface-warm); padding: var(--space-6);
+  font-size: var(--text-sm); line-height: 1.75; border-left: 3px solid var(--color-accent); min-width: 0;
+}
+.translation-label {
+  display: inline-block; font-family: var(--font-mono); font-size: var(--text-xs);
+  text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.55; margin-bottom: var(--space-3);
+}
+.translation-english .translation-label { color: var(--color-text-muted); }
+.translation-lines .tl {
+  margin: 0 0 var(--space-3); padding-left: var(--space-3);
+  border-left: 2px solid var(--color-border-light); color: var(--color-text-secondary);
+}
+.translation-lines .tl strong { color: var(--color-text); }
+.code-comment { color: #6C7086; }
+.code-keyword { color: #CBA6F7; }
+.code-string  { color: #A6E3A1; }
+.code-function{ color: #89B4FA; }
+.code-number  { color: #FAB387; }
+.code-property{ color: #F9E2AF; }
+.code-operator{ color: #94E2D5; }
+.code-tag     { color: #F38BA8; }
+.file-ref {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  color: var(--color-info); background: var(--color-info-light);
+  padding: 4px 8px; border-radius: var(--radius-sm); margin-top: var(--space-3);
+}
+
+/* ---------- CALLOUT ---------- */
+.callout {
+  display: flex; gap: var(--space-4); padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-md); margin: var(--space-8) 0;
+  background: var(--color-accent-light); border-left: 4px solid var(--color-accent);
+}
+.callout-info { background: var(--color-info-light); border-left-color: var(--color-info); }
+.callout-warning { background: var(--color-error-light); border-left-color: var(--color-error); }
+.callout-icon { font-size: 1.4rem; line-height: 1.4; flex-shrink: 0; }
+.callout-title { display: block; font-family: var(--font-display); margin-bottom: var(--space-1); }
+.callout p { margin: 0; font-size: var(--text-sm); color: var(--color-text-secondary); }
+
+/* ---------- CARDS ---------- */
+.pattern-cards {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4); margin: var(--space-8) 0;
+}
+.pattern-card {
+  background: var(--color-surface); border-radius: var(--radius-md);
+  padding: var(--space-6); box-shadow: var(--shadow-sm);
+  border-top: 3px solid var(--color-accent);
+  transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal);
+}
+.pattern-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.pattern-icon {
+  width: 42px; height: 42px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.15rem; margin-bottom: var(--space-4); color: #fff;
+}
+.pattern-title { font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-2); }
+.pattern-desc { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0; }
+
+/* ---------- STEP CARDS ---------- */
+.step-cards { display: flex; flex-direction: column; gap: var(--space-3); margin: var(--space-8) 0; }
+.step-card {
+  display: flex; align-items: flex-start; gap: var(--space-4);
+  padding: var(--space-4) var(--space-5); background: var(--color-surface);
+  border-radius: var(--radius-md); border-left: 3px solid var(--color-accent);
+  box-shadow: var(--shadow-sm);
+}
+.step-num {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--color-accent);
+  color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); flex-shrink: 0; font-size: var(--text-sm);
+}
+.step-body p { margin: var(--space-1) 0 0; color: var(--color-text-secondary); font-size: var(--text-sm); }
+
+/* ---------- FILE TREE ---------- */
+.file-tree { font-family: var(--font-mono); font-size: var(--text-sm); margin: var(--space-6) 0; }
+.ft-folder, .ft-file {
+  padding: var(--space-2) var(--space-3); border-left: 2px solid var(--color-border-light);
+  margin-left: var(--space-4); display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-2);
+}
+.ft-folder > .ft-name { color: var(--color-accent); font-weight: 600; }
+.ft-file > .ft-name { color: var(--color-text); }
+.ft-folder > .ft-name::before { content: '📁 '; }
+.ft-file > .ft-name::before { content: '📄 '; }
+.ft-desc { color: var(--color-text-secondary); font-family: var(--font-body); font-size: var(--text-xs); }
+.ft-children { margin-left: var(--space-4); width: 100%; }
+
+/* ---------- ICON ROWS ---------- */
+.icon-rows { display: flex; flex-direction: column; gap: var(--space-4); margin: var(--space-8) 0; }
+.icon-row {
+  display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4);
+  background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);
+}
+.icon-row p { margin: 0; color: var(--color-text-secondary); font-size: var(--text-sm); }
+.icon-circle {
+  width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 1.25rem; flex-shrink: 0; color: #fff;
+}
+
+/* ---------- BADGES ---------- */
+.badge-list { display: flex; flex-direction: column; gap: var(--space-2); margin: var(--space-6) 0; }
+.badge-item {
+  display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border-light); border-radius: var(--radius-sm);
+  background: var(--color-surface); transition: border-color var(--duration-fast);
+}
+.badge-item:hover { border-color: var(--color-accent-muted); }
+.badge-code {
+  font-family: var(--font-mono); font-size: var(--text-xs); background: var(--color-bg-code);
+  color: #CBA6F7; padding: var(--space-1) var(--space-3); border-radius: var(--radius-sm); white-space: nowrap;
+}
+.badge-desc { font-size: var(--text-sm); color: var(--color-text-secondary); }
+
+/* ---------- QUIZ ---------- */
+.quiz-container {
+  background: var(--color-surface); border-radius: var(--radius-lg);
+  padding: var(--space-6); box-shadow: var(--shadow-md); margin: var(--space-8) 0;
+  border: 1px solid var(--color-border-light);
+}
+.quiz-question-block { margin-bottom: var(--space-8); }
+.quiz-question-block:last-of-type { margin-bottom: var(--space-5); }
+.quiz-question { font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-4); line-height: var(--leading-snug); }
+.quiz-options { display: flex; flex-direction: column; gap: var(--space-2); }
+.quiz-option {
+  display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--color-border); border-radius: var(--radius-sm);
+  background: var(--color-surface); cursor: pointer; width: 100%; text-align: left;
+  font-family: var(--font-body); font-size: var(--text-sm); color: var(--color-text);
+  transition: border-color var(--duration-fast), background var(--duration-fast);
+}
+.quiz-option:hover:not(:disabled) { border-color: var(--color-accent-muted); }
+.quiz-option.selected { border-color: var(--color-accent); background: var(--color-accent-light); }
+.quiz-option.correct { border-color: var(--color-success); background: var(--color-success-light); }
+.quiz-option.incorrect { border-color: var(--color-error); background: var(--color-error-light); }
+.quiz-option:disabled { cursor: default; opacity: 0.9; }
+.quiz-option-radio {
+  width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--color-border);
+  transition: all var(--duration-fast); flex-shrink: 0; background: #fff;
+}
+.quiz-option.selected .quiz-option-radio { border-color: var(--color-accent); background: var(--color-accent); box-shadow: inset 0 0 0 3px #fff; }
+.quiz-option.correct .quiz-option-radio { border-color: var(--color-success); background: var(--color-success); box-shadow: inset 0 0 0 3px #fff; }
+.quiz-option.incorrect .quiz-option-radio { border-color: var(--color-error); background: var(--color-error); box-shadow: inset 0 0 0 3px #fff; }
+.quiz-feedback {
+  max-height: 0; overflow: hidden; opacity: 0;
+  transition: max-height var(--duration-normal), opacity var(--duration-normal), padding var(--duration-normal);
+  font-size: var(--text-sm); border-radius: var(--radius-sm);
+}
+.quiz-feedback.show { max-height: 260px; opacity: 1; padding: var(--space-3); margin-top: var(--space-2); }
+.quiz-feedback.success { background: var(--color-success-light); color: var(--color-success); }
+.quiz-feedback.error { background: var(--color-error-light); color: var(--color-error); }
+.quiz-feedback.warning { background: var(--color-info-light); color: var(--color-info); }
+.quiz-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.quiz-check-btn, .quiz-reset-btn {
+  font-family: var(--font-display); font-weight: 700; font-size: var(--text-sm);
+  padding: var(--space-3) var(--space-6); border-radius: var(--radius-full);
+  cursor: pointer; border: 2px solid transparent; transition: all var(--duration-fast);
+}
+.quiz-check-btn { background: var(--color-accent); color: #fff; }
+.quiz-check-btn:hover { background: var(--color-accent-hover); }
+.quiz-reset-btn { background: transparent; color: var(--color-text-secondary); border-color: var(--color-border); }
+.quiz-reset-btn:hover { border-color: var(--color-accent-muted); color: var(--color-accent); }
+.quiz-overall-feedback { margin-top: var(--space-4); font-size: var(--text-sm); color: var(--color-text-secondary); }
+
+/* ---------- CHAT ---------- */
+.chat-window {
+  background: var(--color-surface); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg); overflow: hidden; margin: var(--space-8) 0;
+  border: 1px solid var(--color-border-light);
+}
+.chat-header {
+  display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-5);
+  background: var(--color-surface-warm); border-bottom: 1px solid var(--color-border-light);
+  font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-secondary);
+}
+.chat-header .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--color-success); }
+.chat-messages { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); min-height: 180px; }
+.chat-message { display: flex; gap: var(--space-3); align-items: flex-start; animation: fadeSlideUp 0.35s var(--ease-out); }
+.chat-message.right { flex-direction: row-reverse; }
+.chat-avatar {
+  width: 34px; height: 34px; border-radius: 50%; color: #fff; font-family: var(--font-display);
+  font-weight: 700; font-size: var(--text-sm); display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0;
+}
+.chat-bubble {
+  background: var(--color-surface-warm); border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4); max-width: 78%;
+  border: 1px solid var(--color-border-light);
+}
+.chat-message.right .chat-bubble { background: var(--color-accent-light); border-color: transparent; }
+.chat-sender { display: block; font-family: var(--font-mono); font-size: 0.68rem; margin-bottom: 3px; letter-spacing: 0.04em; }
+.chat-bubble p { margin: 0; font-size: var(--text-sm); line-height: 1.55; }
+.chat-typing { padding: 0 var(--space-5) var(--space-3); display: flex; align-items: center; gap: var(--space-3); }
+.chat-typing-dots { display: flex; gap: 4px; padding: var(--space-2) var(--space-3); background: var(--color-surface-warm); border-radius: var(--radius-full); }
+.typing-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-text-muted); animation: typingBounce 1.4s infinite; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+@keyframes fadeSlideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.chat-controls {
+  display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+  padding: var(--space-3) var(--space-5); border-top: 1px solid var(--color-border-light);
+  background: var(--color-surface-warm);
+}
+.chat-controls button, .flow-controls button {
+  font-family: var(--font-display); font-weight: 600; font-size: var(--text-xs);
+  padding: var(--space-2) var(--space-4); border-radius: var(--radius-full);
+  border: 1px solid var(--color-border); background: var(--color-surface);
+  color: var(--color-text); cursor: pointer; transition: all var(--duration-fast);
+}
+.chat-controls button:hover, .flow-controls button:hover { border-color: var(--color-accent); color: var(--color-accent); }
+.chat-progress, .flow-progress { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); margin-left: auto; }
+
+/* ---------- FLOW ANIMATION ---------- */
+.flow-animation {
+  position: relative; margin: var(--space-8) 0; padding: var(--space-5);
+  background: var(--color-surface); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md); border: 1px solid var(--color-border-light);
+}
+.flow-rows { position: relative; display: flex; flex-direction: column; gap: var(--space-2); }
+.flow-rail { position: absolute; left: 27px; top: 30px; bottom: 30px; width: 2px; background: var(--color-border); z-index: 0; }
+.flow-packet {
+  position: absolute; left: -4px; top: 0; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--color-accent); box-shadow: 0 0 0 4px var(--color-accent-light);
+  transition: top 0.45s var(--ease-out); z-index: 2;
+}
+.flow-row {
+  position: relative; z-index: 1; display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-3) var(--space-4); border-radius: var(--radius-sm);
+  background: var(--color-surface); border: 1px solid transparent;
+  transition: all var(--duration-normal) var(--ease-out);
+}
+.flow-row .flow-dot {
+  width: 10px; height: 10px; border-radius: 50%; background: var(--color-border);
+  border: 2px solid var(--color-surface); box-shadow: 0 0 0 2px var(--color-border);
+  flex-shrink: 0; margin-left: 8px; transition: all var(--duration-normal);
+}
+.flow-row .flow-actor-name { font-family: var(--font-display); font-weight: 700; font-size: var(--text-sm); min-width: 132px; }
+.flow-row .flow-actor-file { font-family: var(--font-mono); font-size: 0.7rem; color: var(--color-text-muted); }
+.flow-row .flow-actor-desc { font-size: var(--text-sm); color: var(--color-text-secondary); margin-left: auto; text-align: right; }
+.flow-row.active { background: var(--color-accent-light); border-color: var(--color-accent-muted); transform: translateX(4px); }
+.flow-row.active .flow-dot { background: var(--color-accent); box-shadow: 0 0 0 3px var(--color-accent-light); }
+.flow-row.done .flow-dot { background: var(--color-success); box-shadow: 0 0 0 3px var(--color-success-light); }
+.flow-step-label {
+  margin-top: var(--space-4); padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-warm); border-radius: var(--radius-sm);
+  font-size: var(--text-sm); color: var(--color-text-secondary); min-height: 46px;
+}
+.flow-controls { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-3); }
+
+/* ---------- ARCH DIAGRAM ---------- */
+.arch-diagram { display: grid; gap: var(--space-4); margin: var(--space-8) 0; }
+.arch-zone {
+  background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-4);
+  border: 1px dashed var(--color-border);
+}
+.arch-zone-label { font-family: var(--font-mono); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-text-muted); margin-bottom: var(--space-3); }
+.arch-components { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.arch-component {
+  display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-warm); border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-sm);
+  transition: all var(--duration-fast);
+}
+.arch-component:hover, .arch-component.active { border-color: var(--color-accent); background: var(--color-accent-light); }
+.arch-component .arch-icon { font-size: 1rem; }
+.arch-description {
+  margin-top: var(--space-3); padding: var(--space-4); background: var(--color-bg-warm);
+  border-radius: var(--radius-sm); font-size: var(--text-sm); color: var(--color-text-secondary);
+  min-height: 62px;
+}
+.arch-description strong { color: var(--color-text); }
+
+/* ---------- COMPARE ---------- */
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin: var(--space-8) 0; }
+.compare-card { background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-sm); border-top: 3px solid var(--color-border); }
+.compare-card.good { border-top-color: var(--color-success); }
+.compare-card.bad { border-top-color: var(--color-error); }
+.compare-card h4 { font-size: var(--text-base); margin-bottom: var(--space-2); }
+.compare-card p, .compare-card li { font-size: var(--text-sm); color: var(--color-text-secondary); }
+.compare-card ul { margin: 0; padding-left: var(--space-5); }
+
+/* ---------- MODULE FOOTER ---------- */
+.module-footer {
+  margin-top: var(--space-12); padding-top: var(--space-6);
+  border-top: 1px solid var(--color-border-light);
+  display: flex; justify-content: space-between; align-items: center; gap: var(--space-4);
+  flex-wrap: wrap; font-size: var(--text-sm); color: var(--color-text-muted);
+}
+.module-footer .next-hint { display: flex; align-items: center; gap: var(--space-2); }
+.module-footer .next-hint span { color: var(--color-accent); font-weight: 600; }
+
+footer {
+  padding: var(--space-16) var(--space-6); text-align: center;
+  background: var(--color-bg-code); color: #CDD6F4;
+}
+footer p { color: #9BA0B5; font-size: var(--text-sm); max-width: 620px; margin: 0 auto var(--space-3); }
+footer .footer-title { font-family: var(--font-display); font-size: var(--text-2xl); color: #fff; margin-bottom: var(--space-4); }
+footer code { color: #A6E3A1; font-family: var(--font-mono); font-size: var(--text-sm); }
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 768px) {
+  :root { --text-4xl: 1.875rem; --text-5xl: 2.25rem; --text-6xl: 3rem; }
+  .translation-block { grid-template-columns: 1fr; }
+  .translation-english { border-left: none; border-top: 3px solid var(--color-accent); }
+  .compare-grid { grid-template-columns: 1fr; }
+  .hero-orbit, .hero-orbit-2 { display: none; }
+  .flow-row .flow-actor-desc { display: none; }
+  .flow-row .flow-actor-name { min-width: 110px; }
+  .quiz-container { padding: var(--space-4); }
+}
+@media (max-width: 480px) {
+  :root { --text-4xl: 1.5rem; --text-5xl: 1.875rem; --text-6xl: 2.25rem; }
+  .module { padding-left: var(--space-4); padding-right: var(--space-4); }
+  .hero { padding-left: var(--space-4); padding-right: var(--space-4); }
+  .pattern-cards { grid-template-columns: 1fr; }
+  .flow-row { align-items: flex-start; }
+  .flow-row .flow-actor-file { display: none; }
+  .nav-title { display: none; }
+  .arch-components { flex-direction: column; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="课程导航">
+  <div class="progress-bar" id="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+  <div class="nav-inner">
+    <span class="nav-title">LiteLLM <span>内部漫游</span></span>
+    <div class="nav-dots" role="tablist">
+      <button class="nav-dot" data-target="hero" data-tooltip="封面" role="tab" aria-label="封面"></button>
+      <button class="nav-dot" data-target="module-1" data-tooltip="01 请求之旅" role="tab" aria-label="模块 1"></button>
+      <button class="nav-dot" data-target="module-2" data-tooltip="02 演员表" role="tab" aria-label="模块 2"></button>
+      <button class="nav-dot" data-target="module-3" data-tooltip="03 翻译层" role="tab" aria-label="模块 3"></button>
+      <button class="nav-dot" data-target="module-4" data-tooltip="04 虚拟密钥" role="tab" aria-label="模块 4"></button>
+      <button class="nav-dot" data-target="module-5" data-tooltip="05 限流预算" role="tab" aria-label="模块 5"></button>
+      <button class="nav-dot" data-target="module-6" data-tooltip="06 路由降级" role="tab" aria-label="模块 6"></button>
+      <button class="nav-dot" data-target="module-7" data-tooltip="07 成本账本" role="tab" aria-label="模块 7"></button>
+      <button class="nav-dot" data-target="module-8" data-tooltip="08 全景边界" role="tab" aria-label="模块 8"></button>
+    </div>
+  </div>
+</nav>
+
+<main data-pagefind-body>
+
+<!-- ================= HERO ================= -->
+<section class="hero" id="hero" aria-label="课程封面">
+  <div class="hero-orbit" aria-hidden="true"></div>
+  <div class="hero-orbit-2" aria-hidden="true"></div>
+  <div class="hero-inner">
+    <span class="hero-eyebrow">🚅 Source Walkthrough · v1.107.0</span>
+    <h1 class="hero-title">跟着一个请求，<br><span class="accent">走完 LiteLLM 的每一层</span></h1>
+    <p class="hero-subtitle">
+      你不需要读完 14000 个文件。我们只做一件事：从客户端发出
+      <span class="term" data-definition="HTTP 请求就是客户端向服务器发送的一条消息，里面有地址、动作和数据。">HTTP 请求</span>
+      开始，一路跟踪它如何被鉴权、限流、翻译、路由、计价，最后拿到模型的回答。
+    </p>
+    <div class="hero-meta">
+      <span class="pill">📦 8 个模块</span>
+      <span class="pill">⏱️ 约 30 分钟</span>
+      <span class="pill">🧭 面向零基础</span>
+      <span class="pill">📂 开源仓库</span>
+    </div>
+    <a class="hero-cta" href="#module-1">开始旅程 <span class="arrow">→</span></a>
+    <p class="hero-note">源码：<a href="https://github.com/BerriAI/litellm" target="_blank" rel="noopener">BerriAI/litellm</a> · 所有代码片段均原样摘自该仓库</p>
+  </div>
+</section>
+
+<!-- ================= MODULE 1 ================= -->
+<section class="module" id="module-1" aria-label="模块 1：一个请求的旅程">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">01</span>
+      <h1 class="module-title">一个请求的旅程</h1>
+      <p class="module-subtitle">当你的程序调用 <span class="mono">/v1/chat/completions</span> 时，LiteLLM 内部到底发生了什么？</p>
+    </header>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 1</span> 你只写了一句“帮我问一下模型”</h2>
+      <p class="lead">
+        假设你的应用把 OpenAI SDK 的 <span class="term" data-definition="SDK 是别人写好的一整套工具包，你调用里面的函数就能完成复杂操作，不用自己拼 HTTP 请求。">SDK</span>
+        指向了 LiteLLM 的地址 <span class="inline-code">http://localhost:4000</span>。在你的代码里，这只是一次普通调用；但在 LiteLLM 内部，它要穿过一整套“治理流水线”。
+      </p>
+      <div class="step-cards stagger-children">
+        <div class="step-card animate-in">
+          <div class="step-num">1</div>
+          <div class="step-body"><strong>门卫检查身份</strong><p>这把 API Key 属于谁？是哪个团队？还有预算吗？</p></div>
+        </div>
+        <div class="step-card animate-in">
+          <div class="step-num">2</div>
+          <div class="step-body"><strong>限流器看排队人数</strong><p>这一分钟这个 Key 还能发几次？Token 额度还剩多少？</p></div>
+        </div>
+        <div class="step-card animate-in">
+          <div class="step-num">3</div>
+          <div class="step-body"><strong>路由器挑一个上游</strong><p>同一个模型名可能对应多个部署：OpenAI、Azure、Bedrock……选健康且便宜的那个。</p></div>
+        </div>
+        <div class="step-card animate-in">
+          <div class="step-num">4</div>
+          <div class="step-body"><strong>翻译官转换方言</strong><p>把 OpenAI 格式翻译成目标厂商的格式，再把回答翻译回统一格式。</p></div>
+        </div>
+        <div class="step-card animate-in">
+          <div class="step-num">5</div>
+          <div class="step-body"><strong>记账员写下账单</strong><p>这次调用用了多少 Token、花了多少钱，异步写进数据库。</p></div>
+        </div>
+      </div>
+      <div class="callout callout-info">
+        <div class="callout-icon">🧭</div>
+        <div class="callout-content">
+          <strong class="callout-title">先记住这张“流水线”</strong>
+          <p>后面的每个模块，都是把其中一站放大来看。你现在不需要记住文件名，只需要记住顺序：<strong>身份 → 配额 → 选路 → 翻译 → 记账</strong>。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 2</span> 数据包的自述：我经过了谁</h2>
+      <p>点击“下一步”，跟着这个请求走完全程。左边的圆点会亮起，表示当前停在哪一站。</p>
+
+      <div class="flow-animation">
+        <div class="flow-rail" aria-hidden="true"><div class="flow-packet" id="flow-packet"></div></div>
+        <div class="flow-rows" id="flow-rows">
+          <div class="flow-row" data-step="0">
+            <span class="flow-dot"></span>
+            <span class="flow-actor-name">客户端</span>
+            <span class="flow-actor-file">OpenAI SDK / curl</span>
+            <span class="flow-actor-desc">发出 POST /v1/chat/completions</span>
+          </div>
+          <div class="flow-row" data-step="1">
+            <span class="flow-dot"></span>
+            <span class="flow-actor-name">Proxy 入口</span>
+            <span class="flow-actor-file">proxy_server.py</span>
+            <span class="flow-actor-desc">FastAPI 路由接住请求</span>
+          </div>
+          <div class="flow-row" data-step="2">
+            <span class="flow-dot"></span>
+            <span class="flow-actor-name">鉴权</span>
+            <span class="flow-actor-file">auth/user_api_key_auth.py</span>
+            <span class="flow-actor-desc">查 Key、用户、团队、预算</span>
+          </div>
+          <div class="flow-row" data-step="3">
+            <span class="flow-dot"></span>
+            <span class="flow-actor-name">Redis 缓存</span>
+            <span class="flow-actor-file">DualCache / Redis</span>
+            <span class="flow-actor-desc">Key 信息与限流计数</span>
+          </div>
+          <div class="flow-row" data-step="4">
+            <span class="flow-dot"></span>
+            <span class="flow-actor-name">限流 Hooks</span>
+            <span class="flow-actor-file">hooks/parallel_request_limiter.py</span>
+            <span class="flow-actor-desc">RPM / TPM / 并发检查</span>
+          </div>
+          <div class="flow-row" data-step="5">
+            <span class="flow-dot"></span>
+            <span class="flow-actor-name">Router</span>
+            <span class="flow-actor-file">router.py</span>
+            <span class="flow-actor-desc">选部署、重试、降级</span>
+          </div>
+          <div class="flow-row" data-step="6">
+            <span class="flow-dot"></span>
+            <span class="flow-actor-name">LiteLLM SDK</span>
+            <span class="flow-actor-file">main.py + llms/</span>
+            <span class="flow-actor-desc">翻译请求并发出 HTTP</span>
+          </div>
+          <div class="flow-row" data-step="7">
+            <span class="flow-dot"></span>
+            <span class="flow-actor-name">上游模型</span>
+            <span class="flow-actor-file">OpenAI / Anthropic / Gemini…</span>
+            <span class="flow-actor-desc">真正生成回答</span>
+          </div>
+          <div class="flow-row" data-step="8">
+            <span class="flow-dot"></span>
+            <span class="flow-actor-name">成本回调</span>
+            <span class="flow-actor-file">hooks/proxy_track_cost_callback.py</span>
+            <span class="flow-actor-desc">算钱、入队、异步写库</span>
+          </div>
+        </div>
+        <div class="flow-step-label" id="flow-label">点击“下一步”，让请求出发。</div>
+        <div class="flow-controls">
+          <button type="button" onclick="flowNext()">下一步</button>
+          <button type="button" onclick="flowReset()">重新开始</button>
+          <span class="flow-progress" id="flow-progress">Step 0 / 9</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 3</span> 如果组件会聊天</h2>
+      <p>把刚才的流程换成一通群聊。你会发现，每一站只回答一个很窄的问题。</p>
+
+      <div class="chat-window" data-chat>
+        <div class="chat-header"><span class="dot"></span> litellm-proxy · 内部群聊</div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-message" data-msg="0" data-sender="client" style="display:none">
+            <div class="chat-avatar" style="background:var(--color-actor-2)">C</div>
+            <div class="chat-bubble"><span class="chat-sender" style="color:var(--color-actor-2)">客户端</span><p>POST /v1/chat/completions，Bearer sk-abc123，帮我问一下 gpt-4o。</p></div>
+          </div>
+          <div class="chat-message" data-msg="1" data-sender="proxy" style="display:none">
+            <div class="chat-avatar" style="background:var(--color-actor-1)">P</div>
+            <div class="chat-bubble"><span class="chat-sender" style="color:var(--color-actor-1)">Proxy 入口</span><p>收到。先过安检——这个路由挂了 <span class="mono">user_api_key_auth</span> 依赖，没身份进不来。</p></div>
+          </div>
+          <div class="chat-message right" data-msg="2" data-sender="auth" style="display:none">
+            <div class="chat-avatar" style="background:var(--color-actor-3)">A</div>
+            <div class="chat-bubble"><span class="chat-sender" style="color:var(--color-actor-3)">鉴权</span><p>Redis，这把钥匙的哈希是多少？属于哪个团队？还有多少钱？</p></div>
+          </div>
+          <div class="chat-message" data-msg="3" data-sender="redis" style="display:none">
+            <div class="chat-avatar" style="background:var(--color-actor-4)">R</div>
+            <div class="chat-bubble"><span class="chat-sender" style="color:var(--color-actor-4)">Redis</span><p>有效。用户 alice，团队 research，剩余预算 $12.40。鉴权通过。</p></div>
+          </div>
+          <div class="chat-message right" data-msg="4" data-sender="limiter" style="display:none">
+            <div class="chat-avatar" style="background:var(--color-actor-5)">L</div>
+            <div class="chat-bubble"><span class="chat-sender" style="color:var(--color-actor-5)">限流器</span><p>这一分钟第 7 次请求，上限 60 次；预估 320 Token，额度够。放行。</p></div>
+          </div>
+          <div class="chat-message" data-msg="5" data-sender="router" style="display:none">
+            <div class="chat-avatar" style="background:var(--color-actor-1)">R</div>
+            <div class="chat-bubble"><span class="chat-sender" style="color:var(--color-actor-1)">Router</span><p>gpt-4o 有 3 个部署。主线路有点慢，我按权重选一个健康的上游。</p></div>
+          </div>
+          <div class="chat-message" data-msg="6" data-sender="sdk" style="display:none">
+            <div class="chat-avatar" style="background:var(--color-actor-2)">S</div>
+            <div class="chat-bubble"><span class="chat-sender" style="color:var(--color-actor-2)">LiteLLM SDK</span><p>把 OpenAI 格式翻译成厂商格式，发出去。回答回来后，再翻译成统一的 ModelResponse。</p></div>
+          </div>
+          <div class="chat-message right" data-msg="7" data-sender="cost" style="display:none">
+            <div class="chat-avatar" style="background:var(--color-actor-4)">$</div>
+            <div class="chat-bubble"><span class="chat-sender" style="color:var(--color-actor-4)">记账员</span><p>这次输入 320 Token、输出 180 Token，合计 $0.0021。已入队，稍后批量写进 Postgres。</p></div>
+          </div>
+        </div>
+        <div class="chat-typing" id="chat-typing" style="display:none">
+          <div class="chat-avatar" id="typing-avatar" style="background:var(--color-actor-1)">?</div>
+          <div class="chat-typing-dots"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>
+        </div>
+        <div class="chat-controls">
+          <button type="button" onclick="chatNext()">下一条</button>
+          <button type="button" onclick="chatAll()">全部播放</button>
+          <button type="button" onclick="chatReset()">重播</button>
+          <span class="chat-progress" id="chat-progress">0 / 8</span>
+        </div>
+      </div>
+      <div class="callout">
+        <div class="callout-icon">💡</div>
+        <div class="callout-content">
+          <strong class="callout-title">关键洞察：每一层都“只做一件事”</strong>
+          <p>鉴权层不关心你问什么；路由层不关心你是谁；记账层不阻塞回答。软件工程里把这叫 <strong>关注点分离</strong>。看懂这个，你就能在让 AI 改代码时准确说出“这段逻辑应该放在哪一层”。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 4</span> 门卫写在装饰器里</h2>
+      <p>
+        打开 <span class="inline-code">litellm/proxy/proxy_server.py</span>，你会看到聊天接口的第一行不是业务逻辑，而是
+        <span class="term" data-definition="装饰器是 Python 里贴在函数上方的一行特殊写法，用来给函数“附加”额外行为，比如先做鉴权再执行函数。">装饰器</span>。
+        它把鉴权“挂”在了路由上：
+      </p>
+
+      <div class="translation-block">
+        <div class="translation-code">
+          <span class="translation-label">PYTHON · proxy_server.py</span>
+          <pre><code><span class="code-line"><span class="code-keyword">@router</span>.<span class="code-function">post</span>(</span>
+<span class="code-line">    <span class="code-string">"/v1/chat/completions"</span>,</span>
+<span class="code-line">    <span class="code-property">dependencies</span>=[<span class="code-function">Depends</span>(user_api_key_auth)],</span>
+<span class="code-line">    <span class="code-property">tags</span>=[<span class="code-string">"chat/completions"</span>],</span>
+<span class="code-line">)</span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">大白话</span>
+          <div class="translation-lines">
+            <p class="tl"><strong>当有人 POST 到 /v1/chat/completions 时……</strong>把这个函数叫起来。</p>
+            <p class="tl"><strong>先执行 user_api_key_auth。</strong>它像门卫：查 Key、查用户、查团队、查预算。不通过就直接拒绝，业务代码一行都不会跑。</p>
+            <p class="tl"><strong>给接口打上标签。</strong>主要是给自动生成的 API 文档分类用。</p>
+          </div>
+        </div>
+      </div>
+      <span class="file-ref">📄 litellm/proxy/proxy_server.py : 12693</span>
+
+      <p style="margin-top:var(--space-6)">真正进入函数后，它把身份信息塞进请求的 <span class="term" data-definition="metadata 是附带在请求上的“备注信息”，不发给模型，但 LiteLLM 用它记录这个请求属于谁、该记到哪个团队账上。">metadata</span>，然后交给统一的请求处理器：</p>
+
+      <div class="translation-block">
+        <div class="translation-code">
+          <span class="translation-label">PYTHON · proxy_server.py</span>
+          <pre><code><span class="code-line"><span class="code-keyword">async def</span> <span class="code-function">chat_completion</span>(</span>
+<span class="code-line">    request: Request,</span>
+<span class="code-line">    fastapi_response: Response,</span>
+<span class="code-line">    model: str | <span class="code-keyword">None</span> = <span class="code-keyword">None</span>,</span>
+<span class="code-line">    user_api_key_dict: UserAPIKeyAuth = <span class="code-function">Depends</span>(user_api_key_auth),</span>
+<span class="code-line">):</span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">大白话</span>
+          <div class="translation-lines">
+            <p class="tl"><strong>这是一个异步函数。</strong>“异步”意味着等上游模型回复时，服务器可以去处理别的请求，不会干站着。</p>
+            <p class="tl"><strong>request 是原始请求；model 可以从 URL 里带进来。</strong></p>
+            <p class="tl"><strong>user_api_key_dict 是门卫查完身份后交回来的“通行证”。</strong>里面装着用户、团队、预算等信息，后续每一层都要用它。</p>
+          </div>
+        </div>
+      </div>
+      <span class="file-ref">📄 litellm/proxy/proxy_server.py : 12713</span>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Checkpoint</span> 出门前的小测</h2>
+      <div class="quiz-container" id="quiz-1">
+        <div class="quiz-question-block" data-correct="b" data-correct-explanation="对。鉴权是路由的依赖，在业务函数执行前就会运行；Key 无效时请求会直接被拒绝。">
+          <h3 class="quiz-question">1. 一个没有携带有效 API Key 的请求，最可能在什么时候被拦下？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="a" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>等上游模型返回 401 之后</span></button>
+            <button class="quiz-option" data-value="b" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>进入 chat_completion 函数体之前</span></button>
+            <button class="quiz-option" data-value="c" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>记账回调执行时</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <div class="quiz-question-block" data-correct="c" data-correct-explanation="对。Router 负责在多个部署之间做选择，并处理重试和降级；它不是鉴权或计费组件。">
+          <h3 class="quiz-question">2. 同一个模型名配置了 3 个上游部署，谁来决定这次用哪一个？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="a" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>鉴权层</span></button>
+            <button class="quiz-option" data-value="b" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>成本回调</span></button>
+            <button class="quiz-option" data-value="c" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>Router 路由层</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <div class="quiz-actions">
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-1')">检查答案</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-1')">再来一次</button>
+        </div>
+        <div class="quiz-overall-feedback"></div>
+      </div>
+    </section>
+
+    <div class="module-footer">
+      <span>下一站：认识仓库里的“演员表”。</span>
+      <a class="next-hint" href="#module-2"><span>02 演员表</span> →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MODULE 2 ================= -->
+<section class="module" id="module-2" aria-label="模块 2：演员表与仓库地图">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">02</span>
+      <h1 class="module-title">演员表与仓库地图</h1>
+      <p class="module-subtitle">先认清舞台上有哪些角色，再决定该翻开哪个文件。</p>
+    </header>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 1</span> 一个项目，两种用法</h2>
+      <p class="lead">
+        LiteLLM 经常让人困惑，是因为它同时是两个产品：一个 <strong>Python 库</strong>，和一个 <strong>AI 网关服务</strong>。
+        它们共用同一套底层代码，但面对的用户完全不同。
+      </p>
+      <div class="compare-grid">
+        <div class="compare-card good">
+          <h4>🧰 Python SDK</h4>
+          <p>写几行 Python，直接调用 100+ 模型。</p>
+          <ul>
+            <li><span class="inline-code">import litellm</span></li>
+            <li>没有多租户、虚拟 Key、预算</li>
+            <li>适合脚本、原型、单个应用</li>
+            <li>核心入口：<span class="inline-code">litellm/main.py</span></li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>🏢 AI Gateway（Proxy）</h4>
+          <p>起一个 HTTP 服务，让整个团队/公司来调用。</p>
+          <ul>
+            <li>监听 <span class="inline-code">:4000</span></li>
+            <li>虚拟 Key、限流、预算、路由、管理台</li>
+            <li>适合团队、平台、对外中转站</li>
+            <li>核心入口：<span class="inline-code">litellm/proxy/</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout callout-info">
+        <div class="callout-icon">🔁</div>
+        <div class="callout-content">
+          <strong class="callout-title">它们不是二选一</strong>
+          <p>网关内部<strong>就是</strong>在调用 SDK：Proxy 先做鉴权/限流/选路，再把请求交给 SDK 去翻译和发 HTTP。所以看懂 SDK 的请求流程，是看懂网关的基础。</p>
+        </div>
+      </div>
+      <p class="small">
+        补充：这个版本的仓库新增了 <span class="inline-code">gateway/</span> 目录，它复用原来的 FastAPI 应用，但只保留“LLM 数据面”的路由；
+        完整的控制面仍然可以通过旧入口 <span class="inline-code">litellm.proxy.proxy_server:app</span> 使用。
+      </p>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 2</span> 仓库地图：先看这 8 个地方</h2>
+      <p>14000+ 个文件里，真正需要先认识的是这些。把它们想象成一个剧团的演员表：</p>
+      <div class="file-tree">
+        <div class="ft-folder open">
+          <span class="ft-name">litellm/</span><span class="ft-desc">核心 Python 包，SDK 与网关都住在这里</span>
+          <div class="ft-children">
+            <div class="ft-file"><span class="ft-name">main.py</span><span class="ft-desc">主角入口：completion() / acompletion() / embedding()</span></div>
+            <div class="ft-file"><span class="ft-name">router.py</span><span class="ft-desc">选路、重试、降级、负载均衡</span></div>
+            <div class="ft-folder">
+              <span class="ft-name">llms/</span><span class="ft-desc">各个厂商的“方言翻译器”</span>
+              <div class="ft-children">
+                <div class="ft-file"><span class="ft-name">anthropic/chat/transformation.py</span><span class="ft-desc">OpenAI 格式 ↔ Anthropic 格式</span></div>
+                <div class="ft-file"><span class="ft-name">gemini/chat/transformation.py</span><span class="ft-desc">OpenAI 格式 ↔ Gemini 格式</span></div>
+                <div class="ft-file"><span class="ft-name">bedrock/chat/…</span><span class="ft-desc">Bedrock Converse / Invoke 两套翻译</span></div>
+              </div>
+            </div>
+            <div class="ft-folder">
+              <span class="ft-name">proxy/</span><span class="ft-desc">AI 网关本体（FastAPI）</span>
+              <div class="ft-children">
+                <div class="ft-file"><span class="ft-name">proxy_server.py</span><span class="ft-desc">所有 HTTP 接口的定义处（很大）</span></div>
+                <div class="ft-file"><span class="ft-name">auth/</span><span class="ft-desc">虚拟 Key、JWT、预算校验</span></div>
+                <div class="ft-file"><span class="ft-name">hooks/</span><span class="ft-desc">限流、缓存、成本回调等“旁路钩子”</span></div>
+                <div class="ft-file"><span class="ft-name">db/</span><span class="ft-desc">异步写账单、清理旧日志</span></div>
+              </div>
+            </div>
+            <div class="ft-file"><span class="ft-name">models/ + repositories/</span><span class="ft-desc">数据库实体的定义与读写封装</span></div>
+          </div>
+        </div>
+        <div class="ft-folder">
+          <span class="ft-name">gateway/</span><span class="ft-desc">只暴露 LLM 数据面的新入口</span>
+        </div>
+        <div class="ft-folder">
+          <span class="ft-name">ui/</span><span class="ft-desc">Next.js 管理后台：建 Key、看用量、配模型</span>
+        </div>
+        <div class="ft-folder">
+          <span class="ft-name">tests/</span><span class="ft-desc">最好的“用法说明书”，比源码好读</span>
+        </div>
+        <div class="ft-file"><span class="ft-name">ARCHITECTURE.md</span><span class="ft-desc">官方架构地图，强烈建议先读</span></div>
+        <div class="ft-file"><span class="ft-name">docker-compose.yml</span><span class="ft-desc">本地一键起 LiteLLM + Postgres + Prometheus</span></div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 3</span> 主角的签名：统一所有厂商</h2>
+      <p>
+        打开 <span class="inline-code">litellm/main.py</span>，主角 <span class="mono">acompletion</span> 的第一屏就是它的“能力清单”。
+        你看不到任何厂商特有的参数，全是 OpenAI 风格的通用参数：
+      </p>
+      <div class="translation-block">
+        <div class="translation-code">
+          <span class="translation-label">PYTHON · main.py</span>
+          <pre><code><span class="code-line"><span class="code-keyword">async def</span> <span class="code-function">acompletion</span>(</span>
+<span class="code-line">    model: str,</span>
+<span class="code-line">    <span class="code-comment"># Optional OpenAI params: see https://platform.openai.com/docs/api-reference/chat/create</span></span>
+<span class="code-line">    messages: list = [],</span>
+<span class="code-line">    functions: list | <span class="code-keyword">None</span> = <span class="code-keyword">None</span>,</span>
+<span class="code-line">    function_call: str | <span class="code-keyword">None</span> = <span class="code-keyword">None</span>,</span>
+<span class="code-line">    timeout: float | httpx.Timeout | openai.Timeout | <span class="code-keyword">None</span> = <span class="code-keyword">None</span>,</span>
+<span class="code-line">    temperature: float | <span class="code-keyword">None</span> = <span class="code-keyword">None</span>,</span>
+<span class="code-line">    top_p: float | <span class="code-keyword">None</span> = <span class="code-keyword">None</span>,</span>
+<span class="code-line">    n: int | <span class="code-keyword">None</span> = <span class="code-keyword">None</span>,</span>
+<span class="code-line">    stream: bool | <span class="code-keyword">None</span> = <span class="code-keyword">None</span>,</span>
+<span class="code-line">    <span class="code-comment"># …还有几十个通用参数</span></span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">大白话</span>
+          <div class="translation-lines">
+            <p class="tl"><strong>model 是唯一必须给的参数。</strong>格式通常是 <span class="mono">"厂商/模型名"</span>，比如 <span class="mono">"anthropic/claude-sonnet-4"</span>。</p>
+            <p class="tl"><strong>messages 是对话列表。</strong>就是 <span class="mono">[{"role":"user","content":"你好"}]</span> 这种 OpenAI 标准格式。</p>
+            <p class="tl"><strong>temperature、top_p、stream……</strong>这些都是模型调参项，名字沿用 OpenAI，换厂商时不用改代码。</p>
+            <p class="tl"><strong>这就是“统一接口”的含义：</strong>你只学一套参数，LiteLLM 负责翻译成各家方言。</p>
+          </div>
+        </div>
+      </div>
+      <span class="file-ref">📄 litellm/main.py : 440</span>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 4</span> 新手最容易踩的坑：不要通读大文件</h2>
+      <div class="pattern-cards">
+        <div class="pattern-card" style="border-top-color:var(--color-error)">
+          <div class="pattern-icon" style="background:var(--color-error)">⚠️</div>
+          <h4 class="pattern-title">三个“巨无霸”文件</h4>
+          <p class="pattern-desc"><span class="mono">proxy_server.py</span> 约 940KB，<span class="mono">router.py</span> 约 770KB，<span class="mono">main.py</span> 约 380KB。从头读到尾会直接劝退。</p>
+        </div>
+        <div class="pattern-card" style="border-top-color:var(--color-success)">
+          <div class="pattern-icon" style="background:var(--color-success)">🎯</div>
+          <h4 class="pattern-title">按“问题”跳着读</h4>
+          <p class="pattern-desc">先问“鉴权在哪？”再用搜索定位函数名，比如 <span class="mono">user_api_key_auth</span>。读一个函数，不读整个文件。</p>
+        </div>
+        <div class="pattern-card" style="border-top-color:var(--color-info)">
+          <div class="pattern-icon" style="background:var(--color-info)">🗺️</div>
+          <h4 class="pattern-title">先看地图再看街区</h4>
+          <p class="pattern-desc"><span class="mono">ARCHITECTURE.md</span> 里有请求时序图、关键文件表、后台任务表。它是作者写给贡献者的导航。</p>
+        </div>
+        <div class="pattern-card" style="border-top-color:var(--color-actor-3)">
+          <div class="pattern-icon" style="background:var(--color-actor-3)">🧪</div>
+          <h4 class="pattern-title">去 tests/ 找用法</h4>
+          <p class="pattern-desc">测试文件通常只做一件事，输入输出清晰。想知道某个函数怎么用，先搜测试，比读实现快得多。</p>
+        </div>
+      </div>
+      <div class="callout callout-warning">
+        <div class="callout-icon">🧠</div>
+        <div class="callout-content">
+          <strong class="callout-title">给“小白”的读码原则</strong>
+          <p>不要追求“读完”。追求“能回答一个具体问题”。例如：<em>“Key 是在哪一步被校验的？”</em> 带着问题读，一次只看一条路径。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Checkpoint</span> 小测：你该打开哪个文件？</h2>
+      <div class="quiz-container" id="quiz-2">
+        <div class="quiz-question-block" data-correct="b" data-correct-explanation="对。llms/ 下每个厂商一个目录，transformation.py 专门负责请求和响应的格式转换。">
+          <h3 class="quiz-question">1. 你想搞清楚“OpenAI 的 tools 参数如何变成 Gemini 的格式”，应该先看哪里？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="a" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>litellm/proxy/db/</span></button>
+            <button class="quiz-option" data-value="b" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>litellm/llms/gemini/chat/transformation.py</span></button>
+            <button class="quiz-option" data-value="c" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>ui/</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <div class="quiz-question-block" data-correct="a" data-correct-explanation="对。Router 专门负责多个部署之间的选择、重试和降级；它是“选路”角色，不做鉴权或翻译。">
+          <h3 class="quiz-question">2. 你的模型配了 OpenAI 和 Azure 两个部署，希望主线路失败时自动切到备用。这个能力属于哪个角色？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="a" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>Router（router.py）</span></button>
+            <button class="quiz-option" data-value="b" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>Auth（proxy/auth/）</span></button>
+            <button class="quiz-option" data-value="c" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>UI（ui/）</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <div class="quiz-actions">
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-2')">检查答案</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-2')">再来一次</button>
+        </div>
+        <div class="quiz-overall-feedback"></div>
+      </div>
+    </section>
+
+    <div class="module-footer">
+      <span>下一站：LiteLLM 真正的护城河——翻译层。</span>
+      <a class="next-hint" href="#module-3"><span>03 翻译层</span> →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MODULE 3 ================= -->
+<section class="module" id="module-3" aria-label="模块 3：翻译层">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">03</span>
+      <h1 class="module-title">翻译层：让 100 家厂商说同一种话</h1>
+      <p class="module-subtitle">OpenAI 格式进，各家方言出；回答回来，再统一成一种格式。</p>
+    </header>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 1</span> 同一个“你好”，三种方言</h2>
+      <p class="lead">
+        想象你带了一个万能转换插头去旅行。OpenAI、Anthropic、Gemini 的插座形状不同，但你的电器只认一种插头。
+        LiteLLM 的翻译层，就是这个转换插头。
+      </p>
+      <div class="pattern-cards">
+        <div class="pattern-card" style="border-top-color:var(--color-actor-5)">
+          <div class="pattern-icon" style="background:var(--color-actor-5)">O</div>
+          <h4 class="pattern-title">OpenAI 方言</h4>
+          <p class="pattern-desc">对话放在 <span class="mono">messages</span> 里，每条有 <span class="mono">role</span> 和 <span class="mono">content</span>。这是 LiteLLM 的“普通话”。</p>
+        </div>
+        <div class="pattern-card" style="border-top-color:var(--color-actor-1)">
+          <div class="pattern-icon" style="background:var(--color-actor-1)">A</div>
+          <h4 class="pattern-title">Anthropic 方言</h4>
+          <p class="pattern-desc">系统提示单独放 <span class="mono">system</span>；消息内容用 content block 数组；工具调用有自己的一套字段。</p>
+        </div>
+        <div class="pattern-card" style="border-top-color:var(--color-actor-2)">
+          <div class="pattern-icon" style="background:var(--color-actor-2)">G</div>
+          <h4 class="pattern-title">Gemini 方言</h4>
+          <p class="pattern-desc">对话叫 <span class="mono">contents</span>，每条消息里是 <span class="mono">parts</span>；角色名和工具格式也不一样。</p>
+        </div>
+      </div>
+      <p>
+        如果每个应用都自己写三套适配代码，维护成本会爆炸。LiteLLM 把这些差异收进
+        <span class="term" data-definition="Provider 就是“模型供应商”，比如 OpenAI、Anthropic、Google、AWS Bedrock。每个 provider 有自己的 API 格式和鉴权方式。">Provider</span>
+        目录下的 <span class="inline-code">transformation.py</span>，对外只暴露一套 OpenAI 接口。
+      </p>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 2</span> 一次翻译的往返</h2>
+      <div class="step-cards stagger-children">
+        <div class="step-card animate-in">
+          <div class="step-num">1</div>
+          <div class="step-body"><strong>统一入口收到 OpenAI 格式</strong><p>messages、temperature、tools……全是标准 OpenAI 参数。</p></div>
+        </div>
+        <div class="step-card animate-in">
+          <div class="step-num">2</div>
+          <div class="step-body"><strong>识别 provider</strong><p>从模型名前缀（如 <span class="mono">anthropic/…</span>）解析出该找哪家翻译器。</p></div>
+        </div>
+        <div class="step-card animate-in">
+          <div class="step-num">3</div>
+          <div class="step-body"><strong>transform_request()</strong><p>把 OpenAI 请求翻译成厂商能懂的 JSON：字段改名、结构重排、丢弃不支持的参数。</p></div>
+        </div>
+        <div class="step-card animate-in">
+          <div class="step-num">4</div>
+          <div class="step-body"><strong>发 HTTP，拿到原始响应</strong><p>厂商返回自己的格式，可能是流式的一串事件。</p></div>
+        </div>
+        <div class="step-card animate-in">
+          <div class="step-num">5</div>
+          <div class="step-body"><strong>transform_response()</strong><p>把厂商响应翻译成统一的 <span class="mono">ModelResponse</span>，包括 choices、usage、工具调用。</p></div>
+        </div>
+        <div class="step-card animate-in">
+          <div class="step-num">6</div>
+          <div class="step-body"><strong>流式处理</strong><p>如果是 <span class="term" data-definition="流式（streaming）就是模型边生成边返回，像打字机一样，而不是等全部生成完再一次性返回。">流式</span>，还要把各家的 SSE 事件逐块翻译并转发。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 3</span> “哪些参数我能用？”写在清单里</h2>
+      <p>
+        每个 provider 的 Config 类都有一个方法，声明自己支持哪些 OpenAI 参数。下面是 Anthropic 的清单：
+      </p>
+      <div class="translation-block">
+        <div class="translation-code">
+          <span class="translation-label">PYTHON · llms/anthropic/chat/transformation.py</span>
+          <pre><code><span class="code-line"><span class="code-keyword">def</span> <span class="code-function">get_supported_openai_params</span>(self, model: str):</span>
+<span class="code-line">    params: Final = [</span>
+<span class="code-line">        <span class="code-string">"stream"</span>,</span>
+<span class="code-line">        <span class="code-string">"stop"</span>,</span>
+<span class="code-line">        <span class="code-string">"temperature"</span>,</span>
+<span class="code-line">        <span class="code-string">"top_p"</span>,</span>
+<span class="code-line">        <span class="code-string">"max_tokens"</span>,</span>
+<span class="code-line">        <span class="code-string">"max_completion_tokens"</span>,</span>
+<span class="code-line">        <span class="code-string">"tools"</span>,</span>
+<span class="code-line">        <span class="code-string">"tool_choice"</span>,</span>
+<span class="code-line">        <span class="code-string">"extra_headers"</span>,</span>
+<span class="code-line">        <span class="code-string">"parallel_tool_calls"</span>,</span>
+<span class="code-line">        <span class="code-string">"response_format"</span>,</span>
+<span class="code-line">        <span class="code-string">"user"</span>,</span>
+<span class="code-line">        <span class="code-string">"web_search_options"</span>,</span>
+<span class="code-line">        <span class="code-string">"speed"</span>,</span>
+<span class="code-line">        <span class="code-string">"context_management"</span>,</span>
+<span class="code-line">        <span class="code-string">"cache_control"</span>,</span>
+<span class="code-line">    ]</span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">大白话</span>
+          <div class="translation-lines">
+            <p class="tl"><strong>这是一张“验收单”。</strong>请求里出现清单内的参数，翻译器会认真处理；不在清单里的，可能会被丢弃或报错（取决于 <span class="mono">drop_params</span> 设置）。</p>
+            <p class="tl"><strong>“stream” 在里面，</strong>说明 Anthropic 支持流式；“tools / tool_choice” 在里面，说明支持工具调用。</p>
+            <p class="tl"><strong>“cache_control” 在里面，</strong>说明支持 <span class="term" data-definition="Prompt caching 是让厂商缓存一段很长的提示词，下次复用时不必重新计费/计算，能显著省钱并降低延迟。">提示词缓存</span>。不同厂商的缓存写法不同，翻译器负责转换。</p>
+            <p class="tl"><strong>这份清单就是契约。</strong>要新增一个 OpenAI 参数支持，第一步就是把它加到这里，并在 <span class="mono">map_openai_params</span> 里写转换逻辑。</p>
+          </div>
+        </div>
+      </div>
+      <span class="file-ref">📄 litellm/llms/anthropic/chat/transformation.py : 728</span>
+      <div class="callout">
+        <div class="callout-icon">💡</div>
+        <div class="callout-content">
+          <strong class="callout-title">Aha：翻译层是最容易出 bug 的地方</strong>
+          <p>网络、鉴权、路由出问题通常报错很明确；翻译层的 bug 往往表现为“请求成功了，但模型行为不对”。比如缓存没生效、工具调用参数丢了、流式内容缺了一块。排查时先对比<strong>转换前后的 JSON</strong>。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 4</span> 真实排障：同一家厂商，两套翻译</h2>
+      <p>
+        官方架构文档给了一个很好的例子：如果 <span class="mono">/v1/messages</span> 走 Bedrock Converse 时提示词缓存不工作，但走 Bedrock Invoke 正常，你会怎么查？
+      </p>
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h4>路径 A：Converse</h4>
+          <p><span class="mono">llms/bedrock/chat/converse_transformation.py</span></p>
+          <p class="small">使用 Bedrock 的统一对话接口，字段结构更接近“标准消息”。</p>
+        </div>
+        <div class="compare-card">
+          <h4>路径 B：Invoke</h4>
+          <p><span class="mono">llms/bedrock/chat/invoke_transformations/anthropic_claude3_transformation.py</span></p>
+          <p class="small">直接按 Anthropic Claude 的原始请求体来构造。</p>
+        </div>
+      </div>
+      <div class="callout callout-info">
+        <div class="callout-icon">🔍</div>
+        <div class="callout-content">
+          <strong class="callout-title">排查动作</strong>
+          <p>把两条路径的 <span class="mono">transform_request()</span> 并排看，重点对比它们如何处理 <span class="inline-code">cache_control</span>。不需要读整个文件，只读这个字段相关的分支。</p>
+        </div>
+      </div>
+      <p class="small">这就是“按问题跳读”的实际样子：不是从第一行读，而是从一个字段反查两条路径。</p>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Checkpoint</span> 小测：翻译层</h2>
+      <div class="quiz-container" id="quiz-3">
+        <div class="quiz-question-block" data-correct="c" data-correct-explanation="对。get_supported_openai_params 声明了该 provider 接受哪些 OpenAI 参数，是翻译契约的入口。">
+          <h3 class="quiz-question">1. 你给 Anthropic 传了一个 OpenAI 参数，但不确定它是否被支持。最该先看哪个方法？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="a" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>proxy_server.py 的路由定义</span></button>
+            <button class="quiz-option" data-value="b" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>cost_calculator.py 的计价函数</span></button>
+            <button class="quiz-option" data-value="c" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>该 provider 的 get_supported_openai_params()</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <div class="quiz-question-block" data-correct="a" data-correct-explanation="对。响应也要翻译回统一格式；流式场景还需要逐块翻译，否则调用方拿到的结构会不一致。">
+          <h3 class="quiz-question">2. 为什么 LiteLLM 既需要 transform_request，也需要 transform_response？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="a" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>请求要翻译成厂商格式，响应也要翻译回统一格式</span></button>
+            <button class="quiz-option" data-value="b" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>只是为了日志好看</span></button>
+            <button class="quiz-option" data-value="c" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>因为 HTTP 必须发两次请求</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <div class="quiz-actions">
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-3')">检查答案</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-3')">再来一次</button>
+        </div>
+        <div class="quiz-overall-feedback"></div>
+      </div>
+    </section>
+
+    <div class="module-footer">
+      <span>下一站：谁能进来？虚拟密钥与多租户。</span>
+      <a class="next-hint" href="#module-4"><span>04 虚拟密钥</span> →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MODULE 4 ================= -->
+<section class="module" id="module-4" aria-label="模块 4：虚拟密钥与多租户">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">04</span>
+      <h1 class="module-title">虚拟密钥：谁能进来，能花多少钱</h1>
+      <p class="module-subtitle">不要把真正的厂商 API Key 发给客户。发给他们的，是一张有额度、有权限的“房卡”。</p>
+    </header>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 1</span> 总卡与房卡</h2>
+      <p class="lead">
+        酒店前台有一张<strong>总卡</strong>，能打开所有房间。客人拿到的是<strong>房卡</strong>：只能开自己的门，而且过了退房时间就失效。
+      </p>
+      <div class="compare-grid">
+        <div class="compare-card bad">
+          <h4>❌ 直接分发厂商 Key</h4>
+          <ul>
+            <li>拿到 Key 的人可以为所欲为</li>
+            <li>无法知道是谁花的钱</li>
+            <li>一个人泄露，全员换 Key</li>
+            <li>无法按团队限额</li>
+          </ul>
+        </div>
+        <div class="compare-card good">
+          <h4>✅ 分发 LiteLLM 虚拟 Key</h4>
+          <ul>
+            <li>绑定到某个用户/团队</li>
+            <li>可设预算、RPM/TPM、模型白名单</li>
+            <li>随时吊销，不影响其他 Key</li>
+            <li>每一笔花费都能归属到人</li>
+          </ul>
+        </div>
+      </div>
+      <p>
+        在 LiteLLM 里，<span class="term" data-definition="Virtual Key（虚拟密钥）是 LiteLLM 自己签发的一把 Key，看起来像 sk-xxx，但它只在 LiteLLM 内部有效，背后才对应真实的厂商 Key。">虚拟 Key</span>
+        以 <span class="inline-code">sk-</span> 开头，用法和 OpenAI Key 一样。客户端以为自己在直连 OpenAI，其实请求先到了 LiteLLM。
+      </p>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 2</span> 四层身份：Org → Team → User → Key</h2>
+      <div class="icon-rows">
+        <div class="icon-row">
+          <div class="icon-circle" style="background:var(--color-actor-3)">🏢</div>
+          <div><strong>Organization（组织）</strong><p>最大的租户。适合一个公司或一个事业部，可以有自己的预算和管理员。</p></div>
+        </div>
+        <div class="icon-row">
+          <div class="icon-circle" style="background:var(--color-actor-2)">👥</div>
+          <div><strong>Team（团队）</strong><p>组织下的协作单元。预算、模型权限、回调（如 Langfuse）可以按团队配置。</p></div>
+        </div>
+        <div class="icon-row">
+          <div class="icon-circle" style="background:var(--color-actor-4)">👤</div>
+          <div><strong>User（用户）</strong><p>具体的人。一个用户可以拥有多把 Key，也可以属于多个团队。</p></div>
+        </div>
+        <div class="icon-row">
+          <div class="icon-circle" style="background:var(--color-actor-1)">🔑</div>
+          <div><strong>Key（密钥）</strong><p>真正发到客户端手里的那一串字符。限额可以设在这一层，也可以继承上层。</p></div>
+        </div>
+      </div>
+      <div class="callout callout-info">
+        <div class="callout-icon">🧾</div>
+        <div class="callout-content">
+          <strong class="callout-title">为什么要分四层？</strong>
+          <p>因为“谁花了多少钱”必须能按不同粒度回答：公司总共花了多少？研发部花了多少？张三花了多少？这把 Key 花了多少？四层结构就是这个账本的维度。</p>
+        </div>
+      </div>
+      <p class="small">
+        数据层对应 <span class="inline-code">litellm/models/</span> 里的实体（如 <span class="mono">LiteLLM_VerificationToken</span>、<span class="mono">LiteLLM_TeamTable</span>、<span class="mono">LiteLLM_UserTable</span>），读写封装在 <span class="inline-code">litellm/repositories/</span>。
+      </p>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 3</span> 门卫怎么验证一张房卡</h2>
+      <div class="step-cards stagger-children">
+        <div class="step-card animate-in">
+          <div class="step-num">1</div>
+          <div class="step-body"><strong>从请求头取出 Key</strong><p>通常是 <span class="mono">Authorization: Bearer sk-…</span>，也支持其他厂商的 Header 写法。</p></div>
+        </div>
+        <div class="step-card animate-in">
+          <div class="step-num">2</div>
+          <div class="step-body"><strong>对 Key 做哈希</strong><p>不是拿明文去数据库比对，而是先算 SHA-256，再用哈希值查。</p></div>
+        </div>
+        <div class="step-card animate-in">
+          <div class="step-num">3</div>
+          <div class="step-body"><strong>先查 Redis 缓存</strong><p>身份信息缓存起来，避免每个请求都打 Postgres；缓存没命中才回源。</p></div>
+        </div>
+        <div class="step-card animate-in">
+          <div class="step-num">4</div>
+          <div class="step-body"><strong>组装 UserAPIKeyAuth</strong><p>把用户、团队、预算、权限、限流配置打包成一个对象，交给后续每一层。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 4</span> 为什么数据库里不存明文 Key</h2>
+      <div class="translation-block">
+        <div class="translation-code">
+          <span class="translation-label">PYTHON · types/proxy/auth/user_api_key_auth.py</span>
+          <pre><code><span class="code-line"><span class="code-keyword">def</span> <span class="code-function">hash_token</span>(token: str) -&gt; str:</span>
+<span class="code-line">    <span class="code-keyword">import</span> hashlib</span>
+<span class="code-line"></span>
+<span class="code-line">    <span class="code-comment"># Hash the string using SHA-256</span></span>
+<span class="code-line">    hashed_token: Final = hashlib.sha256(token.encode()).hexdigest()</span>
+<span class="code-line"></span>
+<span class="code-line">    <span class="code-keyword">return</span> hashed_token</span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">大白话</span>
+          <div class="translation-lines">
+            <p class="tl"><strong>把 Key 变成一串固定长度的指纹。</strong><span class="term" data-definition="哈希（Hash）是一种单向指纹算法：同样的输入永远得到同样的输出，但无法从输出反推出输入。SHA-256 是其中常用的一种。">SHA-256</span> 是单向的，拿到指纹也推不回原 Key。</p>
+            <p class="tl"><strong>数据库只存指纹。</strong>所以即使数据库泄露，攻击者也拿不到能直接使用的明文 Key。</p>
+            <p class="tl"><strong>验证时比指纹。</strong>客户端发来明文 Key，服务器算一次哈希，再和数据库里的指纹比对。</p>
+          </div>
+        </div>
+      </div>
+      <span class="file-ref">📄 litellm/types/proxy/auth/user_api_key_auth.py : 40</span>
+      <div class="callout callout-warning">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-content">
+          <strong class="callout-title">两个常见误解</strong>
+          <p>1）虚拟 Key 不是“加密后的厂商 Key”，它是一把独立签发的凭证。<br>2）哈希不等于加密：加密可以解密，哈希不能。因此明文 Key 通常只在创建时展示一次，丢了只能重新生成。</p>
+        </div>
+      </div>
+      <p class="small">
+        想继续深入：鉴权主流程在 <span class="inline-code">litellm/proxy/auth/user_api_key_auth.py</span>，预算校验在 <span class="inline-code">litellm/proxy/auth/auth_checks.py</span>，JWT/SSO 在 <span class="inline-code">handle_jwt.py</span>。
+      </p>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Checkpoint</span> 小测：身份与密钥</h2>
+      <div class="quiz-container" id="quiz-4">
+        <div class="quiz-question-block" data-correct="b" data-correct-explanation="对。数据库存的是 Key 的 SHA-256 哈希，不是明文；验证时对客户端传来的 Key 做同样的哈希再比对。">
+          <h3 class="quiz-question">1. LiteLLM 的数据库里，虚拟 Key 通常以什么形式保存？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="a" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>明文 sk-…</span></button>
+            <button class="quiz-option" data-value="b" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>SHA-256 哈希值</span></button>
+            <button class="quiz-option" data-value="c" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>厂商的真实 API Key</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <div class="quiz-question-block" data-correct="c" data-correct-explanation="对。虚拟 Key 绑定到用户/团队，能单独吊销、单独限额；直接分发厂商 Key 做不到这些。">
+          <h3 class="quiz-question">2. 你要给 50 个客户各发一把 Key，并要求“张三超支不能影响李四”。正确做法是？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="a" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>把同一个厂商 Key 发给 50 个人</span></button>
+            <button class="quiz-option" data-value="b" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>让 50 个人共用一个虚拟 Key</span></button>
+            <button class="quiz-option" data-value="c" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>每人一把虚拟 Key，分别设预算和权限</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <div class="quiz-actions">
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-4')">检查答案</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-4')">再来一次</button>
+        </div>
+        <div class="quiz-overall-feedback"></div>
+      </div>
+    </section>
+
+    <div class="module-footer">
+      <span>下一站：进门之后，还要控制“用多快、用多少”。</span>
+      <a class="next-hint" href="#module-5"><span>05 限流与预算</span> →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MODULE 5 ================= -->
+<section class="module" id="module-5" aria-label="模块 5：限流与预算">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">05</span>
+      <h1 class="module-title">限流与预算：别让一辆车堵死整条路</h1>
+      <p class="module-subtitle">RPM 管“多快”，TPM 管“多重”，预算管“总共能花多少”。</p>
+    </header>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 1</span> 匝道信号灯与油箱</h2>
+      <p class="lead">
+        高速公路入口有<strong>匝道信号灯</strong>：每分钟只放固定数量的车上去，否则主路会堵死。同时，每辆车还有<strong>油箱</strong>：油烧完就必须停下。
+      </p>
+      <p>
+        限流（Rate Limit）解决“瞬时压力”，预算（Budget）解决“长期消耗”。它们是两套不同的闸门，经常被混为一谈。
+      </p>
+      <div class="pattern-cards">
+        <div class="pattern-card" style="border-top-color:var(--color-actor-2)">
+          <div class="pattern-icon" style="background:var(--color-actor-2)">🚦</div>
+          <h4 class="pattern-title">RPM</h4>
+          <p class="pattern-desc">Requests Per Minute，每分钟请求数。最直观的“频率”上限，适合防止脚本刷爆。</p>
+        </div>
+        <div class="pattern-card" style="border-top-color:var(--color-actor-3)">
+          <div class="pattern-icon" style="background:var(--color-actor-3)">🪙</div>
+          <h4 class="pattern-title">TPM</h4>
+          <p class="pattern-desc">Tokens Per Minute，每分钟 Token 数。一次长上下文请求可能顶几百次短请求，只看 RPM 会误判。</p>
+        </div>
+        <div class="pattern-card" style="border-top-color:var(--color-actor-4)">
+          <div class="pattern-icon" style="background:var(--color-actor-4)">🚗</div>
+          <h4 class="pattern-title">Max Parallel</h4>
+          <p class="pattern-desc">同时进行的请求数上限。防止一个客户端占满所有连接。</p>
+        </div>
+        <div class="pattern-card" style="border-top-color:var(--color-actor-5)">
+          <div class="pattern-icon" style="background:var(--color-actor-5)">⛽</div>
+          <h4 class="pattern-title">Budget</h4>
+          <p class="pattern-desc">一段时间内能花的钱（或 Token）。可以按 Key、用户、团队、组织分别设。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 2</span> 计数器长什么样</h2>
+      <p>
+        限流不是“记住总数”，而是“记住这一分钟的数”。LiteLLM 把计数器放在
+        <span class="term" data-definition="Redis 是一个内存数据库，读写极快，常用来做缓存和计数器。多个 LiteLLM 实例可以共享同一个 Redis。">Redis</span>
+        里，Key 的拼法非常直白：谁 + 哪一分钟 + 计什么。
+      </p>
+      <div class="translation-block">
+        <div class="translation-code">
+          <span class="translation-label">PYTHON · proxy/hooks/parallel_request_limiter.py</span>
+          <pre><code><span class="code-line">request_count_api_key=(<span class="code-string">f"{api_key}::{precise_minute}::request_count"</span> <span class="code-keyword">if</span> api_key <span class="code-keyword">is not</span> <span class="code-keyword">None</span> <span class="code-keyword">else</span> <span class="code-keyword">None</span>),</span>
+<span class="code-line">request_count_api_key_model=(</span>
+<span class="code-line">    <span class="code-string">f"{api_key}::{_model}::{precise_minute}::request_count"</span></span>
+<span class="code-line">    <span class="code-keyword">if</span> api_key <span class="code-keyword">is not</span> <span class="code-keyword">None</span> <span class="code-keyword">and</span> _model <span class="code-keyword">is not</span> <span class="code-keyword">None</span></span>
+<span class="code-line">    <span class="code-keyword">else</span> <span class="code-keyword">None</span></span>
+<span class="code-line">),</span>
+<span class="code-line">request_count_user_id=(</span>
+<span class="code-line">    <span class="code-string">f"{user_api_key_dict.user_id}::{precise_minute}::request_count"</span></span>
+<span class="code-line">    <span class="code-keyword">if</span> user_api_key_dict.user_id <span class="code-keyword">is not</span> <span class="code-keyword">None</span></span>
+<span class="code-line">    <span class="code-keyword">else</span> <span class="code-keyword">None</span></span>
+<span class="code-line">),</span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">大白话</span>
+          <div class="translation-lines">
+            <p class="tl"><strong>第一行：每把 Key 每分钟一个计数。</strong>比如 <span class="mono">sk-abc::19:42::request_count</span>。分钟一变，自动换新计数器。</p>
+            <p class="tl"><strong>第二段：Key + 模型 + 分钟。</strong>这样可以单独限制“某个 Key 调某个模型”的频率，而不是一刀切。</p>
+            <p class="tl"><strong>第三段：用户 + 分钟。</strong>同一个人可能有多把 Key，用户级计数能把它们合起来算。</p>
+            <p class="tl"><strong>后面还会按 team、end-user 再记一遍。</strong>同一个请求可能同时消耗多个维度的配额，任一维度超限都会拒绝。</p>
+          </div>
+        </div>
+      </div>
+      <span class="file-ref">📄 litellm/proxy/hooks/parallel_request_limiter.py : 328</span>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 3</span> 先占座，再结账</h2>
+      <p>
+        Token 数是请求<strong>发出去之前</strong>无法精确知道的（模型还没生成回答）。所以 LiteLLM 采用“预扣 + 对账”：
+      </p>
+      <div class="step-cards">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <div class="step-body"><strong>预估</strong><p>根据输入消息估算大概会消耗多少 Token。</p></div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <div class="step-body"><strong>预扣（reserve）</strong><p>先从配额里“占座”，防止并发请求把额度同时用超。</p></div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <div class="step-body"><strong>真实调用</strong><p>请求发往上游，拿到实际 usage（输入/输出 Token 数）。</p></div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">4</div>
+          <div class="step-body"><strong>对账（reconcile）</strong><p>用真实用量替换预估值，多退少补。失败/断连也要释放占座。</p></div>
+        </div>
+      </div>
+      <div class="callout">
+        <div class="callout-icon">💡</div>
+        <div class="callout-content">
+          <strong class="callout-title">Aha：为什么一定要 Redis？</strong>
+          <p>如果你只跑一个 LiteLLM 实例，内存里记计数器就够了。但生产环境通常是多实例，用户的下一个请求可能落到另一台机器。计数器必须放在共享存储里，否则每台机器都以为“自己没超限”。</p>
+        </div>
+      </div>
+      <p class="small">
+        预算的“预扣”还能避免并发超支：两个请求同时看到“还剩 $0.01”，都以为能花，最后一起超。占座机制让第二个请求看到的是“已被占掉一部分”的余额。
+      </p>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 4</span> 配置长什么样</h2>
+      <p>在模型部署上可以直接写限流参数；在虚拟 Key / 团队上则配置预算和 RPM/TPM。下面是仓库自带配置里的真实片段：</p>
+      <div class="badge-list">
+        <div class="badge-item"><code class="badge-code">rpm: 480</code><span class="badge-desc">这个部署每分钟最多 480 次请求（来自 proxy_server_config.yaml 的模型配置）。</span></div>
+        <div class="badge-item"><code class="badge-code">timeout: 300</code><span class="badge-desc">单次调用最多等 300 秒。</span></div>
+        <div class="badge-item"><code class="badge-code">stream_timeout: 60</code><span class="badge-desc">流式响应允许的空闲/总时长上限，避免连接一直挂着。</span></div>
+        <div class="badge-item"><code class="badge-code">max_budget / budget_duration</code><span class="badge-desc">预算金额与重置周期，例如 30 天。可在 settings 或 Key/团队层配置。</span></div>
+      </div>
+      <div class="callout callout-info">
+        <div class="callout-icon">🧮</div>
+        <div class="callout-content">
+          <strong class="callout-title">限流的三层视角</strong>
+          <p><strong>请求级</strong>（RPM/并发）防止刷接口；<strong>Token 级</strong>（TPM）防止长上下文拖垮上游；<strong>金额级</strong>（Budget）防止账单失控。三层都配，才算完整。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Checkpoint</span> 小测：限流与预算</h2>
+      <div class="quiz-container" id="quiz-5">
+        <div class="quiz-question-block" data-correct="b" data-correct-explanation="对。TPM 是 Token/分钟；一次长上下文请求可能消耗大量 Token，只看 RPM 会低估压力。">
+          <h3 class="quiz-question">1. 一个用户每分钟只发 2 次请求，但每次都塞进 10 万 Token 的长文档。哪种限制最能保护上游？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="a" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>只限制 RPM</span></button>
+            <button class="quiz-option" data-value="b" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>限制 TPM（每分钟 Token 数）</span></button>
+            <button class="quiz-option" data-value="c" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>限制模型数量</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <div class="quiz-question-block" data-correct="c" data-correct-explanation="对。多实例必须共享计数器，否则每个实例都以为自己是唯一在计数，限额会被放大 N 倍。">
+          <h3 class="quiz-question">2. 你部署了 3 个 LiteLLM 实例，限流计数器却放在各自进程的内存里。会发生什么？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="a" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>限流更严格了</span></button>
+            <button class="quiz-option" data-value="b" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>没有任何影响</span></button>
+            <button class="quiz-option" data-value="c" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>实际限额被放大约 3 倍，容易超支</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <div class="quiz-actions">
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-5')">检查答案</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-5')">再来一次</button>
+        </div>
+        <div class="quiz-overall-feedback"></div>
+      </div>
+    </section>
+
+    <div class="module-footer">
+      <span>下一站：上游挂了怎么办？路由、重试与降级。</span>
+      <a class="next-hint" href="#module-6"><span>06 路由与降级</span> →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MODULE 6 ================= -->
+<section class="module" id="module-6" aria-label="模块 6：路由、重试与降级">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">06</span>
+      <h1 class="module-title">路由、重试与降级：永远留一条备用跑道</h1>
+      <p class="module-subtitle">同一个模型名，可以对应多个部署。Router 决定这次飞哪条航线。</p>
+    </header>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 1</span> 一个名字，多条航线</h2>
+      <p class="lead">
+        在订票 App 里，你输入“北京 → 上海”，系统会给你多个航班：直飞、经停、不同航司。你只关心目的地，系统负责挑一个能飞的。
+      </p>
+      <p>
+        LiteLLM 里，客户端请求的 <span class="mono">model="gpt-4o"</span> 是一个<strong>模型组（model group）</strong>。这个组背后可以挂多个<strong>部署（deployment）</strong>：
+        OpenAI 官方、Azure 同名模型、甚至另一个区域节点。Router 的工作就是从中选一个。
+      </p>
+      <div class="pattern-cards">
+        <div class="pattern-card" style="border-top-color:var(--color-actor-1)">
+          <div class="pattern-icon" style="background:var(--color-actor-1)">🎲</div>
+          <h4 class="pattern-title">加权随机</h4>
+          <p class="pattern-desc"><span class="mono">simple_shuffle.py</span>：按 weight/rpm/tpm 权重随机选，简单、分散压力。</p>
+        </div>
+        <div class="pattern-card" style="border-top-color:var(--color-actor-2)">
+          <div class="pattern-icon" style="background:var(--color-actor-2)">⏱️</div>
+          <h4 class="pattern-title">最低延迟</h4>
+          <p class="pattern-desc"><span class="mono">lowest_latency.py</span>：优先选最近响应更快的部署。</p>
+        </div>
+        <div class="pattern-card" style="border-top-color:var(--color-actor-4)">
+          <div class="pattern-icon" style="background:var(--color-actor-4)">💰</div>
+          <h4 class="pattern-title">最低成本</h4>
+          <p class="pattern-desc"><span class="mono">lowest_cost.py</span>：在健康部署里优先选更便宜的。</p>
+        </div>
+        <div class="pattern-card" style="border-top-color:var(--color-actor-5)">
+          <div class="pattern-icon" style="background:var(--color-actor-5)">📊</div>
+          <h4 class="pattern-title">TPM/RPM 余量</h4>
+          <p class="pattern-desc"><span class="mono">lowest_tpm_rpm.py</span>：看哪个部署这一分钟还有余量，避开快被打满的。</p>
+        </div>
+      </div>
+      <p class="small">还有 <span class="mono">least_busy.py</span>、<span class="mono">tag_based_routing.py</span>、以及自适应/复杂度路由等策略，都在 <span class="inline-code">litellm/router_strategy/</span>。</p>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 2</span> 加权随机是怎么算的</h2>
+      <p>
+        “加权随机”不是简单掷骰子。它先看每个部署的权重；如果权重没配，就依次退回用 rpm、tpm 当权重。下面是选择循环：
+      </p>
+      <div class="translation-block">
+        <div class="translation-code">
+          <span class="translation-label">PYTHON · router_strategy/simple_shuffle.py</span>
+          <pre><code><span class="code-line"><span class="code-keyword">for</span> weights <span class="code-keyword">in</span> weight_sets:</span>
+<span class="code-line">    largest = <span class="code-function">max</span>(weights, default=<span class="code-number">0.0</span>)</span>
+<span class="code-line">    <span class="code-keyword">if</span> largest &lt;= <span class="code-number">0</span>:</span>
+<span class="code-line">        <span class="code-keyword">continue</span></span>
+<span class="code-line">    normalized = <span class="code-function">tuple</span>(weight / largest <span class="code-keyword">for</span> weight <span class="code-keyword">in</span> weights)</span>
+<span class="code-line">    <span class="code-keyword">if</span> <span class="code-function">sum</span>(normalized) &lt;= <span class="code-number">0</span>:</span>
+<span class="code-line">        <span class="code-keyword">continue</span></span>
+<span class="code-line">    selected = random.<span class="code-function">choices</span>(healthy_deployments, weights=normalized)[<span class="code-number">0</span>]</span>
+<span class="code-line">    _ROUTER_LOGGER.<span class="code-function">info</span>(<span class="code-string">"Selected deployment for model %s: %s"</span>, model, selected.<span class="code-function">get</span>(<span class="code-string">"model_info"</span>))</span>
+<span class="code-line">    <span class="code-keyword">return</span> selected</span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">大白话</span>
+          <div class="translation-lines">
+            <p class="tl"><strong>依次尝试几套权重：</strong>先看请求里指定的权重，再看部署的 weight，再看 rpm，最后看 tpm。只要有一套有效就用它。</p>
+            <p class="tl"><strong>归一化：</strong>把权重按最大值缩放成 0~1，方便随机选择。全为 0 就跳过这套。</p>
+            <p class="tl"><strong>按权重随机抽一个健康部署。</strong>权重越高，被抽中的概率越大，但不是绝对轮流。</p>
+            <p class="tl"><strong>如果所有权重都无效，</strong>最后会完全随机选一个（函数末尾的兜底）。</p>
+          </div>
+        </div>
+      </div>
+      <span class="file-ref">📄 litellm/router_strategy/simple_shuffle.py : 55</span>
+      <div class="callout callout-info">
+        <div class="callout-icon">⚖️</div>
+        <div class="callout-content">
+          <strong class="callout-title">为什么按权重而不是轮询？</strong>
+          <p>因为部署的能力不一样：有的额度大，有的额度小，有的延迟低。权重让你能表达“这个部署承担 70% 流量，那个承担 30%”。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 3</span> 重试 ≠ 降级</h2>
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h4>🔁 重试（Retry）</h4>
+          <p><strong>同一目标，再试一次。</strong></p>
+          <ul>
+            <li>适合偶发超时、网络抖动、429</li>
+            <li>通常有次数上限和退避</li>
+            <li>不改变模型，只增加延迟</li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>🪂 降级（Fallback）</h4>
+          <p><strong>换一个目标。</strong></p>
+          <ul>
+            <li>主模型持续失败时，切到备用模型组</li>
+            <li>可以按“上下文超长”或“内容策略”触发</li>
+            <li>模型变了，输出风格和质量可能也变</li>
+          </ul>
+        </div>
+      </div>
+      <p>
+        Router 的 <span class="mono">async_function_with_fallbacks</span> 会准备三类降级名单：
+      </p>
+      <div class="translation-block">
+        <div class="translation-code">
+          <span class="translation-label">PYTHON · router.py</span>
+          <pre><code><span class="code-line">fallbacks: Final[list | <span class="code-keyword">None</span>] = kwargs.<span class="code-function">get</span>(<span class="code-string">"fallbacks"</span>, self.fallbacks)</span>
+<span class="code-line">context_window_fallbacks: list | <span class="code-keyword">None</span> = kwargs.<span class="code-function">get</span>(<span class="code-string">"context_window_fallbacks"</span>, self.context_window_fallbacks)</span>
+<span class="code-line">content_policy_fallbacks: list | <span class="code-keyword">None</span> = kwargs.<span class="code-function">get</span>(<span class="code-string">"content_policy_fallbacks"</span>, self.content_policy_fallbacks)</span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">大白话</span>
+          <div class="translation-lines">
+            <p class="tl"><strong>普通降级名单：</strong>主模型报错（超时、5xx、供应商故障）时，按顺序尝试备用模型组。</p>
+            <p class="tl"><strong>上下文窗口降级：</strong>提示词太长、超过主模型窗口时，切到窗口更大的模型。比如长文档分析。</p>
+            <p class="tl"><strong>内容策略降级：</strong>主模型因安全策略拒绝时，切到策略更宽松的模型（是否合规要你自己判断）。</p>
+            <p class="tl"><strong>优先级：</strong>请求里传的名单优先于 Router 全局配置。这让你能按业务场景覆盖默认策略。</p>
+          </div>
+        </div>
+      </div>
+      <span class="file-ref">📄 litellm/router.py : 8427</span>
+      <div class="callout callout-warning">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-content">
+          <strong class="callout-title">降级的隐藏代价</strong>
+          <p>备用模型可能更贵、更慢、输出风格不同。降级是“可用性优先”的取舍，不是免费的。生产上要监控降级率，并给用户/调用方返回 <span class="mono">x-litellm-*</span> 头部，避免“悄悄换了模型”导致难以排查。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 4</span> 一次请求的决策顺序</h2>
+      <div class="step-cards">
+        <div class="step-card"><div class="step-num">1</div><div class="step-body"><strong>过滤不健康部署</strong><p>健康检查失败、被冷却（cooldown）的部署先排除。</p></div></div>
+        <div class="step-card"><div class="step-num">2</div><div class="step-body"><strong>按策略选一个</strong><p>加权随机 / 最低延迟 / 最低成本……取决于你配置的 routing strategy。</p></div></div>
+        <div class="step-card"><div class="step-num">3</div><div class="step-body"><strong>调用失败，先重试</strong><p>在 <span class="mono">num_retries</span> 范围内重试当前部署或同组部署。</p></div></div>
+        <div class="step-card"><div class="step-num">4</div><div class="step-body"><strong>仍失败，走降级</strong><p>按 <span class="mono">fallbacks</span> 名单换模型组，并记录尝试过哪些目标。</p></div></div>
+        <div class="step-card"><div class="step-num">5</div><div class="step-body"><strong>把决策写进响应头</strong><p>调用方能看到用了哪个模型、是否降级、成本是多少，便于排障。</p></div></div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Checkpoint</span> 小测：路由与降级</h2>
+      <div class="quiz-container" id="quiz-6">
+        <div class="quiz-question-block" data-correct="b" data-correct-explanation="对。重试是同一目标再试；fallback 是换一个模型/部署。两者解决的问题不同。">
+          <h3 class="quiz-question">1. 主模型返回 503，你希望“先原地再试两次，还不行就换备用模型”。这分别对应什么机制？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="a" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>两次 fallback</span></button>
+            <button class="quiz-option" data-value="b" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>先 retry，再 fallback</span></button>
+            <button class="quiz-option" data-value="c" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>先 fallback，再 retry</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <div class="quiz-question-block" data-correct="a" data-correct-explanation="对。context_window_fallbacks 专门处理“提示词超过主模型上下文窗口”的情况，会切到窗口更大的模型。">
+          <h3 class="quiz-question">2. 用户上传了一份超长合同，主模型报“上下文超限”。最合适的降级配置是？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="a" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>context_window_fallbacks</span></button>
+            <button class="quiz-option" data-value="b" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>content_policy_fallbacks</span></button>
+            <button class="quiz-option" data-value="c" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>提高 RPM</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <div class="quiz-actions">
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-6')">检查答案</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-6')">再来一次</button>
+        </div>
+        <div class="quiz-overall-feedback"></div>
+      </div>
+    </section>
+
+    <div class="module-footer">
+      <span>下一站：这单花了多少钱？成本追踪与账本。</span>
+      <a class="next-hint" href="#module-7"><span>07 成本账本</span> →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MODULE 7 ================= -->
+<section class="module" id="module-7" aria-label="模块 7：成本追踪与账本">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">07</span>
+      <h1 class="module-title">成本追踪：每一次调用都有一张计价器</h1>
+      <p class="module-subtitle">Token 怎么变成钱？账单为什么是异步写的？哪些账 LiteLLM 管，哪些要你自己建？</p>
+    </header>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 1</span> 出租车计价器</h2>
+      <p class="lead">
+        出租车不是按“一趟”收费，而是按里程和时间。模型调用也一样：输入 Token 是起步里程，输出 Token 是继续行驶，缓存命中则像“已走过的路打折”。
+      </p>
+      <div class="icon-rows">
+        <div class="icon-row">
+          <div class="icon-circle" style="background:var(--color-actor-2)">📥</div>
+          <div><strong>输入 Token</strong><p>你发给模型的提示词。通常按“每百万 Token 多少美元”计价。</p></div>
+        </div>
+        <div class="icon-row">
+          <div class="icon-circle" style="background:var(--color-actor-1)">📤</div>
+          <div><strong>输出 Token</strong><p>模型生成的回答。单价通常比输入贵，因为生成更耗算力。</p></div>
+        </div>
+        <div class="icon-row">
+          <div class="icon-circle" style="background:var(--color-actor-5)">♻️</div>
+          <div><strong>缓存 Token</strong><p>命中的提示词缓存，通常有折扣；写入缓存也可能单独计费。</p></div>
+        </div>
+      </div>
+      <p class="small">
+        价格表在仓库根目录的 <span class="inline-code">model_prices_and_context_window.json</span>，每个模型一行：上下文窗口、输入价、输出价、缓存价、支持的参数等。
+      </p>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 2</span> 计价公式：没有魔法</h2>
+      <div class="translation-block">
+        <div class="translation-code">
+          <span class="translation-label">PYTHON · cost_calculator.py</span>
+          <pre><code><span class="code-line">regular_prompt_tokens: Final = <span class="code-function">max</span>(</span>
+<span class="code-line">    prompt_tokens - cached_tokens - cache_creation_tokens,</span>
+<span class="code-line">    <span class="code-number">0</span>,</span>
+<span class="code-line">)</span>
+<span class="code-line"></span>
+<span class="code-line">input_cost: Final = (</span>
+<span class="code-line">    regular_prompt_tokens * input_cost_per_token</span>
+<span class="code-line">    + cached_tokens * cache_read_input_token_cost</span>
+<span class="code-line">    + cache_creation_tokens * cache_creation_input_token_cost</span>
+<span class="code-line">)</span>
+<span class="code-line">output_cost = completion_tokens * output_cost_per_token</span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">大白话</span>
+          <div class="translation-lines">
+            <p class="tl"><strong>先算“普通输入”：</strong>总输入减去缓存命中和缓存写入的部分。用 <span class="mono">max(…, 0)</span> 防止出现负数。</p>
+            <p class="tl"><strong>输入成本 = 普通输入 × 输入单价 + 缓存命中 × 缓存读单价 + 缓存写入 × 缓存写单价。</strong>三段分别计价。</p>
+            <p class="tl"><strong>输出成本 = 输出 Token × 输出单价。</strong>有些模型还有图片、音频、推理 Token 等附加项，会再加。</p>
+            <p class="tl"><strong>单位是“每 Token 美元”，</strong>价格表里通常写“每百万 Token”，代码里会先换算。</p>
+          </div>
+        </div>
+      </div>
+      <span class="file-ref">📄 litellm/cost_calculator.py : 252</span>
+      <div class="callout">
+        <div class="callout-icon">💡</div>
+        <div class="callout-content">
+          <strong class="callout-title">Aha：成本计算是“估算 + 定价表”</strong>
+          <p>LiteLLM 不是向厂商查询账单，而是用厂商公开的单价 × 实际 Token 数自己算。所以价格表需要持续更新；厂商调价后，LiteLLM 也要更新 JSON。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 3</span> 账单为什么是异步写的</h2>
+      <p>
+        如果每来一个请求就同步写一次 Postgres，数据库会成为瓶颈，用户也要多等。LiteLLM 的做法是“先返回，再记账”：
+      </p>
+      <div class="step-cards">
+        <div class="step-card"><div class="step-num">1</div><div class="step-body"><strong>响应里带上成本</strong><p>成本先塞进响应的隐藏字段 <span class="mono">_hidden_params["response_cost"]</span>，再暴露成响应头 <span class="mono">x-litellm-response-cost</span>。</p></div></div>
+        <div class="step-card"><div class="step-num">2</div><div class="step-body"><strong>触发成功回调</strong><p>SDK 的 logging 对象调用 <span class="mono">async_success_handler()</span>，通知所有已注册的回调（LiteLLM 自己的记账器、Langfuse、Prometheus 等）。</p></div></div>
+        <div class="step-card"><div class="step-num">3</div><div class="step-body"><strong>先入 Redis 队列</strong><p><span class="mono">DBSpendUpdateWriter</span> 把“某 Key 增加 $0.0021”放进队列，而不是立刻写库。</p></div></div>
+        <div class="step-card"><div class="step-num">4</div><div class="step-body"><strong>后台批量落库</strong><p>APScheduler 每 60 秒跑一次 <span class="mono">update_spend</span>，把队列里的增量批量写进 Postgres。把 N 次写合并成 1 次。</p></div></div>
+      </div>
+      <div class="callout callout-info">
+        <div class="callout-icon">🧾</div>
+        <div class="callout-content">
+          <strong class="callout-title">这解释了一个常见现象</strong>
+          <p>你在管理台看到的用量可能<strong>延迟几十秒</strong>才更新。这不是 bug，而是“异步批量写入”的取舍：牺牲实时性，换取数据库吞吐和请求延迟。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 4</span> LiteLLM 管到哪，你还要建什么</h2>
+      <p>结合你开头那张“AI 中转站”架构图，这条边界非常重要：</p>
+      <div class="compare-grid">
+        <div class="compare-card good">
+          <h4>✅ LiteLLM 已经覆盖</h4>
+          <ul>
+            <li>每次调用的成本计算与用量日志</li>
+            <li>Key / 用户 / 团队 / 组织级预算</li>
+            <li>预算预扣与并发防超支</li>
+            <li>用量看板、花费报表</li>
+            <li>成本响应头、回调到 Langfuse 等</li>
+          </ul>
+        </div>
+        <div class="compare-card bad">
+          <h4>🧱 通常要你自己建</h4>
+          <ul>
+            <li>支付充值（支付宝 / 微信 / Stripe）</li>
+            <li>发票、退款、对账、税务</li>
+            <li>与财务系统的账单同步</li>
+            <li>复杂合同价、阶梯价、分成结算</li>
+            <li>面向客户的套餐与订阅体系</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout callout-warning">
+        <div class="callout-icon">🧮</div>
+        <div class="callout-content">
+          <strong class="callout-title">一句话边界</strong>
+          <p>LiteLLM 提供的是<strong>“用量与成本的计量层”</strong>，不是完整的<strong>“计费账务系统”</strong>。预扣/预算它做了，但支付、退款、发票、对账这些“钱的闭环”，仍然要接你自己的业务系统。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Checkpoint</span> 小测：成本与账本</h2>
+      <div class="quiz-container" id="quiz-7">
+        <div class="quiz-question-block" data-correct="b" data-correct-explanation="对。LiteLLM 用价格表 × 实际 Token 数自行计算成本；它不是向厂商拉取真实账单。">
+          <h3 class="quiz-question">1. LiteLLM 显示的“本次调用花费 $0.0021”是怎么来的？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="a" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>向厂商实时查询账单</span></button>
+            <button class="quiz-option" data-value="b" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>按价格表 × 实际 Token 数计算</span></button>
+            <button class="quiz-option" data-value="c" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>固定按请求次数收费</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <div class="quiz-question-block" data-correct="c" data-correct-explanation="对。用量日志异步批量写库，存在几十秒延迟；这是为了降低数据库压力和请求延迟。">
+          <h3 class="quiz-question">2. 管理台的用量数字比实际请求晚了几十秒，最可能的原因是？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="a" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>请求丢失了</span></button>
+            <button class="quiz-option" data-value="b" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>Redis 坏了</span></button>
+            <button class="quiz-option" data-value="c" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>成本日志走异步批量写入</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <div class="quiz-actions">
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-7')">检查答案</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-7')">再来一次</button>
+        </div>
+        <div class="quiz-overall-feedback"></div>
+      </div>
+    </section>
+
+    <div class="module-footer">
+      <span>最后一站：把整张地图拼起来，并决定你该怎么动手。</span>
+      <a class="next-hint" href="#module-8"><span>08 全景与边界</span> →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MODULE 8 ================= -->
+<section class="module" id="module-8" aria-label="模块 8：全景与边界">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">08</span>
+      <h1 class="module-title">全景与边界：LiteLLM 该放在哪一格</h1>
+      <p class="module-subtitle">把前面七块拼回一张图，然后决定：哪些交给它，哪些必须自己建。</p>
+    </header>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 1</span> 点一点，看看每个角色在哪</h2>
+      <p>点击任意组件，下方会显示它在 LiteLLM 里的位置和职责。</p>
+      <div class="arch-diagram">
+        <div class="arch-zone">
+          <h4 class="arch-zone-label">接入层 · 不在 LiteLLM 里</h4>
+          <div class="arch-components">
+            <div class="arch-component" onclick="showArchDesc(this)" data-desc="TLS 终结、域名、基础 HTTP 路由。通常由 Nginx、云负载均衡或 Kubernetes Gateway API 负责。LiteLLM 假设请求已经安全到达它。">
+              <span class="arch-icon">🚪</span><span>Ingress / LB</span>
+            </div>
+          </div>
+        </div>
+        <div class="arch-zone">
+          <h4 class="arch-zone-label">治理层 · LiteLLM Proxy</h4>
+          <div class="arch-components">
+            <div class="arch-component" onclick="showArchDesc(this)" data-desc="虚拟 Key、JWT、SSO、预算校验。入口在 proxy/auth/，每个请求先经过 user_api_key_auth。">
+              <span class="arch-icon">🛂</span><span>鉴权</span>
+            </div>
+            <div class="arch-component" onclick="showArchDesc(this)" data-desc="RPM/TPM/并发与预算。实现主要在 proxy/hooks/parallel_request_limiter*.py，计数器放 Redis，多实例共享。">
+              <span class="arch-icon">🚦</span><span>限流</span>
+            </div>
+            <div class="arch-component" onclick="showArchDesc(this)" data-desc="在多个部署之间选路，处理重试与降级。核心在 router.py 与 router_strategy/。">
+              <span class="arch-icon">🧭</span><span>路由 / 降级</span>
+            </div>
+            <div class="arch-component" onclick="showArchDesc(this)" data-desc="记录用量与成本，异步批量写 Postgres。核心在 cost_calculator.py、hooks/proxy_track_cost_callback.py、db/db_spend_update_writer.py。">
+              <span class="arch-icon">🧾</span><span>成本计量</span>
+            </div>
+            <div class="arch-component" onclick="showArchDesc(this)" data-desc="Next.js 管理台：建虚拟 Key、配模型、看用量、管团队。代码在 ui/。">
+              <span class="arch-icon">🖥️</span><span>管理 UI</span>
+            </div>
+          </div>
+        </div>
+        <div class="arch-zone">
+          <h4 class="arch-zone-label">核心转发 · LiteLLM SDK</h4>
+          <div class="arch-components">
+            <div class="arch-component" onclick="showArchDesc(this)" data-desc="统一入口 main.py：completion/acompletion/embedding。对外只暴露 OpenAI 风格参数。">
+              <span class="arch-icon">⚡</span><span>main.py</span>
+            </div>
+            <div class="arch-component" onclick="showArchDesc(this)" data-desc="每个厂商一个目录，transformation.py 负责请求/响应翻译，包括流式与工具调用。">
+              <span class="arch-icon">🔌</span><span>翻译层 llms/</span>
+            </div>
+            <div class="arch-component" onclick="showArchDesc(this)" data-desc="统一的 ModelResponse 与 usage 结构，让上层不用关心厂商差异。">
+              <span class="arch-icon">📦</span><span>统一响应</span>
+            </div>
+          </div>
+        </div>
+        <div class="arch-zone">
+          <h4 class="arch-zone-label">存储 · 外部依赖</h4>
+          <div class="arch-components">
+            <div class="arch-component" onclick="showArchDesc(this)" data-desc="保存 Key、团队、用户、用量日志。通过 Prisma 访问，实体定义在 litellm/models/，读写封装在 litellm/repositories/。">
+              <span class="arch-icon">🐘</span><span>PostgreSQL</span>
+            </div>
+            <div class="arch-component" onclick="showArchDesc(this)" data-desc="限流计数器、Key 缓存、响应缓存、花费增量队列、部署冷却。多实例部署时必须共享。">
+              <span class="arch-icon">⚡</span><span>Redis</span>
+            </div>
+          </div>
+        </div>
+        <div class="arch-zone">
+          <h4 class="arch-zone-label">上游 · 模型供应商</h4>
+          <div class="arch-components">
+            <div class="arch-component" onclick="showArchDesc(this)" data-desc="OpenAI、Anthropic、Google Gemini、AWS Bedrock、Azure、Groq、Mistral、Ollama……100+ provider。">
+              <span class="arch-icon">☁️</span><span>LLM APIs</span>
+            </div>
+          </div>
+        </div>
+        <div class="arch-zone">
+          <h4 class="arch-zone-label">非 AI 支撑 · 通常要你自建</h4>
+          <div class="arch-components">
+            <div class="arch-component" onclick="showArchDesc(this)" data-desc="支付充值、发票、退款、对账、税务。LiteLLM 不管钱怎么进来，只记录用量和成本。">
+              <span class="arch-icon">💳</span><span>支付 / 账务</span>
+            </div>
+            <div class="arch-component" onclick="showArchDesc(this)" data-desc="面向客户的套餐、订阅、合同价、分成结算。需要建在 LiteLLM 的计量数据之上。">
+              <span class="arch-icon">📊</span><span>运营 / 计费策略</span>
+            </div>
+            <div class="arch-component" onclick="showArchDesc(this)" data-desc="内容审核、PII 脱敏、输出审核。LiteLLM 提供 guardrails 接口与钩子，但具体策略和合规责任在你。">
+              <span class="arch-icon">🛡️</span><span>安全护栏</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="arch-description" id="arch-desc">点击任意组件，查看它在 LiteLLM 中的位置。</div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 2</span> 一句话定位</h2>
+      <div class="pattern-cards">
+        <div class="pattern-card" style="border-top-color:var(--color-actor-2)">
+          <div class="pattern-icon" style="background:var(--color-actor-2)">🚪</div>
+          <h4 class="pattern-title">Ingress 管进门</h4>
+          <p class="pattern-desc">TLS、域名、基础路由。交给 Nginx / 云 LB / Gateway API。LiteLLM 不负责这一层。</p>
+        </div>
+        <div class="pattern-card" style="border-top-color:var(--color-actor-1)">
+          <div class="pattern-icon" style="background:var(--color-actor-1)">🧭</div>
+          <h4 class="pattern-title">LiteLLM 管治理</h4>
+          <p class="pattern-desc">虚拟 Key、限流、预算、路由、翻译、成本计量。它是 AI 数据面的核心。</p>
+        </div>
+        <div class="pattern-card" style="border-top-color:var(--color-actor-4)">
+          <div class="pattern-icon" style="background:var(--color-actor-4)">🧾</div>
+          <h4 class="pattern-title">自建服务管账本与运营</h4>
+          <p class="pattern-desc">支付、退款、发票、对账、套餐、合同价、客服后台。这些不在 LiteLLM 的职责里。</p>
+        </div>
+      </div>
+      <div class="callout">
+        <div class="callout-icon">💡</div>
+        <div class="callout-content">
+          <strong class="callout-title">Aha：不要用 LiteLLM 代替业务系统</strong>
+          <p>它把“请求怎么安全、便宜、稳定地到达模型”这件事做到了极致。但“客户怎么付钱、发票怎么开、退款怎么处理”是另一个领域。边界清楚，架构才不会拧巴。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 3</span> 部署长什么样</h2>
+      <p>仓库自带的 <span class="inline-code">docker-compose.yml</span> 把 LiteLLM 和 Postgres 一起拉起来。核心就三段：</p>
+      <div class="translation-block">
+        <div class="translation-code">
+          <span class="translation-label">YAML · docker-compose.yml</span>
+          <pre><code><span class="code-line"><span class="code-property">ports</span>:</span>
+<span class="code-line">  - <span class="code-string">"4000:4000"</span></span>
+<span class="code-line"><span class="code-property">environment</span>:</span>
+<span class="code-line">  <span class="code-property">DATABASE_URL</span>: <span class="code-string">"postgresql://llmproxy:dbpassword9090@db:5432/litellm"</span></span>
+<span class="code-line">  <span class="code-property">STORE_MODEL_IN_DB</span>: <span class="code-string">"True"</span></span></code></pre>
+        </div>
+        <div class="translation-english">
+          <span class="translation-label">大白话</span>
+          <div class="translation-lines">
+            <p class="tl"><strong>把容器内的 4000 端口映射到本机 4000。</strong>客户端就访问 <span class="mono">http://localhost:4000</span>。</p>
+            <p class="tl"><strong>告诉 LiteLLM 数据库在哪。</strong>Key、团队、用量日志都存在 Postgres。注意这里的密码只是示例，生产必须改。</p>
+            <p class="tl"><strong>允许通过管理台往数据库里加模型。</strong>不开这个，模型只能写在配置文件里。</p>
+          </div>
+        </div>
+      </div>
+      <span class="file-ref">📄 docker-compose.yml : 14</span>
+      <div class="callout callout-info">
+        <div class="callout-icon">💻</div>
+        <div class="callout-content">
+          <strong class="callout-title">你的机器没有 Docker</strong>
+          <p>我检查过，当前环境里 <span class="mono">docker</span> 命令不可用，但有 <span class="mono">uv 0.11.27</span> 和 <span class="mono">Python 3.13.2</span>。所以先用 Python 路线跑起来，不必为了学习去装 Docker。</p>
+        </div>
+      </div>
+      <div class="badge-list">
+        <div class="badge-item"><code class="badge-code">cd litellm</code><span class="badge-desc">进入你刚克隆的仓库。</span></div>
+        <div class="badge-item"><code class="badge-code">uv venv .venv</code><span class="badge-desc">创建一个隔离的 Python 环境，避免污染全局。</span></div>
+        <div class="badge-item"><code class="badge-code">uv pip install -e ".[proxy]"</code><span class="badge-desc">以可编辑模式安装 LiteLLM 和网关依赖。第一次会比较久。</span></div>
+        <div class="badge-item"><code class="badge-code">litellm --config config.yaml --port 4000</code><span class="badge-desc">启动网关。config.yaml 里至少配一个模型和 master key。</span></div>
+      </div>
+      <p class="small">Windows 下激活虚拟环境用 <span class="inline-code">.venv\Scripts\activate</span>；也可以直接用 <span class="inline-code">uv run litellm …</span> 免激活。</p>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Scene 4</span> 你的下一步：5 个实验</h2>
+      <div class="step-cards">
+        <div class="step-card"><div class="step-num">1</div><div class="step-body"><strong>先跑通 SDK</strong><p>用 <span class="mono">litellm.completion()</span> 直连一个你有的厂商 Key，看到回答。目标是理解“统一接口”。</p></div></div>
+        <div class="step-card"><div class="step-num">2</div><div class="step-body"><strong>再起 Proxy</strong><p>配一个模型 + <span class="mono">master_key</span>，用 curl 或 OpenAI SDK 指向 <span class="mono">:4000</span>。目标是把请求路径换成网关。</p></div></div>
+        <div class="step-card"><div class="step-num">3</div><div class="step-body"><strong>建一把虚拟 Key</strong><p>通过管理台或 API 创建 Key，设一个小预算。用这把 Key 调用，观察预算耗尽后的行为。</p></div></div>
+        <div class="step-card"><div class="step-num">4</div><div class="step-body"><strong>亲手触发一次限流</strong><p>把 RPM 设成 2，快速发 3 个请求。看第三个请求返回什么状态码、错误体是什么。</p></div></div>
+        <div class="step-card"><div class="step-num">5</div><div class="step-body"><strong>接 Postgres + Redis，再起两个实例</strong><p>用同一套数据库和 Redis，验证“重启不丢 Key”“两个实例共享限流计数”。</p></div></div>
+      </div>
+      <div class="callout">
+        <div class="callout-icon">🗺️</div>
+        <div class="callout-content">
+          <strong class="callout-title">推荐的源码阅读顺序</strong>
+          <p><span class="mono">ARCHITECTURE.md</span> → <span class="mono">litellm/main.py</span> 的 <span class="mono">acompletion</span> → <span class="mono">litellm/llms/anthropic/chat/transformation.py</span> → <span class="mono">proxy/auth/user_api_key_auth.py</span> → <span class="mono">proxy/hooks/parallel_request_limiter.py</span> → <span class="mono">router.py</span> 的 fallback → <span class="mono">cost_calculator.py</span>。每条只看一个函数。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen animate-in">
+      <h2 class="screen-heading"><span class="kicker">Final Checkpoint</span> 毕业小测</h2>
+      <div class="quiz-container" id="quiz-8">
+        <div class="quiz-question-block" data-correct="b" data-correct-explanation="对。LiteLLM 负责治理与转发；支付、退款、发票、对账属于业务账务系统，需要自建或对接。">
+          <h3 class="quiz-question">1. 你要做一个“AI 中转站”，下面哪件事 LiteLLM 不会替你做？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="a" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>给客户发虚拟 Key 并限额</span></button>
+            <button class="quiz-option" data-value="b" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>支付宝充值与退款对账</span></button>
+            <button class="quiz-option" data-value="c" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>把 OpenAI 请求翻译给 Anthropic</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <div class="quiz-question-block" data-correct="c" data-correct-explanation="对。多实例共享 Key 缓存、限流计数、花费队列，靠的是 Redis；持久化账本和实体数据靠 Postgres。">
+          <h3 class="quiz-question">2. 三个 LiteLLM 实例要共享限流计数和 Key 缓存，必须依赖哪个组件？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="a" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>每个实例自己的内存</span></button>
+            <button class="quiz-option" data-value="b" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>管理台 UI</span></button>
+            <button class="quiz-option" data-value="c" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>共享 Redis</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <div class="quiz-question-block" data-correct="a" data-correct-explanation="对。先直连 SDK，再上 Proxy，再学虚拟 Key、限流，最后做多实例与持久化。每次只增加一个变量，最容易定位问题。">
+          <h3 class="quiz-question">3. 作为初学者，下面哪种学习顺序最稳妥？</h3>
+          <div class="quiz-options">
+            <button class="quiz-option" data-value="a" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>SDK → Proxy → Key/限流 → 多实例持久化</span></button>
+            <button class="quiz-option" data-value="b" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>直接读 940KB 的 proxy_server.py</span></button>
+            <button class="quiz-option" data-value="c" onclick="selectOption(this)"><span class="quiz-option-radio"></span><span>先搭支付系统和发票</span></button>
+          </div>
+          <div class="quiz-feedback"></div>
+        </div>
+        <div class="quiz-actions">
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-8')">检查答案</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-8')">再来一次</button>
+        </div>
+        <div class="quiz-overall-feedback"></div>
+      </div>
+    </section>
+
+    <div class="module-footer">
+      <span>课程结束。现在回到仓库，亲手跑一个请求。</span>
+      <a class="next-hint" href="#hero"><span>回到封面</span> ↑</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="footer-title">你已经看懂一次请求了。</div>
+  <p>课程基于本地克隆的 LiteLLM <code>v1.107.0</code>（HEAD <code>6762d65</code>）。<br>所有代码片段均为仓库原文；行号会随版本变化，以函数名为准。</p>
+  <p>下一步：回到仓库，用 <code>uv</code> 把它跑起来，亲手发一个请求。</p>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- reveal ---------- */
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { rootMargin: '0px 0px -10% 0px', threshold: 0.1 });
+  document.querySelectorAll('.animate-in').forEach((el) => observer.observe(el));
+
+  document.querySelectorAll('.stagger-children').forEach((parent) => {
+    Array.from(parent.children).forEach((child, i) => child.style.setProperty('--stagger-index', i));
+  });
+
+  /* ---------- progress + nav ---------- */
+  const progressBar = document.getElementById('progress-bar');
+  const sections = Array.from(document.querySelectorAll('.hero, .module'));
+  const navDots = Array.from(document.querySelectorAll('.nav-dot'));
+
+  function updateProgress() {
+    const scrollTop = window.scrollY;
+    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+    progressBar.style.width = progress + '%';
+    progressBar.setAttribute('aria-valuenow', String(Math.round(progress)));
+
+    let current = 0;
+    sections.forEach((section, i) => {
+      if (section.getBoundingClientRect().top <= window.innerHeight * 0.45) current = i;
+    });
+    navDots.forEach((dot, i) => {
+      dot.classList.toggle('current', i === current);
+      dot.classList.toggle('visited', i < current);
+    });
+  }
+  window.addEventListener('scroll', () => requestAnimationFrame(updateProgress), { passive: true });
+  window.addEventListener('resize', updateProgress);
+  updateProgress();
+
+  navDots.forEach((dot) => {
+    dot.addEventListener('click', () => {
+      const target = document.getElementById(dot.dataset.target);
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  function scrollToSection(delta) {
+    const positions = sections.map((s) => s.getBoundingClientRect().top + window.scrollY);
+    const y = window.scrollY + 10;
+    if (delta > 0) {
+      const next = positions.find((p) => p > y);
+      if (next !== undefined) window.scrollTo({ top: next, behavior: 'smooth' });
+    } else {
+      const prev = [...positions].reverse().find((p) => p < y - 10);
+      if (prev !== undefined) window.scrollTo({ top: prev, behavior: 'smooth' });
+    }
+  }
+  document.addEventListener('keydown', (e) => {
+    if (['INPUT', 'TEXTAREA', 'BUTTON'].includes(e.target.tagName)) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { scrollToSection(1); e.preventDefault(); }
+    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { scrollToSection(-1); e.preventDefault(); }
+  });
+
+  /* ---------- glossary tooltips ---------- */
+  let activeTooltip = null;
+  function positionTooltip(term, tip) {
+    const rect = term.getBoundingClientRect();
+    const tipWidth = Math.min(320, Math.max(200, window.innerWidth * 0.8));
+    let left = rect.left + rect.width / 2 - tipWidth / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tipWidth - 8));
+    tip.style.left = left + 'px';
+    document.body.appendChild(tip);
+    const tipHeight = tip.offsetHeight;
+    if (rect.top - tipHeight - 8 < 0) {
+      tip.style.top = (rect.bottom + 8) + 'px';
+      tip.classList.add('flip');
+    } else {
+      tip.style.top = (rect.top - tipHeight - 8) + 'px';
+      tip.classList.remove('flip');
+    }
+  }
+  function clearTooltip() {
+    if (activeTooltip) {
+      activeTooltip.classList.remove('visible');
+      const tip = activeTooltip;
+      setTimeout(() => tip.remove(), 150);
+      activeTooltip = null;
+    }
+  }
+  document.querySelectorAll('.term').forEach((term) => {
+    const tip = document.createElement('span');
+    tip.className = 'term-tooltip';
+    tip.textContent = term.dataset.definition;
+    term.addEventListener('mouseenter', () => {
+      if (activeTooltip && activeTooltip !== tip) clearTooltip();
+      positionTooltip(term, tip);
+      requestAnimationFrame(() => tip.classList.add('visible'));
+      activeTooltip = tip;
+    });
+    term.addEventListener('mouseleave', clearTooltip);
+    term.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (tip.classList.contains('visible')) { clearTooltip(); return; }
+      clearTooltip();
+      positionTooltip(term, tip);
+      requestAnimationFrame(() => tip.classList.add('visible'));
+      activeTooltip = tip;
+    });
+  });
+  document.addEventListener('click', clearTooltip);
+
+  /* ---------- quiz ---------- */
+  window.selectOption = function (btn) {
+    const block = btn.closest('.quiz-question-block');
+    block.querySelectorAll('.quiz-option').forEach((o) => o.classList.remove('selected'));
+    btn.classList.add('selected');
+  };
+
+  window.checkQuiz = function (containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const questions = container.querySelectorAll('.quiz-question-block');
+    let answered = 0;
+    let correct = 0;
+    questions.forEach((q) => {
+      const selected = q.querySelector('.quiz-option.selected');
+      const feedback = q.querySelector('.quiz-feedback');
+      if (!selected) {
+        feedback.textContent = '先选一个答案吧。';
+        feedback.className = 'quiz-feedback show warning';
+        return;
+      }
+      answered++;
+      const correctValue = q.dataset.correct;
+      if (selected.dataset.value === correctValue) {
+        correct++;
+        selected.classList.add('correct');
+        feedback.innerHTML = '<strong>答对了！</strong> ' + (q.dataset.correctExplanation || '');
+        feedback.className = 'quiz-feedback show success';
+      } else {
+        selected.classList.add('incorrect');
+        const right = q.querySelector('[data-value="' + correctValue + '"]');
+        if (right) right.classList.add('correct');
+        feedback.innerHTML = '<strong>再想想。</strong> 正确答案已经标出来了。回到上文对应的场景，看看那一层到底负责什么。';
+        feedback.className = 'quiz-feedback show error';
+      }
+      q.querySelectorAll('.quiz-option').forEach((o) => { o.disabled = true; });
+    });
+    const overall = container.querySelector('.quiz-overall-feedback');
+    if (answered === questions.length) {
+      overall.textContent = correct === questions.length
+        ? '全部正确。你已经开始用架构师的眼光看这条请求了。'
+        : '已经答了 ' + answered + ' 题，答对 ' + correct + ' 题。往上翻一翻对应场景，再试一次。';
+    }
+  };
+
+  window.resetQuiz = function (containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.querySelectorAll('.quiz-option').forEach((o) => {
+      o.disabled = false;
+      o.classList.remove('selected', 'correct', 'incorrect');
+    });
+    container.querySelectorAll('.quiz-feedback').forEach((f) => { f.className = 'quiz-feedback'; f.innerHTML = ''; });
+    const overall = container.querySelector('.quiz-overall-feedback');
+    if (overall) overall.textContent = '';
+  };
+
+  /* ---------- chat ---------- */
+  const chatMessages = Array.from(document.querySelectorAll('#chat-messages .chat-message'));
+  let chatIndex = 0;
+  let chatTimer = null;
+  const actorMeta = {
+    client: { initials: 'C', color: 'var(--color-actor-2)' },
+    proxy: { initials: 'P', color: 'var(--color-actor-1)' },
+    auth: { initials: 'A', color: 'var(--color-actor-3)' },
+    redis: { initials: 'R', color: 'var(--color-actor-4)' },
+    limiter: { initials: 'L', color: 'var(--color-actor-5)' },
+    router: { initials: 'R', color: 'var(--color-actor-1)' },
+    sdk: { initials: 'S', color: 'var(--color-actor-2)' },
+    cost: { initials: '$', color: 'var(--color-actor-4)' }
+  };
+  function updateChatProgress() {
+    const el = document.getElementById('chat-progress');
+    if (el) el.textContent = chatIndex + ' / ' + chatMessages.length;
+  }
+  window.chatNext = function () {
+    if (chatIndex >= chatMessages.length) return;
+    const msg = chatMessages[chatIndex];
+    const meta = actorMeta[msg.dataset.sender] || { initials: '?', color: 'var(--color-accent)' };
+    const typing = document.getElementById('chat-typing');
+    const avatar = document.getElementById('typing-avatar');
+    avatar.textContent = meta.initials;
+    avatar.style.background = meta.color;
+    typing.style.display = 'flex';
+    setTimeout(() => {
+      typing.style.display = 'none';
+      msg.style.display = 'flex';
+      chatIndex++;
+      updateChatProgress();
+    }, 650);
+  };
+  window.chatAll = function () {
+    if (chatTimer) clearInterval(chatTimer);
+    chatTimer = setInterval(() => {
+      if (chatIndex >= chatMessages.length) { clearInterval(chatTimer); chatTimer = null; return; }
+      chatNext();
+    }, 1150);
+  };
+  window.chatReset = function () {
+    if (chatTimer) { clearInterval(chatTimer); chatTimer = null; }
+    chatIndex = 0;
+    chatMessages.forEach((m) => { m.style.display = 'none'; });
+    document.getElementById('chat-typing').style.display = 'none';
+    updateChatProgress();
+  };
+  updateChatProgress();
+
+  /* ---------- flow ---------- */
+  const flowRows = Array.from(document.querySelectorAll('#flow-rows .flow-row'));
+  const flowLabels = [
+    '客户端发出请求：URL 是 /v1/chat/completions，Header 里带着 Bearer Key。',
+    'Proxy 入口接住请求。注意：鉴权依赖会在业务函数体之前执行。',
+    '鉴权层把 Key 哈希后去查用户、团队、预算。无效就直接 401。',
+    'Redis 返回缓存的身份信息；缓存没命中才回源 Postgres。',
+    '限流器检查这一分钟的 RPM/TPM 计数，以及并发数。',
+    'Router 在多个部署之间选一个，并准备重试与降级策略。',
+    'SDK 把统一格式翻译成上游厂商格式，真正发出 HTTP 请求。',
+    '上游模型生成回答，SDK 再把回答翻译回统一的 ModelResponse。',
+    '成本回调算出本次花费，异步入队，稍后批量写进数据库。'
+  ];
+  let flowStep = 0;
+  function moveFlowPacket() {
+    const packet = document.getElementById('flow-packet');
+    if (!packet || flowStep === 0) { if (packet) packet.style.top = '0px'; return; }
+    const row = flowRows[flowStep - 1];
+    packet.style.top = (row.offsetTop + row.offsetHeight / 2 - 5) + 'px';
+  }
+  window.flowNext = function () {
+    if (flowStep >= flowRows.length) return;
+    flowRows.forEach((r, i) => {
+      r.classList.toggle('active', i === flowStep);
+      r.classList.toggle('done', i < flowStep);
+    });
+    document.getElementById('flow-label').textContent = flowLabels[flowStep];
+    flowStep++;
+    moveFlowPacket();
+    document.getElementById('flow-progress').textContent = 'Step ' + flowStep + ' / ' + flowRows.length;
+    if (flowStep === flowRows.length) {
+      flowRows.forEach((r) => { r.classList.remove('active'); r.classList.add('done'); });
+      document.getElementById('flow-label').textContent = '旅程结束：客户端拿到了回答，账本上也多了一笔记录。';
+    }
+  };
+  window.flowReset = function () {
+    flowStep = 0;
+    flowRows.forEach((r) => r.classList.remove('active', 'done'));
+    document.getElementById('flow-label').textContent = '点击“下一步”，让请求出发。';
+    document.getElementById('flow-progress').textContent = 'Step 0 / ' + flowRows.length;
+    moveFlowPacket();
+  };
+  window.addEventListener('resize', moveFlowPacket);
+
+  /* ---------- architecture description ---------- */
+  window.showArchDesc = function (el) {
+    document.querySelectorAll('.arch-component').forEach((c) => c.classList.remove('active'));
+    el.classList.add('active');
+    const box = document.getElementById('arch-desc');
+    const title = el.querySelector('span:last-child').textContent;
+    box.innerHTML = '<strong>' + title + '</strong> — ' + el.dataset.desc;
+  };
+})();
+</script>
+
+<a class="course-back" href="../" aria-label="返回项目学习">← 项目学习</a>
+<style>
+  .course-back {
+    position: fixed; right: 18px; bottom: 18px; z-index: 9500;
+    padding: 9px 14px; border: 1px solid #E5DFD6; border-radius: 999px;
+    background: rgba(250, 247, 242, .92); color: #6B6560;
+    font: 500 12px/1 "DM Sans", "Noto Sans SC", sans-serif;
+    text-decoration: none; backdrop-filter: blur(8px);
+  }
+  .course-back:hover { color: #D94F30; border-color: #D94F30; }
+</style>
+</body>
+</html>

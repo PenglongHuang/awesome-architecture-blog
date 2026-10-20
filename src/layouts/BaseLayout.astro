@@ -4,8 +4,9 @@ import Masthead from '../components/Masthead.astro'
 import Footer from '../components/Footer.astro'
 
 interface Props { title: string; description?: string }
-const { title, description = '专注架构思维的中文知识库:40 章教程、31 张架构地图、6 个案例。' } = Astro.props
-const fullTitle = title === '架构图谱' ? title : `${title} · 架构图谱`
+const { title, description = '专注架构思维的中文知识库:40 章入门教程、31 张架构地图、6 个系统设计、1 门项目课程。' } = Astro.props
+const siteName = 'AI架构师之路'
+const fullTitle = title === siteName ? title : `${title} · ${siteName}`
 const base = import.meta.env.BASE_URL
 const path = Astro.url.pathname.replace(base, '/')
 const overrideBase = import.meta.env.PUBLIC_CANONICAL_BASE
