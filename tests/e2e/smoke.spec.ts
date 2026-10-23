@@ -14,6 +14,7 @@ test('新导航名称并进入项目学习', async ({ page }) => {
   await page.goto('')
   await expect(page.getByRole('link', { name: 'AI架构师之路' })).toBeVisible()
   await expect(page.getByRole('link', { name: '入门教程' })).toBeVisible()
+  await expect(page.getByText('共 1 门')).toBeVisible()
 
   await page.getByRole('link', { name: '系统设计' }).click()
   await expect(page).toHaveURL(/cases\/$/)
@@ -32,6 +33,7 @@ test('新导航名称并进入项目学习', async ({ page }) => {
 
 test('项目学习课程页可打开并返回', async ({ page }) => {
   await page.goto('learning/')
+  await expect(page.getByText('项目学习 · 1 门')).toBeVisible()
   await page.getByRole('link', { name: /LiteLLM 内部漫游指南/ }).click()
   await expect(page).toHaveURL(/learning\/litellm\/$/)
   await expect(page).toHaveTitle(/LiteLLM 内部漫游指南/)
@@ -39,6 +41,125 @@ test('项目学习课程页可打开并返回', async ({ page }) => {
 
   await page.getByRole('link', { name: '返回项目学习' }).click()
   await expect(page).toHaveURL(/learning\/$/)
+})
+
+test('项目学习可按方向与标签筛选并同步 URL', async ({ page }) => {
+  await page.goto('learning/')
+  const filter = page.locator('[data-course-filter]')
+  await expect(filter).toBeVisible()
+  await expect(page.locator('[data-course-card]')).toHaveCount(1)
+
+  const allTracks = filter.getByRole('button', { name: /^全部/ }).first()
+  await expect(allTracks).toHaveAttribute('aria-pressed', 'true')
+
+  const aiTrack = filter.getByRole('button', { name: /AI 基础设施/ })
+  await aiTrack.click()
+  await expect(aiTrack).toHaveAttribute('aria-pressed', 'true')
+  await expect(allTracks).toHaveAttribute('aria-pressed', 'false')
+  expect(new URL(page.url()).searchParams.get('track')).toBe('ai-infra')
+
+  const tagButton = filter.getByRole('button', { name: 'AI 网关' })
+  const limitTag = filter.getByRole('button', { name: '限流' })
+  await tagButton.click()
+  await limitTag.click()
+  await expect(tagButton).toHaveAttribute('aria-pressed', 'true')
+  await expect(limitTag).toHaveAttribute('aria-pressed', 'true')
+  await expect(tagButton.locator('.filter-chip__x')).toBeVisible()
+  await expect(limitTag.locator('.filter-chip__x')).toBeVisible()
+  expect(new URL(page.url()).searchParams.getAll('tag')).toEqual([
+    'ai-gateway',
+    'rate-limiting',
+  ])
+  await expect(page.locator('[data-course-summary]')).toHaveText('显示 1 门 · 2 个标签')
+  await expect(page.locator('[data-course-card]')).toHaveCount(1)
+
+  await page.reload()
+  await expect(filter.getByRole('button', { name: /AI 基础设施/ })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  )
+  await expect(filter.getByRole('button', { name: 'AI 网关' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  )
+  await expect(filter.getByRole('button', { name: '限流' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  )
+  expect(new URL(page.url()).searchParams.getAll('tag')).toEqual([
+    'ai-gateway',
+    'rate-limiting',
+  ])
+  await expect(page.locator('[data-course-card]')).toHaveCount(1)
+
+  await tagButton.click()
+  expect(new URL(page.url()).searchParams.getAll('tag')).toEqual(['rate-limiting'])
+  await expect(tagButton).toHaveAttribute('aria-pressed', 'false')
+  await expect(tagButton.locator('.filter-chip__x')).toBeHidden()
+  await expect(limitTag).toHaveAttribute('aria-pressed', 'true')
+
+  await page.getByRole('button', { name: '清除筛选' }).click()
+  await expect(page).toHaveURL(/learning\/$/)
+  await expect(page.locator('[data-course-summary]')).toHaveText('显示 1 门')
+  await expect(page.locator('[data-course-card]')).toHaveCount(1)
+})
+
+test('课程卡片上的标签可直接筛选', async ({ page }) => {
+  await page.goto('learning/')
+  const card = page.locator('[data-course-card]').first()
+  await card.getByRole('button', { name: 'AI 网关' }).click()
+  await card.getByRole('button', { name: '限流' }).click()
+
+  expect(new URL(page.url()).searchParams.getAll('tag')).toEqual([
+    'ai-gateway',
+    'rate-limiting',
+  ])
+  await expect(
+    page.locator('[data-course-filter]').getByRole('button', { name: 'AI 网关' })
+  ).toHaveAttribute('aria-pressed', 'true')
+  await expect(
+    page.locator('[data-course-filter]').getByRole('button', { name: '限流' })
+  ).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.locator('[data-course-card]')).toHaveCount(1)
+})
+
+test('课程卡片标签支持键盘筛选', async ({ page }) => {
+  await page.goto('learning/')
+  const tag = page.locator('[data-course-card] [data-tag-filter]').first()
+  await expect(tag).toHaveAttribute('role', 'button')
+
+  await tag.focus()
+  await page.keyboard.press('Enter')
+
+  expect(new URL(page.url()).searchParams.get('tag')).toBe('ai-gateway')
+  await expect(
+    page.locator('[data-course-filter]').getByRole('button', { name: 'AI 网关' })
+  ).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('旧的中文标签 URL 会规范化为标签 id', async ({ page }) => {
+  await page.goto('learning/?tag=AI%20%E7%BD%91%E5%85%B3')
+  const filter = page.locator('[data-course-filter]')
+
+  await expect(filter.getByRole('button', { name: 'AI 网关' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  )
+  expect(new URL(page.url()).searchParams.getAll('tag')).toEqual(['ai-gateway'])
+})
+
+test.describe('项目学习无 JS 降级', () => {
+  test.use({ javaScriptEnabled: false })
+
+  test('筛选栏隐藏且课程仍然可见', async ({ page }) => {
+    await page.goto('learning/')
+    await expect(page.locator('[data-course-filter]')).toBeHidden()
+    await expect(page.locator('[data-course-card]')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'LiteLLM 内部漫游指南' })).toBeVisible()
+    await expect(
+      page.locator('[data-course-card] [data-tag-filter]').first()
+    ).not.toHaveAttribute('role', 'button')
+  })
 })
 
 test('Quiz 可以判分并展开解析', async ({ page }) => {

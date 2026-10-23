@@ -149,6 +149,19 @@ pnpm build
 4. 课程正文建议加 `data-pagefind-body`，让 Pagefind 只索引正文
 5. 不要依赖 Google Fonts 等远程字体；课程应尽量自包含
 
+课程元数据分为四个维度（前三项使用受控词表）：
+
+| 字段 | 作用 | 取值 |
+|---|---|---|
+| `track` | 一级方向，决定筛选 tab | `ai-infra` / `classic-systems` / `engineering` |
+| `format` | 课程形式，显示在卡片上 | `source-walkthrough` / `case-study` / `lab` |
+| `level` | 难度，显示在卡片元信息里 | `beginner` / `intermediate` / `advanced` |
+| `tags` | 细分主题，可点击筛选 | `COURSE_TAGS` 中的标签 id，每门课 2–5 个 |
+
+标签用注册表管理（`src/data/courses.ts` 中的 `COURSE_TAGS`），每个标签包含 `id`、`label`、`group`、`order` 和 `aliases`。课程只引用 `id`，显示时再取 `label`；这样改展示名不会破坏 URL，旧的中文标签 URL 也会通过 `label` / `aliases` 自动规范化。
+
+新增方向、形式或难度时，先更新 `src/data/courses.ts` 中对应的词表，再添加课程。`/learning/` 会自动生成方向与标签筛选：方向单选，标签可多选，多选时命中任一标签即可。选中的标签会固定到「标签」行前部并带关闭按钮；标签超过 8 个时，未选中的标签收进按分组展示的「更多标签」。筛选状态会同步到 URL，例如 `?track=ai-infra&tag=ai-gateway&tag=rate-limiting`。筛选是渐进增强的：脚本不可用时筛选栏隐藏，所有课程仍然可见。
+
 LiteLLM 课程由脚本从外部课程目录同步：
 
 ```bash

@@ -32,9 +32,9 @@ const countOf = (id: string) => all.filter((p) => p.data.series === id).length
   </div>
 
   <div class="section">
-    <div class="section__head"><b>项目学习</b><i>PROJECT LAB · {COURSES.length}</i></div>
+    <div class="section__head"><b>项目学习</b><i>共 {COURSES.length} 门</i></div>
     <div class="course-grid">
-      {COURSES.map((course, i) => <CourseCard course={course} index={i} />)}
+      {COURSES.map((course) => <CourseCard course={course} />)}
     </div>
   </div>
 

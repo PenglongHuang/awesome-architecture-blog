@@ -1,0 +1,25 @@
+---
+import type { CourseTag } from '../data/courses'
+
+interface Props {
+  tag: CourseTag
+  tracks?: string
+  count?: number
+  showCount?: boolean
+}
+
+const { tag, tracks = '', count = 0, showCount = false } = Astro.props
+---
+<button
+  type="button"
+  class="filter-chip filter-chip--tag"
+  data-tag-filter={tag.id}
+  data-tag-option
+  data-tag-label={tag.label}
+  data-tag-aliases={tag.aliases.join('|')}
+  data-tag-tracks={tracks}
+  aria-pressed="false"
+>
+  {tag.label}
+  {showCount && <span class="filter-chip__count">{count}</span>}
+</button>

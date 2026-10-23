@@ -1,24 +1,50 @@
 ---
 import type { Course } from '../data/courses'
+import {
+  COURSE_FORMATS,
+  COURSE_LEVELS,
+  getTagLabel,
+  getTrackLabel,
+} from '../data/courses'
 import { href } from '../lib/urls'
-interface Props { course: Course; index?: number }
-const { course, index = 0 } = Astro.props
+
+interface Props {
+  course: Course
+  filterable?: boolean
+}
+
+const { course, filterable = false } = Astro.props
 const url = href(`/learning/${course.slug}/`)
+const trackLabel = getTrackLabel(course.track)
+const formatLabel = COURSE_FORMATS[course.format]
+const levelLabel = COURSE_LEVELS[course.level]
+const tags = JSON.stringify(course.tags)
 ---
-<a class="course-card" href={url}>
+<article
+  class="course-card"
+  data-course-card
+  data-course-track={course.track}
+  data-course-tags={tags}
+>
   <div class="course-card__body">
-    <p class="course-card__kicker">项目学习 · COURSE {String(index + 1).padStart(2, '0')}</p>
-    <h3>{course.title}</h3>
+    <p class="course-card__kicker">{trackLabel} · {formatLabel}</p>
+    <h3 class="course-card__title">
+      <a class="course-card__link" href={url}>{course.title}</a>
+    </h3>
     <p class="course-card__sub">{course.subtitle}</p>
     <p class="course-card__desc">{course.description}</p>
     <div class="course-card__tags">
-      {course.tags.map((tag) => <span>{tag}</span>)}
+      {filterable
+        ? course.tags.map((tag) => (
+            <span class="course-card__tag" data-tag-filter={tag}>{getTagLabel(tag)}</span>
+          ))
+        : course.tags.map((tag) => <span class="course-card__tag">{getTagLabel(tag)}</span>)}
     </div>
-    <span class="course-card__cta">进入课程 →</span>
+    <span class="course-card__cta" aria-hidden="true">进入课程 →</span>
   </div>
   <div class="course-card__meta">
     <span><b>{course.modules}</b><small>个模块</small></span>
     <span><b>{course.minutes}</b><small>分钟</small></span>
-    <span><b>{course.level}</b><small>难度</small></span>
+    <span><b>{levelLabel}</b><small>难度</small></span>
   </div>
-</a>
+</article>

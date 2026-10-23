@@ -1,18 +1,125 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import CourseCard from '../../components/CourseCard.astro'
-import { COURSES } from '../../data/courses'
+import CourseTagButton from '../../components/CourseTagButton.astro'
+import {
+  COURSES,
+  FEATURED_TAG_LIMIT,
+  collectCourseTracks,
+  collectTagTracks,
+  countCoursesWithTag,
+  groupCourseTags,
+  sortTagsByUsage,
+} from '../../data/courses'
+
+const tracks = collectCourseTracks()
+const tags = sortTagsByUsage()
+const tagTracks = collectTagTracks()
+const showTagCounts = COURSES.length > 1
+const featuredTags = tags.slice(0, FEATURED_TAG_LIMIT)
+const moreTags = tags.slice(FEATURED_TAG_LIMIT)
+const moreTagGroups = groupCourseTags(moreTags)
+const tagCounts = new Map(tags.map((tag) => [tag.id, countCoursesWithTag(tag.id)]))
+const trackCounts = new Map(
+  tracks.map((track) => [track.id, COURSES.filter((course) => course.track === track.id).length])
+)
 ---
 <BaseLayout title="项目学习">
   <div class="hero">
-    <p class="kicker">Project Learning · {COURSES.length} 门</p>
+    <p class="kicker">项目学习 · {COURSES.length} 门</p>
     <h1>在真实项目里,<br />把架构走一遍</h1>
     <p>不只读结论,而是跟着一条真实请求、一次真实部署,穿过代码、配置与边界。每门课都可以直接打开,边读边点。</p>
   </div>
   <div class="section">
-    <div class="section__head"><b>课程</b><i>COURSES · {COURSES.length}</i></div>
-    <div class="course-grid">
-      {COURSES.map((course, i) => <CourseCard course={course} index={i} />)}
+    <div class="section__head"><b>全部课程</b><i>共 {COURSES.length} 门</i></div>
+    <div class="course-filter" data-course-filter hidden>
+      <div class="course-filter__row" role="group" aria-label="按方向筛选">
+        <span class="course-filter__label">方向</span>
+        <div class="course-filter__options">
+          <button type="button" class="filter-chip" data-track-filter="" aria-pressed="true">
+            全部 <span class="filter-chip__count">{COURSES.length}</span>
+          </button>
+          {tracks.map((track) => (
+            <button
+              type="button"
+              class="filter-chip"
+              data-track-filter={track.id}
+              aria-pressed="false"
+            >
+              {track.label} <span class="filter-chip__count">{trackCounts.get(track.id)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div class="course-filter__row course-filter__row--tags" role="group" aria-label="按标签筛选">
+        <span class="course-filter__label">标签</span>
+        <div class="course-filter__options">
+          <button type="button" class="filter-chip" data-tag-filter="" aria-pressed="true">全部</button>
+          {tags.map((tag) => (
+            <button
+              type="button"
+              class="filter-chip filter-chip--tag filter-chip--selected"
+              data-tag-filter={tag.id}
+              data-tag-selected
+              aria-pressed="true"
+              hidden
+            >
+              {tag.label}<span class="filter-chip__x" aria-hidden="true">×</span>
+            </button>
+          ))}
+          {featuredTags.map((tag) => (
+            <CourseTagButton
+              tag={tag}
+              tracks={[...(tagTracks.get(tag.id) ?? [])].join(' ')}
+              count={tagCounts.get(tag.id) ?? 0}
+              showCount={showTagCounts}
+            />
+          ))}
+          {moreTags.length > 0 && (
+            <button
+              type="button"
+              class="filter-chip filter-chip--more"
+              data-tag-more
+              aria-expanded="false"
+              aria-controls="tag-more-panel"
+            >
+              更多标签 <span class="filter-chip__count" data-tag-more-count>{moreTags.length}</span>
+            </button>
+          )}
+        </div>
+      </div>
+      {moreTags.length > 0 && (
+        <div class="course-filter__more" id="tag-more-panel" data-tag-more-panel hidden>
+          {moreTagGroups.map((group) => (
+            <div class="tag-group" data-tag-group>
+              <span class="tag-group__title">{group.label}</span>
+              <div class="course-filter__options">
+                {group.tags.map((tag) => (
+                  <CourseTagButton
+                    tag={tag}
+                    tracks={[...(tagTracks.get(tag.id) ?? [])].join(' ')}
+                    count={tagCounts.get(tag.id) ?? 0}
+                    showCount={showTagCounts}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div class="course-filter__status">
+        <p class="course-filter__summary" data-course-summary aria-live="polite">
+          显示 {COURSES.length} 门
+        </p>
+        <button type="button" class="course-filter__clear" data-course-clear hidden>清除筛选</button>
+      </div>
+    </div>
+    <div class="course-grid" data-course-list>
+      {COURSES.map((course) => <CourseCard course={course} filterable />)}
+    </div>
+    <div class="course-empty" data-course-empty hidden>
+      <p>当前筛选下还没有课程。</p>
+      <button type="button" class="course-filter__clear" data-course-clear-reset>查看全部课程</button>
     </div>
   </div>
   <div class="section">
@@ -22,4 +129,7 @@ import { COURSES } from '../../data/courses'
       <p>课程页面是独立交互页,包含可点击的架构图、逐段源码和场景解释;读完可以回到这里继续下一门。</p>
     </div>
   </div>
+  <script>
+    import '../../scripts/course-filter'
+  </script>
 </BaseLayout>
