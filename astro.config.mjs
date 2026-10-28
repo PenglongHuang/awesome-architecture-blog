@@ -50,7 +50,10 @@ export default defineConfig({
   vite: { plugins: [courseDirectoryIndex()] },
   integrations: [
     sitemap({
-      customPages: [new URL(`${BASE}learning/litellm/`, SITE).href],
+      customPages: [
+        new URL(`${BASE}learning/litellm/`, SITE).href,
+        new URL(`${BASE}learning/llm2jev/`, SITE).href,
+      ],
     }),
   ],
   markdown: {

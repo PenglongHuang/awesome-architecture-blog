@@ -68,6 +68,13 @@ export const COURSE_TAGS = [
     order: 50,
     aliases: [],
   },
+  {
+    id: 'llm2jev',
+    label: 'LLM2Jev',
+    group: 'product',
+    order: 60,
+    aliases: [],
+  },
 ] as const satisfies readonly {
   id: string
   label: string
@@ -107,6 +114,19 @@ export const COURSES: Course[] = [
     modules: 8,
     minutes: 30,
     tags: ['ai-gateway', 'request-routing', 'rate-limiting', 'pricing', 'litellm'],
+  },
+  {
+    slug: 'llm2jev',
+    title: 'LLM2Jev 决策引擎拆解',
+    subtitle: '跟着一次 systemone 请求,看大模型如何零训练输出概率',
+    description:
+      '从 client.systemone.create() 出发,看请求如何被拆成 N 个 yes/no 判断,经 prefill-only 二值打分、L1 归一化与置信度组装成 Jev 概率。覆盖 SGLang/Transformers/MLX 三后端与共享前缀缓存,配可交互架构图。',
+    track: 'ai-infra',
+    format: 'source-walkthrough',
+    level: 'intermediate',
+    modules: 5,
+    minutes: 25,
+    tags: ['llm2jev'],
   },
 ]
 
