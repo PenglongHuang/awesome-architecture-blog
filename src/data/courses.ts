@@ -62,6 +62,13 @@ export const COURSE_TAGS = [
     aliases: ['计费'],
   },
   {
+    id: 'binary-scoring',
+    label: '二值打分',
+    group: 'mechanics',
+    order: 45,
+    aliases: ['prefill 打分'],
+  },
+  {
     id: 'litellm',
     label: 'LiteLLM',
     group: 'product',
@@ -126,7 +133,7 @@ export const COURSES: Course[] = [
     level: 'intermediate',
     modules: 5,
     minutes: 25,
-    tags: ['llm2jev'],
+    tags: ['binary-scoring', 'llm2jev'],
   },
 ]
 

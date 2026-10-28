@@ -78,7 +78,9 @@ describe('course taxonomy', () => {
       'request-routing',
       'rate-limiting',
       'pricing',
+      'binary-scoring',
       'litellm',
+      'llm2jev',
     ])
   })
 
@@ -104,8 +106,8 @@ describe('course taxonomy', () => {
     expect(groups.map((group) => group.label)).toEqual(['系统类型', '运行机制', '项目'])
     expect(groups.map((group) => group.tags.map((tag) => tag.id))).toEqual([
       ['ai-gateway'],
-      ['request-routing', 'rate-limiting', 'pricing'],
-      ['litellm'],
+      ['request-routing', 'rate-limiting', 'pricing', 'binary-scoring'],
+      ['litellm', 'llm2jev'],
     ])
   })
 
