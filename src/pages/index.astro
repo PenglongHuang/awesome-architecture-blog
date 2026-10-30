@@ -50,27 +50,6 @@ const courseCaption = (c: typeof litellm) =>
 ---
 <BaseLayout title="AI架构师之路">
   <section class="hero" aria-label="AI架构师之路">
-    <div class="band" data-in>
-      <div class="band__scene" data-ui role="img" aria-label="一张典型的 AI 网关架构地图：客户端经网关做路由、限流、计价，再转发到上游模型">
-        <div class="map-ui" aria-hidden="true">
-          <div class="map-ui__col">
-            <div class="ui-node">客户端</div>
-          </div>
-          <div class="map-ui__link"><span class="map-ui__label">请求</span><i class="ui-pulse"></i></div>
-          <div class="map-ui__col">
-            <div class="ui-node ui-node--focus">API 网关</div>
-            <div class="ui-chips"><span>路由</span><span>限流</span><span>计价</span></div>
-          </div>
-          <div class="map-ui__link"><span class="map-ui__label">转发</span><i class="ui-pulse ui-pulse--late"></i></div>
-          <div class="map-ui__col">
-            <div class="ui-node">模型 A</div>
-            <div class="ui-node">模型 B</div>
-            <div class="ui-node">模型 C</div>
-          </div>
-        </div>
-        <p class="band__note">跟着一条真实请求，穿过它该走的每一站。</p>
-      </div>
-    </div>
     <div class="grid frame">
       <h1 class="hero__title" data-in>先看清系统，<br />再动手写代码。</h1>
       <p class="hero__what" data-in>中文架构知识库：{countTutorial} 章入门教程、{countTemplates} 张架构地图、{countCases} 个系统设计、{COURSES.length} 门项目课程。从第一章走到能拍板，约 {totalHours} 小时。</p>
@@ -129,7 +108,7 @@ const courseCaption = (c: typeof litellm) =>
       <div class="grid">
         <h2 class="section__title course__head" id="course-title" data-in>项目学习</h2>
         <p class="course__intro" data-in>两门课都走进真实开源系统的源码：LiteLLM 把 AI 网关的路由、限流和计价逐行拆开；LLM2Jev 把一套 RAG 评测系统从数据到打分跑通。</p>
-        <div class="course__stage" data-in>
+        <div class="course__stage" data-in data-ui>
           <a class="course__item" href={href(`/learning/${litellm.slug}/`)}>
             <p class="course__word">LiteLLM</p>
             <p class="course__cap">{courseCaption(litellm)}</p>
