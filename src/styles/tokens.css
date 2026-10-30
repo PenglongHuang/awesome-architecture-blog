@@ -35,8 +35,8 @@
 
   /* the printed annual's fixed vertical axis: column 6 of 12 (42%) */
   --axis: 41.6667%;
-  --margin: clamp(20px, 2.4vw, 34px);
-  --measure: 38em;
+  --margin: clamp(24px, 4vw, 72px);
+  --measure: 40em;
   --section-gap: clamp(120px, 14vw, 220px);
 }
 

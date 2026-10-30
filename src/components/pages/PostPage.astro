@@ -24,7 +24,8 @@ const date = post.data.pubDate.toISOString().slice(0, 10)
 <BaseLayout title={post.data.title} description={post.data.description}>
   <div class="article frame">
     <article data-pagefind-body>
-      <div class="crumb" data-pagefind-ignore>
+      <h1 data-in>{post.data.title}</h1>
+      <div class="crumb" data-pagefind-ignore data-in>
         {channelLabel}
         {showSeriesCrumb && (
           <>
@@ -34,9 +35,8 @@ const date = post.data.pubDate.toISOString().slice(0, 10)
         )}
         {' / '}第 {post.data.order} 篇
       </div>
-      <h1>{post.data.title}</h1>
-      {!(post.body ?? '').trimStart().startsWith('>') && <p class="dek">{post.data.description}</p>}
-      <div class="article__meta" data-pagefind-ignore>{date} &nbsp;|&nbsp; 约 {readingMinutes(post.body ?? '')} 分钟 &nbsp;|&nbsp; 系列 {post.data.order} / {siblings.length}</div>
+      {!(post.body ?? '').trimStart().startsWith('>') && <p class="dek" data-in>{post.data.description}</p>}
+      <div class="article__meta" data-pagefind-ignore data-in>{date} &nbsp;|&nbsp; 约 {readingMinutes(post.body ?? '')} 分钟 &nbsp;|&nbsp; 系列 {post.data.order} / {siblings.length}</div>
       <div class="toc-mobile" data-pagefind-ignore><Toc headings={headings} /></div>
       <div class="prose"><Content /></div>
       <PostNav prev={prev} next={next} />

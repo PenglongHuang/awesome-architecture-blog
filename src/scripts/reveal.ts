@@ -6,6 +6,15 @@
 // -- entrances: heading, then text, then figure, staggered -------------------
 // The fade is opacity-only (safe for reduced motion); the CSS drops the
 // 16px travel when the visitor prefers reduced motion.
+
+// Articles render their body as markdown; tag the prose children so long
+// chapters still get the staggered entrance instead of a static wall.
+for (const prose of document.querySelectorAll<HTMLElement>('.prose')) {
+  ;[...prose.children].forEach((child) => {
+    if (!child.hasAttribute('data-in')) child.setAttribute('data-in', '')
+  })
+}
+
 const toReveal = Array.from(document.querySelectorAll<HTMLElement>('[data-in]'))
 if ('IntersectionObserver' in window) {
   // The bottom margin fires 15% early so content is already visible (or
