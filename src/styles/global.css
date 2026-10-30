@@ -80,7 +80,6 @@ h1, h2, h3, h4 { font-weight: 400; margin: 0; text-wrap: balance; }
 /* masthead image band: the site's own artifact — an AI-gateway map fragment */
 .band { position: relative; height: clamp(280px, 42vh, 440px); overflow: hidden; background: var(--ink); }
 .band__scene { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 22px; padding: 24px clamp(20px, 3vw, 44px); }
-.band__tag { margin: 0; font-size: var(--step-small); color: var(--muted); }
 .band__note { margin: 0; font-size: var(--step-body); color: var(--paper); }
 .map-ui { display: flex; align-items: center; gap: clamp(14px, 2.4vw, 34px); min-width: 560px; }
 .map-ui__col { display: flex; flex-direction: column; gap: 10px; }
