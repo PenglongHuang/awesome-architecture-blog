@@ -67,6 +67,7 @@ export default defineConfig({
       customPages: [
         new URL(`${BASE}learning/litellm/`, SITE).href,
         new URL(`${BASE}learning/llm2jev/`, SITE).href,
+        new URL(`${BASE}learning/pi/`, SITE).href,
       ],
     }),
   ],

@@ -1,0 +1,2927 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pi 内部探秘 · 一句话的六次接力</title>
+
+  <!-- Fonts are self-hosted via styles.css; no external font requests. -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!--
+    Accent palette: use the design-system default (vermillion) unless the course
+    has a reason to differ. Options:
+      vermillion  #D94F30 / #C4432A / #FDEEE9 / #E8836C  (default, matches the reference course)
+      coral       #E06B56 / #C85A47 / #FDECEA / #E89585
+      teal        #2A7B9B / #1F6280 / #E4F2F7 / #5A9DB8
+      amber       #D4A843 / #BF9530 / #FDF5E0 / #E0C070
+      forest      #2D8B55 / #226B41 / #E8F5EE / #5AAD7A
+  -->
+
+  <script src="main.js" defer></script>
+</head>
+<body>
+
+  <nav class="nav" id="nav">
+    <div class="progress-bar" id="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+    <div class="nav-inner">
+      <span class="nav-title">Pi <span>内部探秘</span></span>
+      <div class="nav-dots" id="nav-dots" role="tablist">
+        <!--
+          One <button> per module, plus one for the hero cover.
+          Order matters: main.js pairs navDots[i] with modules[i], and the hero
+          is the first .module section, so the cover dot comes first.
+
+          <button class="nav-dot" data-target="module-1" data-tooltip="MODULE_1_NAME" role="tab" aria-label="Module 1: MODULE_1_NAME"></button>
+          ...
+        -->
+        <button class="nav-dot" data-target="hero" data-tooltip="封面" role="tab" aria-label="封面：Pi 内部探秘"></button>
+        <button class="nav-dot" data-target="module-1" data-tooltip="一句话的六次接力" role="tab" aria-label="Module 1: 一句话的六次接力"></button>
+        <button class="nav-dot" data-target="module-2" data-tooltip="四个包各管什么" role="tab" aria-label="Module 2: 四个包各管什么"></button>
+        <button class="nav-dot" data-target="module-3" data-tooltip="一个接口万家供应商" role="tab" aria-label="Module 3: 一个接口万家供应商"></button>
+        <button class="nav-dot" data-target="module-4" data-tooltip="工具：AI 的手" role="tab" aria-label="Module 4: 工具：AI 的手"></button>
+        <button class="nav-dot" data-target="module-5" data-tooltip="记忆：会话与压缩" role="tab" aria-label="Module 5: 记忆：会话与压缩"></button>
+        <button class="nav-dot" data-target="module-6" data-tooltip="读懂失败" role="tab" aria-label="Module 6: 读懂失败"></button>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main">
+
+    <!-- ══ HERO COVER ══════════════════════════════════════════ -->
+    <section class="module hero" id="hero">
+      <div class="hero-orbit" aria-hidden="true"></div>
+      <div class="hero-orbit-2" aria-hidden="true"></div>
+      <div class="hero-content">
+        <span class="hero-eyebrow animate-in">交互式源码课 · 基于 earendil-works/pi</span>
+        <h1 class="hero-title animate-in">Pi 内部探秘<span class="hero-title-accent">一句话的六次接力</span></h1>
+        <p class="hero-subtitle animate-in">从你在终端按下回车，到模型说「就到这里」——中间每一个角色、每一行代码，都在这门课里逐行拆给你看。</p>
+
+        <div class="hero-pills animate-in">
+          <span class="hero-pill">6 个模块</span>
+          <span class="hero-pill">38 段真实源码</span>
+          <span class="hero-pill">29 段逐行翻译</span>
+          <span class="hero-pill">18 道测验</span>
+          <span class="hero-pill">中文讲解</span>
+        </div>
+
+        <div class="hero-cta-row animate-in">
+          <a class="hero-cta hero-cta--primary" href="#module-1">开始学习 <span class="arrow">→</span></a>
+          <a class="hero-cta hero-cta--ghost" href="architecture.html" target="_blank" rel="noopener">架构总览图 <span class="arrow">↗</span></a>
+        </div>
+
+        <p class="hero-note animate-in">源码固定在 commit <code>972d701</code>（earendil-works/pi）· 每段代码都标注了文件与行号</p>
+      </div>
+    </section>
+
+    <!-- modules/*.html content is assembled here by build.sh -->
+<section class="module" id="module-1" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">01</span>
+      <h1 class="module-title">你在终端里敲下一句话之后</h1>
+      <p class="module-subtitle">一句话背后，六次接力</p>
+      <a class="archimap-link" href="architecture.html" target="_blank" rel="noopener">架构总览图 · 这条旅程的完整路线 ↗</a>
+    </header>
+
+    <div class="module-body">
+
+      <!-- ══ SCREEN 1 ══════════════════════════════════════════ -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">回车之后的那几秒</h2>
+        <p>你在 pi 里按下回车，屏幕底部跳出 working 状态条。那几秒里，你那一行字被几个角色接力传了一遍——<strong>没有一个角色是模型自己</strong>。</p>
+        <p>把 pi 想成一场会议。<span class="term" data-definition="模型就是坐在桌前的主管：它能看懂文字，但它不会自己站起来去翻文件。">模型</span>是坐在桌前的主管，它不会自己离开座位去翻文件，只会说「小李，帮我把这段读出来」。你（pi）就是助理：照办，把结果摊回桌面，主管接着说下一句，直到他说「就到这里」。</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+            <div class="pattern-icon" style="background: var(--color-actor-5)">🪑</div>
+            <h4 class="pattern-title">主管：模型</h4>
+            <p class="pattern-desc">坐在桌前不动。它能读文件、能改代码的那双手，是别人递给它的——它只会下指令。</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">🧑‍💻</div>
+            <h4 class="pattern-title">助理：pi</h4>
+            <p class="pattern-desc">把主管的每句话变成真的动作：读文件、跑命令、改代码，然后把结果摊回桌面。</p>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">这套节奏叫代理循环</strong>
+            <p>你说我做、我做完你再说——工程上叫<span class="term" data-definition="代理循环 agent loop：一段反复转圈的流程。模型要工具就去执行、执行完再回来问，直到它不再要工具为止。">代理循环 agent loop</span>。模型不是「回答一次」，它可能连着问好几轮；<strong>它停手的标志，是某一轮回复里不再出现工具请求</strong>。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ SCREEN 2 ══════════════════════════════════════════ -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">六次接力：这句话怎么走</h2>
+        <p>点「下一步」，看这一句话从你的手指走到模型、再走回来。八个小方块是接力的人，亮点和小球表示"现在轮到谁"。</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-actor-2","label":"第 1 跳 · 你按回车：tui 的 Input 触发 onSubmit，把输入框里的字符串交出去","packet":true,"from":"actor-1","to":"actor-2"},
+          {"highlight":"flow-actor-3","label":"第 2 跳 · 交互模式的主循环 getUserInput() 取到这行字，调用 session.prompt(text)","packet":true,"from":"actor-2","to":"actor-3"},
+          {"highlight":"flow-actor-4","label":"第 3 跳 · 会话先查模型和鉴权，再把你的话变成一条 role: \"user\" 的消息（图片一起附上）","packet":true,"from":"actor-3","to":"actor-4"},
+          {"highlight":"flow-actor-5","label":"第 4 跳 · 代理循环把消息数组转成模型格式（convertToLlm + normalizeContext），通过 streamFunction 发出请求","packet":true,"from":"actor-4","to":"actor-5"},
+          {"highlight":"flow-actor-6","label":"第 5 跳 · pi-ai 的 Models 按模型名找到拥有它的 provider，附带密钥把请求发出去；文字块以 message_update 事件流回来","packet":true,"from":"actor-5","to":"actor-6"},
+          {"highlight":"flow-actor-5","label":"第 6 跳 · 回复回到代理循环，它判定：这一轮里有 toolCall → 执行本地工具 → 结果作为 role: \"toolResult\" 的消息塞回对话 → 带着新上下文再问一次（回到第 4 跳）；没有工具调用 → 循环结束","packet":true,"from":"actor-7","to":"actor-5"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-actor-1">
+              <div class="flow-actor-icon" style="background: var(--color-actor-1); color: #FFFFFF;">你</div>
+              <span>你（人）</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-2">
+              <div class="flow-actor-icon" style="background: var(--color-actor-1); color: #FFFFFF;">键</div>
+              <span>tui 输入框</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-3">
+              <div class="flow-actor-icon" style="background: var(--color-actor-2); color: #FFFFFF;">交</div>
+              <span>coding-agent 交互模式</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-4">
+              <div class="flow-actor-icon" style="background: var(--color-actor-2); color: #FFFFFF;">会</div>
+              <span>coding-agent 会话</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-5">
+              <div class="flow-actor-icon" style="background: var(--color-actor-3); color: #FFFFFF;">循</div>
+              <span>agent 代理循环</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-6">
+              <div class="flow-actor-icon" style="background: var(--color-actor-4); color: #FFFFFF;">运</div>
+              <span>pi-ai 模型运行时</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-7">
+              <div class="flow-actor-icon" style="background: var(--color-actor-5); color: #FFFFFF;">模</div>
+              <span>模型服务</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-8">
+              <div class="flow-actor-icon" style="background: var(--color-actor-2); color: #FFFFFF;">具</div>
+              <span>本地工具</span>
+            </div>
+          </div>
+
+          <div class="flow-packet" id="flow-packet"></div>
+
+          <div class="flow-step-label">点「下一步」，开始第一跳。</div>
+
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">下一步</button>
+            <button class="btn flow-reset-btn">重放</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+
+        <p>六跳记下来：<strong>回车被认成提交 → 文本交到交互模式 → 变成一条 user 消息 → 转成模型格式发出去 → 找到 provider 拿到回复 → 有工具就执行、把结果塞回对话再问一次</strong>。这六句话你要是能默背出来，pi 卡住的时候你就能自己说出它卡在哪一跳。</p>
+
+        <h3 class="screen-heading" style="font-size: var(--text-xl); margin-top: var(--space-8);">自己排一遍：这一跳归谁管</h3>
+        <p>把下面的事情拖到对应的角色手里。拖错了不要紧，点「检查」看颜色。</p>
+
+        <div class="dnd-container" id="m1-dnd-journey">
+          <div class="dnd-chips">
+            <div class="dnd-chip" draggable="true" data-answer="tui">回车被识别为提交</div>
+            <div class="dnd-chip" draggable="true" data-answer="interactive">输入框内容交给上层</div>
+            <div class="dnd-chip" draggable="true" data-answer="session">你的话变成一条 user 消息</div>
+            <div class="dnd-chip" draggable="true" data-answer="loop">消息被转成模型格式</div>
+            <div class="dnd-chip" draggable="true" data-answer="runtime">找到 provider 并发请求</div>
+            <div class="dnd-chip" draggable="true" data-answer="loop-back">工具结果塞回对话再问一次</div>
+          </div>
+          <div class="dnd-zones">
+            <div class="dnd-zone" data-correct="tui">
+              <p class="dnd-zone-label">tui 输入框</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+            <div class="dnd-zone" data-correct="interactive">
+              <p class="dnd-zone-label">coding-agent 交互模式</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+            <div class="dnd-zone" data-correct="session">
+              <p class="dnd-zone-label">coding-agent 会话</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+            <div class="dnd-zone" data-correct="loop">
+              <p class="dnd-zone-label">agent 代理循环</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+            <div class="dnd-zone" data-correct="runtime">
+              <p class="dnd-zone-label">pi-ai 模型运行时</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+            <div class="dnd-zone" data-correct="loop-back">
+              <p class="dnd-zone-label">agent 代理循环（工具回灌）</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+          </div>
+          <button class="btn" onclick="checkDnD('m1-dnd-journey')">检查</button>
+          <button class="btn" onclick="resetDnD('m1-dnd-journey')">重置</button>
+        </div>
+      </section>
+
+      <!-- ══ SCREEN 3 ══════════════════════════════════════════ -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">一场会议从头到尾</h2>
+        <p>同一件事换个看法：谁在跟谁说话。点「下一条」一格格看，或者点「全部播放」让它自己走完。</p>
+
+        <div class="chat-window" id="m1-chat-journey">
+          <div class="chat-messages">
+            <div class="chat-message" data-sender="你" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">你</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">你</span>
+                <p>帮我看看 package.json 里 scripts 都写了什么。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="tui 输入框" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">键</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">tui 输入框</span>
+                <p>回车命中 tui.input.submit，输入框里这行字符串交给你了。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="coding-agent 交互模式" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">交</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">coding-agent 交互模式</span>
+                <p>收到。session.prompt(text) 走这一趟。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="coding-agent 会话" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">会</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">coding-agent 会话</span>
+                <p>模型选好了、鉴权也通。给你一条 role: "user" 的消息，图片一起附上。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="agent 代理循环" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-3)">循</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-3)">agent 代理循环</span>
+                <p>整段对话转成模型格式，发给 pi-ai。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="pi-ai 模型运行时" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-4)">运</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-4)">pi-ai 模型运行时</span>
+                <p>按模型名找到 provider，密钥附上，文字块开始一段段回来。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="模型服务" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-5)">模</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-5)">模型服务</span>
+                <p>先读文件再答——我要调 read 工具。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="agent 代理循环" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-3)">循</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-3)">agent 代理循环</span>
+                <p>这一轮里有 toolCall。执行工具，把结果塞回对话，再问一次模型。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="本地工具" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">具</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">本地工具</span>
+                <p>文件内容在这儿。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="agent 代理循环" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-3)">循</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-3)">agent 代理循环</span>
+                <p>结果收到。作为 role: "toolResult" 的消息塞回对话，再问一次模型。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="模型服务" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-5)">模</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-5)">模型服务</span>
+                <p>这次回复里没有工具调用了，循环结束——这是最终答案。</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-typing" style="display:none">
+            <div class="chat-avatar" id="m1-chat-journey-typing-avatar" style="background: var(--color-text-muted)">?</div>
+            <div class="chat-typing-dots">
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+          </div>
+
+          <div class="chat-controls">
+            <button class="btn chat-next-btn">下一条</button>
+            <button class="btn chat-all-btn">全部播放</button>
+            <button class="btn chat-reset-btn">重放</button>
+            <span class="chat-progress"></span>
+          </div>
+        </div>
+
+        <p>颜色是身份标签，全课通用：<span style="color: var(--color-actor-1); font-weight: 700;">朱红＝终端层</span>（你和 tui）、<span style="color: var(--color-actor-2); font-weight: 700;">青＝coding-agent</span>、<span style="color: var(--color-actor-3); font-weight: 700;">紫＝agent 代理循环</span>、<span style="color: var(--color-actor-4); font-weight: 700;">金＝pi-ai 模型运行时</span>、<span style="color: var(--color-actor-5); font-weight: 700;">绿＝模型服务</span>。下一模块会把这些包一一拆开看。</p>
+      </section>
+
+      <!-- ══ SCREEN 4 ══════════════════════════════════════════ -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">从回车到一条 user 消息</h2>
+        <p>下面四段是这条旅程的前半程。左边是仓库里的原代码，右边是同一句人话——<strong>代码一段不改</strong>，你可以打开对应文件核对。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · input.ts</span>
+            <pre><code><span class="code-line"><span class="code-comment">// Submit</span></span>
+<span class="code-line"><span class="code-keyword">if</span> (<span class="code-function">kb.matches</span>(data, <span class="code-string">"tui.input.submit"</span>) || data === <span class="code-string">"\n"</span>) {</span>
+<span class="code-line">    <span class="code-keyword">if</span> (this.onSubmit) this.<span class="code-function">onSubmit</span>(this.value);</span>
+<span class="code-line">    <span class="code-keyword">return</span>;</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">注释写着"提交"：下面这段，就是输入框遇到回车时做的事。</p>
+              <p class="tl">按下的键命中 tui.input.submit 这个动作，或者你按的就是换行符，就走进这条分支。</p>
+              <p class="tl">有 onSubmit 回调就把它叫起来，把输入框里现在的内容递过去。</p>
+              <p class="tl">递完立刻 return——后面删除、上下移动那些按键处理，一概不执行。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/tui/src/components/input.ts : 123-127</span>
+
+        <p>第一跳的真相：<strong>回车键不是"发送消息"</strong>，它只是把当前输入框里的字符串交给上层。它不发网络请求，不知道有模型这回事，也不认识后面任何一个角色。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · interactive-mode.ts</span>
+            <pre><code><span class="code-line"><span class="code-comment">// Main interactive loop</span></span>
+<span class="code-line"><span class="code-keyword">while</span> (<span class="code-keyword">true</span>) {</span>
+<span class="code-line">    <span class="code-keyword">const</span> userInput = <span class="code-keyword">await</span> this.<span class="code-function">getUserInput</span>();</span>
+<span class="code-line">    <span class="code-keyword">try</span> {</span>
+<span class="code-line">        <span class="code-keyword">await</span> this.session.<span class="code-function">prompt</span>(userInput);</span>
+<span class="code-line">    } <span class="code-keyword">catch</span> (error: unknown) {</span>
+<span class="code-line">        <span class="code-keyword">const</span> errorMessage = error <span class="code-keyword">instanceof</span> Error ? error.message : <span class="code-string">"Unknown error occurred"</span>;</span>
+<span class="code-line">        this.<span class="code-function">showError</span>(errorMessage);</span>
+<span class="code-line">    }</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">主循环：while (true) 表示它一直在这儿转，不会自己结束。</p>
+              <p class="tl">getUserInput() 一直等着你敲下一句，拿到就往下走。</p>
+              <p class="tl">session.prompt(userInput) 把这句话交给会话去处理。</p>
+              <p class="tl">出错不要紧：catch 把错误变成人话，showError 打在界面上，循环继续等下一句。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/coding-agent/src/modes/interactive/interactive-mode.ts : 1276-1285</span>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · interactive-mode.ts</span>
+            <pre><code><span class="code-line"><span class="code-comment">// Normal message submission</span></span>
+<span class="code-line"><span class="code-comment">// First, move any pending bash components to chat</span></span>
+<span class="code-line">this.<span class="code-function">flushPendingBashComponents</span>();</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-keyword">if</span> (this.onInputCallback) {</span>
+<span class="code-line">    this.<span class="code-function">onInputCallback</span>(text);</span>
+<span class="code-line">} <span class="code-keyword">else</span> {</span>
+<span class="code-line">    this.pendingUserInputs.<span class="code-function">push</span>(text);</span>
+<span class="code-line">}</span>
+<span class="code-line">this.editor.<span class="code-function">addToHistory</span>?.(text);</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">这是"正常发消息"的路径：先把还挂着没提交的 bash 片段冲进聊天区。</p>
+              <p class="tl">外面挂了 onInputCallback，就直接把文本交出去。</p>
+              <p class="tl">没有的话，先 push 进 pendingUserInputs 排队，等会话来取。</p>
+              <p class="tl">最后把这句存进输入框的历史记录——所以你能用上下键翻出上一句。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/coding-agent/src/modes/interactive/interactive-mode.ts : 3456-3465</span>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · agent-session.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">const</span> normalized = <span class="code-keyword">await</span> this.<span class="code-function">_normalizePromptImages</span>(trigger.images);</span>
+<span class="code-line"><span class="code-keyword">const</span> text =</span>
+<span class="code-line">    normalized.hints.length &gt; 0 ? <span class="code-string">`${trigger.prompt}\n\n${normalized.hints.join("\n")}`</span> : trigger.prompt;</span>
+<span class="code-line">messages.<span class="code-function">push</span>({</span>
+<span class="code-line">    role: <span class="code-string">"user"</span>,</span>
+<span class="code-line">    content: [{ type: <span class="code-string">"text"</span>, text }, ...normalized.images],</span>
+<span class="code-line">    timestamp: Date.<span class="code-function">now</span>(),</span>
+<span class="code-line">});</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">先把图片整理一遍，顺手拿到一些提示 hints。</p>
+              <p class="tl">如果整理出了提示，就拼在你这句话后面，中间隔两个换行。</p>
+              <p class="tl">messages.push：往这次对话的消息数组里塞一条消息。</p>
+              <p class="tl">role 是 "user"——模型看到的是"这是人说的"，不是"这是系统命令"。</p>
+              <p class="tl">content 第一块是文字，后面跟着图片；timestamp 是写下这句话的时间。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/coding-agent/src/core/agent-session.ts : 1971-1978</span>
+
+        <p>到这儿，你那句话已经变成了一条规规矩矩的消息：有角色（user）、有内容、有时间戳。<span class="term" data-definition="上下文 context：模型这一轮能看到的全部对话记录。每一轮请求都会把整段记录重新发一遍。">上下文 context</span>就是这些消息攒起来的那一大坨。</p>
+      </section>
+
+      <!-- ══ SCREEN 5 ══════════════════════════════════════════ -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">把话送到厂商那里，然后循环回来了</h2>
+        <p>pi 内部的消息长这样，模型厂商只认自己那套格式。这两段就是"翻译 + 寄出"。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · agent-loop.ts</span>
+            <pre><code><span class="code-line"><span class="code-comment">// Convert to LLM-compatible messages (AgentMessage[] → Message[])</span></span>
+<span class="code-line"><span class="code-keyword">const</span> llmMessages = <span class="code-keyword">await</span> config.<span class="code-function">convertToLlm</span>(messages);</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-keyword">const</span> llmContext = <span class="code-function">normalizeContext</span>({ messages: llmMessages });</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-comment">// Resolve API key (important for expiring tokens)</span></span>
+<span class="code-line"><span class="code-keyword">const</span> resolvedApiKey =</span>
+<span class="code-line">    (config.getApiKey ? <span class="code-keyword">await</span> config.<span class="code-function">getApiKey</span>(config.model.provider) : undefined) || config.apiKey;</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-keyword">const</span> response = <span class="code-keyword">await</span> <span class="code-function">streamFunction</span>(config.model, llmContext, {</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">先把内部消息数组转成模型接口认识的格式（convertToLlm）。</p>
+              <p class="tl">normalizeContext 把这段对话整理成模型能吃的上下文。</p>
+              <p class="tl">取密钥：优先现取（有些<span class="term" data-definition="API key 密钥：一串代表「你是我」的字符，发给模型厂商证明身份。">密钥</span>会过期），取不到才用 config.apiKey。</p>
+              <p class="tl">streamFunction 真正把请求发出去，而且是一段一段回来的（<span class="term" data-definition="流式 streaming：模型边写边返回，屏幕不用等它全部写完才刷新。">流式 streaming</span>）。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/agent/src/agent-loop.ts : 403-412</span>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · models.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">const</span> transcript = <span class="code-function">normalizeContext</span>(context);</span>
+<span class="code-line"><span class="code-keyword">return</span> <span class="code-function">lazyStream</span>(</span>
+<span class="code-line">    model,</span>
+<span class="code-line">    <span class="code-keyword">async</span> () =&gt; {</span>
+<span class="code-line">        <span class="code-keyword">const</span> provider = this.<span class="code-function">requireChatProvider</span>(model);</span>
+<span class="code-line">        <span class="code-keyword">const</span> { requestModel, requestOptions } = <span class="code-keyword">await</span> this.<span class="code-function">applyAuth</span>(</span>
+<span class="code-line">            model,</span>
+<span class="code-line">            options <span class="code-keyword">as</span> ModelsApiStreamOptions&lt;Api&gt; | undefined,</span>
+<span class="code-line">        );</span>
+<span class="code-line">        <span class="code-keyword">return</span> provider.<span class="code-function">stream</span>(requestModel, transcript, requestOptions <span class="code-keyword">as</span> ApiStreamOptions&lt;TApi&gt;);</span>
+<span class="code-line">    },</span>
+<span class="code-line">    <span class="code-function">observeModelRequest</span>(model, options, false),</span>
+<span class="code-line">);</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">再整理一次对话，得到要寄给厂商的 transcript。</p>
+              <p class="tl">lazyStream：先造一个流，真正发请求推迟到你第一次去读这个流的时候。</p>
+              <p class="tl">requireChatProvider：按模型名找到谁家（<span class="term" data-definition="provider 模型服务商：真正提供大模型的那家公司或接口，比如 OpenAI、Anthropic。">provider</span>）能接这个活。</p>
+              <p class="tl">applyAuth：把密钥和请求参数准备好。</p>
+              <p class="tl">provider.stream 把请求寄出去，回复以<span class="term" data-definition="事件 event：程序内部广播的一条消息，比如「我又写了几个字」。界面靠听这些事件来刷新。">事件</span>一段段回来。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/ai/src/models.ts : 906-918</span>
+
+        <p>你现在能说出 pi 为什么会"卡在第一秒"：<strong>模型名不对</strong>（<span class="term" data-definition="鉴权：确认「你到底是不是你」，也就是核对密钥这一步。">鉴权</span>没过、或者找不到对应的 provider），卡在 applyAuth 和 requireChatProvider 这两行；<strong>密钥不对</strong>，卡在 getApiKey。界面看不出区别，因为它们都只是在等。</p>
+
+        <h3 class="screen-heading" style="font-size: var(--text-xl); margin-top: var(--space-8);">循环回来了</h3>
+        <p>这是整条旅程的关键。模型回复里如果夹着工具请求，代理循环不会停，它会去执行工具，再把结果塞回对话里问第二次。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · agent-loop.ts</span>
+            <pre><code><span class="code-line"><span class="code-comment">// Check for tool calls</span></span>
+<span class="code-line"><span class="code-keyword">const</span> toolCalls = message.content.<span class="code-function">filter</span>((c) =&gt; c.type === <span class="code-string">"toolCall"</span>);</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-keyword">const</span> toolResults: ToolResultMessage[] = [];</span>
+<span class="code-line">hasMoreToolCalls = <span class="code-keyword">false</span>;</span>
+<span class="code-line"><span class="code-keyword">if</span> (toolCalls.length &gt; 0) {</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">先看模型这一轮说了什么：把内容里所有 <span class="term" data-definition="toolCall 工具请求：模型说「我要执行某个动作」的单子。它是请求，不是结果。">toolCall</span> 挑出来。</p>
+              <p class="tl">toolResults 收集执行完的结果，hasMoreToolCalls 记下要不要接着转圈。</p>
+              <p class="tl">只有 toolCalls 不为空，才真的去执行工具。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/agent/src/agent-loop.ts : 267-272</span>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · agent-loop.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">for</span> (<span class="code-keyword">const</span> result <span class="code-keyword">of</span> toolResults) {</span>
+<span class="code-line">    currentContext.messages.<span class="code-function">push</span>(result);</span>
+<span class="code-line">    newMessages.<span class="code-function">push</span>(result);</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">每一条执行结果都做两件事：塞回这次对话的上下文（currentContext）。</p>
+              <p class="tl">再放进 newMessages——这份列表最后会变成界面上的聊天记录。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/agent/src/agent-loop.ts : 283-287</span>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · agent-session.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">try</span> {</span>
+<span class="code-line">    <span class="code-keyword">await</span> this.agent.<span class="code-function">prompt</span>(messages);</span>
+<span class="code-line">    <span class="code-keyword">while</span> (!this._agentRunAbortRequested) {</span>
+<span class="code-line">        <span class="code-keyword">if</span> (<span class="code-keyword">await</span> this.<span class="code-function">_handlePostAgentRun</span>()) {</span>
+<span class="code-line">            <span class="code-keyword">if</span> (this._agentRunAbortRequested) <span class="code-keyword">break</span>;</span>
+<span class="code-line">            <span class="code-keyword">await</span> this.agent.<span class="code-function">continue</span>();</span>
+<span class="code-line">            <span class="code-keyword">continue</span>;</span>
+<span class="code-line">        }</span>
+<span class="code-line">        <span class="code-keyword">if</span> (this._agentRunAbortRequested || !(<span class="code-keyword">await</span> this.<span class="code-function">_runBeforeSettleBoundary</span>())) <span class="code-keyword">break</span>;</span>
+<span class="code-line">        <span class="code-keyword">if</span> (this._agentRunAbortRequested) <span class="code-keyword">break</span>;</span>
+<span class="code-line">        <span class="code-keyword">await</span> this.agent.<span class="code-function">continue</span>();</span>
+<span class="code-line">    }</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">先把这条消息数组交给代理循环：agent.prompt(messages)。</p>
+              <p class="tl">然后进入 while：只要没人喊停，就一直转下去。</p>
+              <p class="tl">_handlePostAgentRun 负责收尾后的额外动作（要不要压缩上下文之类），要继续就 agent.continue()。</p>
+              <p class="tl">_runBeforeSettleBoundary 是"可以停下来了吗"的判断：能停就 break，不能停就再转一圈。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/coding-agent/src/core/agent-session.ts : 1919-1930</span>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">模型没有"回答"你，它请求了一次工具</strong>
+            <p>你在屏幕上看到的文字，只是这个循环的一次外循环。模型说了「我要调 read」，pi 真的去读了文件，把内容作为 role: "toolResult" 的消息塞回对话，<strong>再问一次</strong>。一直问到某一轮回复里不再有 toolCall，这个 while 才停。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ SCREEN 7 ══════════════════════════════════════════ -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">卡住了，先看哪一层</h2>
+        <p>pi 不回话有三种长相，对应三层完全不同的代码。按症状定位，比重开会话重试快得多。</p>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">🖥️</div>
+            <div>
+              <strong>界面层（packages/tui）：没反应</strong>
+              <p>按键没进来、状态条不刷新、窗口不动、Ctrl+C 也没用。看的是 tui 的输入框和渲染。</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-3)">🔁</div>
+            <div>
+              <strong>代理循环层（packages/agent）：界面在动，文字不出来</strong>
+              <p>working 一直转，或者转了两圈就停在那儿。看的是 agent-loop：请求发出去了吗、回复回来了吗、toolCall 判定对不对。</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-4)">🔌</div>
+            <div>
+              <strong>请求层（packages/ai）：明确报错</strong>
+              <p>鉴权失败、模型名不存在、接口不通、限流。看的是 models.ts 里的 provider、密钥和请求参数。</p>
+            </div>
+          </div>
+        </div>
+
+        <p><strong>为什么改一句 prompt 会牵连一大片：</strong>因为每一轮请求都把<strong>整段对话</strong>重新发一遍。模型每轮看到的都是"前面的全部 + 你这次这句"，所以多写一句话，可能让工具行为和权限检查一起变。<span class="term" data-definition="上下文窗口 context window：模型一次最多能看多少内容。超了就要压缩或分批。">上下文窗口 context window</span>满了，老对话就进不去了。</p>
+
+        <p>所以下次 pi 不听话，别急着重开会话。先问两句：<strong>界面动了吗？</strong>动了就去 agent 层看这一轮到底发生了什么；<strong>模型那一轮说了什么、有没有 toolCall？</strong>这两问通常能把"卡住了"缩小到一个文件、一个函数。</p>
+
+        <h3 class="screen-heading" style="font-size: var(--text-xl); margin-top: var(--space-8);">自测：三道题</h3>
+        <p>不考名词，考你会不会用。</p>
+
+        <div class="quiz-container" id="quiz-module-1">
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="对了。界面还在响应，说明 tui 这一层是活的，问题出在请求发出去之后——agent 的代理循环里。要看的是：请求有没有真的发出去、模型回复有没有回来。"
+               data-explanation-wrong="再看一眼症状：状态条在转、还能继续打字，说明界面层是活的，先去 agent 的代理循环查请求发没发出去、回复回没回来。请求层（provider）只在出现明确的鉴权失败、模型名不存在这类报错时才需要第一时间看。">
+            <h3 class="quiz-question">用户说：pi 按回车之后状态条一直转，屏幕不卡、还能继续打字。按层定位，你第一步该看哪里？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>packages/tui —— 界面层：确认回车事件有没有进来、状态条有没有刷新</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>packages/agent —— 代理循环层：确认请求发出去了没、是不是卡在等模型回复</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>provider 请求层 —— 确认密钥和模型名对不对</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="a"
+               data-explanation-right="正是如此。这行是循环的开关而不是执行器：filter 出来的 toolCall 非空，才有人去执行工具、结果也才会作为 toolResult 消息塞回对话。filter 出来是空的，代理循环就认为这一轮说完了，循环直接结束。"
+               data-explanation-wrong="关键在这一行是「开关」不是「执行器」。toolCall 一旦被过滤成空，代理循环就认为这一轮没有工具要跑，直接结束——工具本体和结果回灌根本不会发生。">
+            <h3 class="quiz-question">packages/agent/src/agent-loop.ts 里这行如果判断失准（永远返回空数组）：<br><code>const toolCalls = message.content.filter((c) =&gt; c.type === "toolCall");</code><br>界面上会看到什么？循环会怎么走？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>模型说要调工具，pi 却把它当普通文字打印出来，工具永远不执行；一轮回复之后循环就结束</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>工具会被反复调用，界面一直转下去停不下来</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>界面直接报错崩掉，因为工具调用没有对应的结果</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="c"
+               data-explanation-right="对。pi 就是这么分层的：工具实现（coding-agent）、工具契约（agent 的 AgentTool）、谁被调用（agent 的代理循环）。模型只看得见名字和参数说明，看不见你的实现——所以你给 AI 提需求时，说清楚「工具叫什么名字、参数长什么样」就够了。"
+               data-explanation-wrong="pi 的分层不按界面分：tui 只画界面、ai 只管把请求发给厂商。真正动手的实现要放在 coding-agent，声明给模型看的契约在 agent，执行顺序由 agent 的代理循环决定。">
+            <h3 class="quiz-question">你想给 pi 加一个新工具「查数据库并返回表格」。这三件事分别落在哪一层？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>全写在 packages/tui，因为那是用户唯一看得见的地方</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>全写在 packages/ai，因为那是唯一跟模型说话的地方</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>工具本体（真连数据库）写 coding-agent；给模型看的名字和参数说明由 agent 的 AgentTool 声明；谁被执行由 agent 的代理循环决定</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module-1')">检查答案</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module-1')">再来一次</button>
+        </div>
+
+        <p>下一模块把今天出现的角色拆成四层楼：谁负责画面、谁负责思考、谁负责动手。<strong>同一套颜色会一直沿用</strong>——看到朱红就知道是终端层，看到青就知道是 coding-agent。</p>
+      </section>
+
+    </div>
+  </div>
+</section>
+<section class="module" id="module-2" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">02</span>
+      <h1 class="module-title">认识演员：四个包各管什么</h1>
+      <p class="module-subtitle">谁负责画面，谁负责思考，谁负责动手</p>
+      <a class="archimap-link" href="architecture.html" target="_blank" rel="noopener">架构总览图 · 四个包的依赖与调用地图 ↗</a>
+    </header>
+
+    <div class="module-body">
+
+      <!-- ══ SCREEN 1 ══════════════════════════════════════════ -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">一栋只能往下送电的楼</h2>
+
+        <p>你在 pi 里敲下 <code>/model</code>，屏幕上列出一长串模型名：claude-…、gpt-…、gemini-…。这些名字<strong>没有一个是 pi 自己造的</strong>——它们来自这栋楼最底层的电缆井。</p>
+        <p>pi 不是一个程序，是一栋楼。楼里住着四层，每层只干一件事，而且只有一条规矩：<strong>楼上的可以往下拉线，楼下的永远不知道楼上住着谁</strong>。</p>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">🛠️</div>
+            <div>
+              <strong>顶楼 · 总控室（packages/coding-agent）</strong>
+              <p>把电接到模型、把模型的回话接到屏幕，顺便装上 read / bash / edit 这些工具和会话档案。它就是 pi 这个命令行程序本身。</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">🖥️</div>
+            <div>
+              <strong>墙上 · 显示屏（packages/tui）</strong>
+              <p>画框、收按键、渲染 Markdown。它压根不知道什么是大模型——它是一个通用终端界面库。</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-3)">🔁</div>
+            <div>
+              <strong>三楼 · 机房（packages/agent）</strong>
+              <p>循环继电器：模型说「我要调工具」，由谁执行、结果怎么再喂回去，全在这一层。</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-4)">🔌</div>
+            <div>
+              <strong>地下 · 电缆井与总闸（packages/ai）</strong>
+              <p>各家模型厂商的接口、密钥、请求格式都在这里。井里先通，电才能往上送。</p>
+            </div>
+          </div>
+        </div>
+
+        <p>颜色还是上一模块那套：<span style="color: var(--color-actor-1); font-weight: 700;">朱红＝终端层</span>（你、显示屏）、<span style="color: var(--color-actor-2); font-weight: 700;">青＝coding-agent</span>、<span style="color: var(--color-actor-3); font-weight: 700;">紫＝agent 机房</span>、<span style="color: var(--color-actor-4); font-weight: 700;">金＝ai 电缆井</span>、<span style="color: var(--color-actor-5); font-weight: 700;">绿＝模型服务</span>。</p>
+
+        <div class="callout callout-warning">
+          <div class="callout-icon">⚠️</div>
+          <div class="callout-content">
+            <strong class="callout-title">最常见的误解：tui 依赖 ai</strong>
+            <p>不依赖。翻 <code>packages/tui/package.json</code>，它一个 <code>@earendil-works/*</code> 包都没引，是这栋楼里最干净的叶子。所以 <strong>tui 不认识 AI，ai 也不认识 pi</strong>——把整栋楼拆了，显示屏照样能单独拿去用。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ SCREEN 2 ══════════════════════════════════════════ -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">四个包的文件树</h2>
+
+        <p>每个包一句话。记住这句话，比记住文件名有用得多。</p>
+
+        <div class="file-tree">
+          <div class="ft-folder open">
+            <span class="ft-name">packages/</span>
+            <span class="ft-desc">pi 的四个包</span>
+            <div class="ft-children">
+              <div class="ft-folder">
+                <span class="ft-name">ai/</span>
+                <span class="ft-desc">接入模型厂商：请求怎么发、密钥怎么管、模型清单从哪来</span>
+                <div class="ft-children">
+                  <div class="ft-file">
+                    <span class="ft-name">api/ providers/ auth/ compat/</span>
+                    <span class="ft-desc">各家厂商的实现、鉴权与兼容层</span>
+                  </div>
+                  <div class="ft-file">
+                    <span class="ft-name">models.ts types.ts</span>
+                    <span class="ft-desc">模型清单与通用类型</span>
+                  </div>
+                </div>
+              </div>
+              <div class="ft-folder">
+                <span class="ft-name">agent/</span>
+                <span class="ft-desc">通用代理循环：工具怎么执行、结果怎么回喂、事件怎么发</span>
+                <div class="ft-children">
+                  <div class="ft-file">
+                    <span class="ft-name">agent.ts agent-loop.ts</span>
+                    <span class="ft-desc">循环本体</span>
+                  </div>
+                  <div class="ft-file">
+                    <span class="ft-name">types.ts stream-fn.ts proxy.ts</span>
+                    <span class="ft-desc">契约、请求转发与代理</span>
+                  </div>
+                </div>
+              </div>
+              <div class="ft-folder">
+                <span class="ft-name">tui/</span>
+                <span class="ft-desc">纯终端界面库：画框、按键、颜色、Markdown——不认识大模型</span>
+                <div class="ft-children">
+                  <div class="ft-file">
+                    <span class="ft-name">components/ tui.ts</span>
+                    <span class="ft-desc">输入框、聊天区、渲染</span>
+                  </div>
+                  <div class="ft-file">
+                    <span class="ft-name">terminal.ts keybindings.ts keys.ts</span>
+                    <span class="ft-desc">终端读写与按键</span>
+                  </div>
+                </div>
+              </div>
+              <div class="ft-folder">
+                <span class="ft-name">coding-agent/</span>
+                <span class="ft-desc">把上面三个组装成 pi CLI：内置工具、会话存档、扩展系统</span>
+                <div class="ft-children">
+                  <div class="ft-file">
+                    <span class="ft-name">core/ modes/ extensions/</span>
+                    <span class="ft-desc">会话、交互模式、扩展命令</span>
+                  </div>
+                  <div class="ft-file">
+                    <span class="ft-name">cli/ utils/</span>
+                    <span class="ft-desc">命令行入口与杂项</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p>依赖方向也是朝下的。<span class="term" data-definition="依赖方向：这栋楼里谁可以拉谁的电。它永远单向朝下——这是你能放心改代码的前提。">依赖</span>关系写在各自的 <code>package.json</code> 里，翻一眼就知道，不用猜：</p>
+
+        <div class="badge-list">
+          <div class="badge-item">
+            <span class="badge-code">coding-agent → agent</span>
+            <span class="badge-desc">总控室把一次对话交给机房去跑</span>
+          </div>
+          <div class="badge-item">
+            <span class="badge-code">coding-agent → ai</span>
+            <span class="badge-desc">总控室自己向电缆井要模型名单和密钥</span>
+          </div>
+          <div class="badge-item">
+            <span class="badge-code">coding-agent → tui</span>
+            <span class="badge-desc">总控室把画面交给显示屏</span>
+          </div>
+          <div class="badge-item">
+            <span class="badge-code">agent → ai</span>
+            <span class="badge-desc">机房向电缆井要一次请求</span>
+          </div>
+          <div class="badge-item">
+            <span class="badge-code">tui → （没有）</span>
+            <span class="badge-desc">显示屏不依赖楼里任何一个包</span>
+          </div>
+        </div>
+
+        <p>（总控室还另外拉着 <code>pi-mcp</code> 和 <code>pi-codemode</code> 两个小包，负责 MCP 服务和代码模式——它们不在本课的四层楼里，但方向同样是往下。）</p>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">「这段逻辑该写在哪」的三问</strong>
+            <p>离<strong>用户的手</strong>最近（按键、渲染）→ 放 <code>tui</code>；离<strong>模型的嘴</strong>最近（请求格式、密钥、厂商协议）→ 放 <code>ai</code>；离<strong>屏幕</strong>最近（把工具、会话、扩展组装成 pi）→ 放 <code>coding-agent</code>；管的是「模型说了什么、工具怎么跑、结果怎么回喂」→ 放 <code>agent</code>。拿不准的时候问这四句，比翻目录快得多。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ SCREEN 3 ══════════════════════════════════════════ -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">工具契约：模型也看得懂的字符串协议</h2>
+
+        <p>先看 pi 内置的全部工具名。这是模型唯一能看见的东西——它看不见你的实现，只看见一个名字和一张参数说明书。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · tools/index.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">export type</span> ToolName = <span class="code-string">"read" | "bash" | "powershell" | "edit" | "write" | "grep" | "find" | "ls"</span>;</span>
+<span class="code-line"><span class="code-keyword">export const</span> allToolNames: Set&lt;ToolName&gt; = <span class="code-keyword">new</span> Set([</span>
+<span class="code-line">    <span class="code-string">"read"</span>,</span>
+<span class="code-line">    <span class="code-string">"bash"</span>,</span>
+<span class="code-line">    <span class="code-string">"powershell"</span>,</span>
+<span class="code-line">    <span class="code-string">"edit"</span>,</span>
+<span class="code-line">    <span class="code-string">"write"</span>,</span>
+<span class="code-line">    <span class="code-string">"grep"</span>,</span>
+<span class="code-line">    <span class="code-string">"find"</span>,</span>
+<span class="code-line">    <span class="code-string">"ls"</span>,</span>
+<span class="code-line">]);</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">ToolName：工具名只能是这八个里的一个，写死在类型里。</p>
+              <p class="tl">allToolNames：把这八个名字装进一个集合，随时能问一句「这个工具存不存在」。</p>
+              <p class="tl">这一整份清单住在 packages/coding-agent 的 tools 目录里——内置工具由总控室提供。</p>
+              <p class="tl">工具名是模型也看得懂的字符串协议：改名等于换协议，连提示词、连你脑子里的习惯都得一起改。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/coding-agent/src/core/tools/index.ts : 95-105</span>
+
+        <p>那这张「参数说明书 + 怎么执行」的纸长什么样？它不在 coding-agent，而是住在机房那一层的<span class="term" data-definition="契约：一份约好的规矩——谁来实现、传什么、返回什么。你加新工具时照着它写，agent 的循环自然就认。">契约</span>里，谁来实现都可以，但必须照这张纸实现：</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · types.ts</span>
+            <pre><code><span class="code-line"><span class="code-comment">/**</span></span>
+<span class="code-line"> <span class="code-comment">* JSON Schema of `structuredContent` in successful results. Tools that declare it should always</span></span>
+<span class="code-line"> <span class="code-comment">* set `structuredContent`.</span></span>
+<span class="code-line"> <span class="code-comment">*/</span></span>
+<span class="code-line"><span class="code-property">outputSchema</span>?: TSchema;</span>
+<span class="code-line"><span class="code-comment">/**</span></span>
+<span class="code-line"> <span class="code-comment">* Execute the tool call. Throw on failure, or return a result with `isError: true`; do not only</span></span>
+<span class="code-line"> <span class="code-comment">* describe the failure in `content`.</span></span>
+<span class="code-line"> <span class="code-comment">*/</span></span>
+<span class="code-line"><span class="code-property">execute</span>: (</span>
+<span class="code-line">    <span class="code-property">toolCallId</span>: string,</span>
+<span class="code-line">    <span class="code-property">params</span>: Static&lt;TParameters&gt;,</span>
+<span class="code-line">    <span class="code-property">signal</span>?: AbortSignal,</span>
+<span class="code-line">    <span class="code-property">onUpdate</span>?: AgentToolUpdateCallback&lt;TDetails&gt;,</span>
+<span class="code-line">) =&gt; Promise&lt;AgentToolResult&lt;TDetails&gt;&gt;;</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">outputSchema：可选。声明了它，成功结果里就该带一份结构化数据（<span class="term" data-definition="structuredContent：工具成功时额外带回的结构化数据，通常是一份 JSON，比给人看的正文更好读。">structuredContent</span>）。</p>
+              <p class="tl">execute：真正干活的那一段。失败要么抛错，要么交一张 isError 为 true 的回执——别只在正文里用文字描述失败。</p>
+              <p class="tl">四个参数：单号、模型填好的<span class="term" data-definition="schema：一张字段说明书，规定参数叫什么名字、是文字还是数字、必填还是可选。">参数</span>、喊停开关（signal 变成 true 就该立刻收手）、中途报进度的回调。</p>
+              <p class="tl">返回的是 Promise：工具是异步的，机房必须等它跑完才继续往下转圈。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/agent/src/types.ts : 474-488</span>
+
+        <p>契约住在 <code>packages/agent</code>，实现住在 <code>packages/coding-agent</code>。这就是分层的意义：<strong>换掉一组工具的实现，机房一点都不用改</strong>。</p>
+      </section>
+
+      <!-- ══ SCREEN 4 ══════════════════════════════════════════ -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">机房一直在说话：十个事件</h2>
+
+        <p>界面上的每一次刷新，都来自一个<span class="term" data-definition="事件 event：程序内部广播的一条消息，比如「我又写了几个字」。界面靠听这些事件来刷新。">事件</span>。这十个名字就是 agent 层的全部词汇表——你看到的动画，全是它们转译出来的。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · types.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">export type</span> AgentEvent =</span>
+<span class="code-line">    <span class="code-comment">// Agent lifecycle</span></span>
+<span class="code-line">    | { type: <span class="code-string">"agent_start"</span> }</span>
+<span class="code-line">    | { type: <span class="code-string">"agent_end"</span>; messages: AgentMessage[] }</span>
+<span class="code-line">    <span class="code-comment">// Turn lifecycle - a turn is one assistant response + any tool calls/results</span></span>
+<span class="code-line">    | { type: <span class="code-string">"turn_start"</span> }</span>
+<span class="code-line">    | { type: <span class="code-string">"turn_end"</span>; message: AgentMessage; toolResults: ToolResultMessage[] }</span>
+<span class="code-line">    <span class="code-comment">// Message lifecycle - emitted for system, user, assistant, and toolResult messages</span></span>
+<span class="code-line">    | { type: <span class="code-string">"message_start"</span>; message: AgentMessage }</span>
+<span class="code-line">    <span class="code-comment">// Only emitted for assistant messages during streaming</span></span>
+<span class="code-line">    | { type: <span class="code-string">"message_update"</span>; message: AgentMessage; assistantMessageEvent: AssistantMessageEvent }</span>
+<span class="code-line">    | { type: <span class="code-string">"message_end"</span>; message: AgentMessage }</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">AgentEvent：机房对外广播的十种消息，界面全靠听它们来刷新。</p>
+              <p class="tl">注释就是分类：agent 生命周期、turn（<span class="term" data-definition="turn 一轮：模型的一次回复，加上这一轮里所有的工具调用与工具结果。">一轮</span>）生命周期、message 生命周期。</p>
+              <p class="tl">每一条都是「type 决定这是什么，后面跟着这一条自带的字段」。</p>
+              <p class="tl">message_start / message_end 对系统消息、你的消息、模型的消息、工具结果都发。</p>
+              <p class="tl">message_update 只在模型<span class="term" data-definition="流式 streaming：模型边写边返回，屏幕不用等它全部写完才刷新。">流式输出</span>的时候发——你看到字一个一个冒出来，就是它。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/agent/src/types.ts : 516-527</span>
+
+        <p>再往后还有三个工具执行事件，加起来正好十个。记住这十个名字，调试时你就知道该等哪一条：</p>
+
+        <div class="badge-list">
+          <div class="badge-item">
+            <span class="badge-code">agent_start</span>
+            <span class="badge-desc">一次代理运行开始了</span>
+          </div>
+          <div class="badge-item">
+            <span class="badge-code">turn_start</span>
+            <span class="badge-desc">一轮开始（模型的一次回复 + 它的工具调用）</span>
+          </div>
+          <div class="badge-item">
+            <span class="badge-code">message_start</span>
+            <span class="badge-desc">一条消息开始：系统的、你的、模型的、工具结果都算</span>
+          </div>
+          <div class="badge-item">
+            <span class="badge-code">message_update</span>
+            <span class="badge-desc">模型正在流式吐字，一个字一个字往外冒</span>
+          </div>
+          <div class="badge-item">
+            <span class="badge-code">message_end</span>
+            <span class="badge-desc">一条消息结束</span>
+          </div>
+          <div class="badge-item">
+            <span class="badge-code">tool_execution_start</span>
+            <span class="badge-desc">某个工具开始执行（带工具名和参数）</span>
+          </div>
+          <div class="badge-item">
+            <span class="badge-code">tool_execution_update</span>
+            <span class="badge-desc">工具执行到一半，回报进度</span>
+          </div>
+          <div class="badge-item">
+            <span class="badge-code">tool_execution_end</span>
+            <span class="badge-desc">工具执行结束，带结果和 isError 标记</span>
+          </div>
+          <div class="badge-item">
+            <span class="badge-code">turn_end</span>
+            <span class="badge-desc">一轮结束：这一条回复 + 这一轮所有工具结果</span>
+          </div>
+          <div class="badge-item">
+            <span class="badge-code">agent_end</span>
+            <span class="badge-desc">整次运行结束，消息列表交回去</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ SCREEN 5 ══════════════════════════════════════════ -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">一次请求怎么跑</h2>
+
+        <p>把楼里的电走一遍。点「下一步」，看这句话怎么往下走、又怎么走回来。</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-m2-actor-2","label":"第 1 步 · 用户开 pi：总控室（coding-agent）把会话、内置工具、扩展命令组装好，准备开工","packet":true,"from":"m2-actor-1","to":"m2-actor-2"},
+          {"highlight":"flow-m2-actor-4","label":"第 2 步 · 总控室向电缆井（packages/ai）要可用模型与鉴权状态——你敲 /model 看到的候选名单就来自这里","packet":true,"from":"m2-actor-2","to":"m2-actor-4"},
+          {"highlight":"flow-m2-actor-3","label":"第 3 步 · 你这一句话进入机房（packages/agent）的代理循环","packet":true,"from":"m2-actor-2","to":"m2-actor-3"},
+          {"highlight":"flow-m2-actor-5","label":"第 4 步 · 机房通过 ai 的 Models 按模型名找到 provider；电缆井附上密钥，请求一路送到厂商","packet":true,"from":"m2-actor-4","to":"m2-actor-5"},
+          {"highlight":"flow-m2-actor-6","label":"第 5 步 · provider 的回复回到机房；里面夹着的工具调用，由总控室提供的工具去执行，结果再喂回机房","packet":true,"from":"m2-actor-3","to":"m2-actor-6"},
+          {"highlight":"flow-m2-actor-2","label":"第 6 步 · 这一轮的结果交回总控室，以 JSONL 一行追加进 ~/.pi/agent/sessions/「编码后的 cwd」/ 下的会话文件","packet":true,"from":"m2-actor-3","to":"m2-actor-2"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-m2-actor-1">
+              <div class="flow-actor-icon" style="background: var(--color-actor-1); color: #FFFFFF;">你</div>
+              <span>用户</span>
+            </div>
+            <div class="flow-actor" id="flow-m2-actor-2">
+              <div class="flow-actor-icon" style="background: var(--color-actor-2); color: #FFFFFF;">控</div>
+              <span>coding-agent 总控室</span>
+            </div>
+            <div class="flow-actor" id="flow-m2-actor-3">
+              <div class="flow-actor-icon" style="background: var(--color-actor-3); color: #FFFFFF;">机</div>
+              <span>agent 机房</span>
+            </div>
+            <div class="flow-actor" id="flow-m2-actor-4">
+              <div class="flow-actor-icon" style="background: var(--color-actor-4); color: #FFFFFF;">井</div>
+              <span>ai 电缆井</span>
+            </div>
+            <div class="flow-actor" id="flow-m2-actor-5">
+              <div class="flow-actor-icon" style="background: var(--color-actor-5); color: #FFFFFF;">模</div>
+              <span>模型服务</span>
+            </div>
+            <div class="flow-actor" id="flow-m2-actor-6">
+              <div class="flow-actor-icon" style="background: var(--color-actor-2); color: #FFFFFF;">具</div>
+              <span>内置工具</span>
+            </div>
+          </div>
+
+          <div class="flow-packet" id="m2-flow-packet"></div>
+
+          <div class="flow-step-label">点「下一步」，从用户按回车开始。</div>
+
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">下一步</button>
+            <button class="btn flow-reset-btn">重放</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+
+        <p>同一个过程，换成「谁在跟谁说话」更清楚。点「下一条」一格格看，或者点「全部播放」让它自己走完。</p>
+
+        <div class="chat-window" id="m2-chat-actors">
+          <div class="chat-messages">
+            <div class="chat-message" data-sender="coding-agent 总控室" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">控</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">coding-agent 总控室</span>
+                <p>跑一次对话。工具我已经装好了：read、bash、edit、write、grep、find、ls，会话档案也备着。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="agent 机房" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-3)">机</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-3)">agent 机房</span>
+                <p>收到。我把整段消息转成模型格式，往下要一次请求。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="ai 电缆井" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-4)">井</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-4)">ai 电缆井</span>
+                <p>这个模型名归 OpenAI 管。密钥我附上了，请求发出去。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="模型服务" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-5)">模</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-5)">模型服务</span>
+                <p>先读一下 README 再回答——我要调 read 工具。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="tui 显示屏" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">屏</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">tui 显示屏</span>
+                <p>屏幕上开始一段段出字：模型的正文正在流回来。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="agent 机房" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-3)">机</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-3)">agent 机房</span>
+                <p>回复里有工具请求。总控室，你那边执行一下 read。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="内置工具" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">具</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">内置工具</span>
+                <p>文件内容在这儿。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="agent 机房" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-3)">机</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-3)">agent 机房</span>
+                <p>结果收到，包成 toolResult 塞回对话，我再问一次电缆井。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="ai 电缆井" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-4)">井</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-4)">ai 电缆井</span>
+                <p>这次没有工具调用了——这是最终答案。</p>
+              </div>
+            </div>
+
+            <div class="chat-message" data-sender="tui 显示屏" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">屏</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">tui 显示屏</span>
+                <p>答案上屏了。</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-typing" style="display:none">
+            <div class="chat-avatar" id="m2-chat-actors-typing-avatar" style="background: var(--color-text-muted)">?</div>
+            <div class="chat-typing-dots">
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+          </div>
+
+          <div class="chat-controls">
+            <button class="btn chat-next-btn">下一条</button>
+            <button class="btn chat-all-btn">全部播放</button>
+            <button class="btn chat-reset-btn">重放</button>
+            <span class="chat-progress"></span>
+          </div>
+        </div>
+
+        <p>注意这条链子：<strong>工具不在机房，也不在电缆井——工具住在总控室里（packages/coding-agent）</strong>。机房只负责「决定执行谁、结果怎么回喂」，显示屏只负责「把字画出来」。</p>
+      </section>
+
+      <!-- ══ SCREEN 6 ══════════════════════════════════════════ -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">分诊台：这段活儿归谁</h2>
+
+        <p>现在换你当分诊医生。把下面的活儿拖到该负责的包里。拖错了不要紧，点「检查」看颜色。</p>
+
+        <div class="dnd-container" id="m2-dnd-packages">
+          <div class="dnd-chips">
+            <div class="dnd-chip" draggable="true" data-answer="ai">把 HTTP 请求发给 OpenAI/Anthropic 等厂商，并把流式回复解析成文字与工具调用</div>
+            <div class="dnd-chip" draggable="true" data-answer="agent">模型说「我要调 read/edit/bash」时，决定执行谁并把结果再喂回模型</div>
+            <div class="dnd-chip" draggable="true" data-answer="tui">在终端里画出输入框与聊天区，并解析回车、方向键、Ctrl+C</div>
+            <div class="dnd-chip" draggable="true" data-answer="coding-agent">把内置工具、会话存档、扩展命令组装成 pi 这个命令行程序</div>
+          </div>
+          <div class="dnd-zones">
+            <div class="dnd-zone" data-correct="ai">
+              <p class="dnd-zone-label">packages/ai · 电缆井</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+            <div class="dnd-zone" data-correct="agent">
+              <p class="dnd-zone-label">packages/agent · 机房</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+            <div class="dnd-zone" data-correct="tui">
+              <p class="dnd-zone-label">packages/tui · 显示屏</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+            <div class="dnd-zone" data-correct="coding-agent">
+              <p class="dnd-zone-label">packages/coding-agent · 总控室</p>
+              <div class="dnd-zone-target">Drop here</div>
+            </div>
+          </div>
+          <button class="btn" onclick="checkDnD('m2-dnd-packages')">检查</button>
+          <button class="btn" onclick="resetDnD('m2-dnd-packages')">重置</button>
+        </div>
+
+        <h3 class="screen-heading" style="font-size: var(--text-xl); margin-top: var(--space-8);">总控室还管一件杂事：把对话存到磁盘</h3>
+        <p>「关掉 pi 明天接着聊」这件事，代码在总控室这一层。<span class="term" data-definition="session 会话：一次连续的对话记录。pi 把它存成一个文件，关掉再打开还能接着聊。">会话</span>落在哪儿，由你当时所在的工作目录决定：</p>
+
+        <div class="translation-code">
+          <span class="translation-label">TypeScript · session-manager.ts</span>
+          <pre><code><span class="code-line"><span class="code-keyword">function</span> <span class="code-function">getDefaultSessionDirPath</span>(cwd: string, agentDir: string = <span class="code-function">getDefaultAgentDir</span>()): string {</span>
+<span class="code-line">    <span class="code-keyword">const</span> resolvedCwd = <span class="code-function">resolvePath</span>(cwd);</span>
+<span class="code-line">    <span class="code-keyword">const</span> resolvedAgentDir = <span class="code-function">resolvePath</span>(agentDir);</span>
+<span class="code-line">    <span class="code-keyword">const</span> safePath = <span class="code-string">`--${resolvedCwd.replace(/^[/\\]/, "").replace(/[/\\:]/g, "-")}--`</span>;</span>
+<span class="code-line">    <span class="code-keyword">return</span> <span class="code-function">join</span>(resolvedAgentDir, <span class="code-string">"sessions"</span>, safePath);</span>
+<span class="code-line">}</span></code></pre>
+        </div>
+        <span class="file-ref">📦 packages/coding-agent/src/core/session-manager.ts : 589-594</span>
+
+        <p>目录名是「把工作目录改写一遍」：路径里的 <code>/</code> 和 <code>:</code> 换成 <code>-</code>，首尾包上 <code>--</code>。文件名则是这样定的：</p>
+
+        <div class="translation-code">
+          <span class="translation-label">TypeScript · session-manager.ts</span>
+          <pre><code><span class="code-line"><span class="code-keyword">if</span> (<span class="code-keyword">this</span>.persist) {</span>
+<span class="code-line">    <span class="code-keyword">const</span> fileTimestamp = timestamp.<span class="code-function">replace</span>(/[:.]/g, <span class="code-string">"-"</span>);</span>
+<span class="code-line">    <span class="code-keyword">this</span>.sessionFile = <span class="code-function">join</span>(<span class="code-keyword">this</span>.<span class="code-function">getSessionDir</span>(), <span class="code-string">`${fileTimestamp}_${this.sessionId}.jsonl`</span>);</span>
+<span class="code-line">}</span></code></pre>
+        </div>
+        <span class="file-ref">📦 packages/coding-agent/src/core/session-manager.ts : 1078-1081</span>
+
+        <p>时间戳 + 会话 ID，后缀 <code>.jsonl</code>——<span class="term" data-definition="JSONL（JSON Lines）：一种纯文本格式，一行写一条记录，像账本一行一笔。这里每一行就是一条会话条目。">JSONL</span> 是一行一条记录、只追加不覆盖的账本。所以你可以放心备份、放心用 grep 找某一轮，必要时手改一行也能接着聊。（压缩和上下文怎么管，第 5 课再展开。）</p>
+
+        <h3 class="screen-heading" style="font-size: var(--text-xl); margin-top: var(--space-8);">自测：三道题</h3>
+        <p>不考名词，考你会不会用。</p>
+
+        <div class="quiz-container" id="quiz-module-2">
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="对。厂商接口、请求格式、密钥怎么管、鉴权怎么走，全是 packages/ai 这一层的事——它住在这栋楼最底下，是唯一认识 OpenAI、Anthropic 协议的地方。另外三个包都不该出现厂商特有的东西：tui 只画界面，agent 只管循环，coding-agent 只管组装。你把鉴权写进 agent，将来换个厂商就得改两处。"
+               data-explanation-wrong="看楼的位置：只有最底层的电缆井（packages/ai）才认识厂商。tui 是显示屏、agent 是机房、coding-agent 是总控室，它们都不该出现厂商特有的请求格式或鉴权逻辑，否则换个厂商就要连着改好几层。">
+            <h3 class="quiz-question">你要接入一家新模型厂商，并给它加一种 API key 之外的鉴权方式。代码应该落在哪个包？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>packages/tui —— 显示屏：把新厂商做成界面上一个新选项</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>packages/ai —— 电缆井：厂商接口、请求格式、密钥与鉴权方式都在这一层</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>packages/agent —— 机房：代理循环只负责「去问模型」，不管怎么问</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="顺序对。allToolNames 只是 pi 内部的全集清单，说明工具存在；模型能看见哪些工具，由 declareToolChanges（packages/agent/src/agent-loop.ts）在每次请求前算出来，写进一条系统消息（toolsAdded、toolsRemoved）。「被声明」和「可被执行」是两件事：声明没到位，模型压根看不见这个工具；声明到位了，再去查 AgentTool.execute 本体能不能跑。"
+               data-explanation-wrong="先确认「模型知不知道」，再查「工具能不能跑」。allToolNames 只是 pi 内部的全集清单，不是给模型看的；模型能看见哪些工具，由 declareToolChanges 生成的 toolsAdded、toolsRemoved 系统消息决定。声明没问题了，再去查 AgentTool.execute。">
+            <h3 class="quiz-question">有个新工具，界面上能看见，名字也列在 allToolNames 里，可模型从来不调它。你第一步该查哪一边？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>先查工具本体：AgentTool.execute 到底能不能跑起来</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>先查「模型知不知道这个工具存在」：declareToolChanges 产生的 toolsAdded、toolsRemoved 系统消息</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>先查显示屏：Ctrl+C 是不是被 tui 的按键解析吃掉了</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="a"
+               data-explanation-right="对。会话目录由当前工作目录改写而来（路径里的斜杠和冒号换成横杠，首尾包上 --），文件名是时间戳加会话 ID 的 .jsonl。写入是追加：每次只多写一行，原始记录不会被覆盖，所以你可以放心备份、用 grep 找某一轮，必要时手改一行也能接着聊。"
+               data-explanation-wrong="会话是落盘的，而且不是覆盖式重写。getDefaultSessionDirPath 把当前工作目录改写成一个子目录，文件按时间戳加会话 ID 命名，每一轮只追加一行。覆盖式重写会丢掉历史，也没法放心备份。">
+            <h3 class="quiz-question">你关掉 pi，第二天想接着昨天那条对话。对话存在磁盘上的什么位置、什么格式？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>~/.pi/agent/sessions/ 下按工作目录改写出的子目录里，一个 .jsonl 文件，一行一条记录，只追加不覆盖</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>~/.pi/ 下的单个 .json 文件，每次对话整体重写一遍</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>只在内存里，关掉就没了，得靠模型自己记得</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module-2')">检查答案</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module-2')">再来一次</button>
+        </div>
+
+        <p><strong>所以呢：</strong>下次 pi 出问题，你不用从头猜。<strong>模型名不对、鉴权不过 → 电缆井（packages/ai）；模型不调工具 → 机房（packages/agent）；界面卡住不刷新 → 显示屏（packages/tui）；工具本身跑错 → 总控室（packages/coding-agent）</strong>。想加功能、想让 AI 少跑偏的时候也一样：先问这段逻辑离用户、离模型、还是离屏幕最近——第 4 课会告诉你，怎么把工具的「名字和参数」写成一张模型看得懂的说明书。</p>
+      </section>
+
+    </div>
+  </div>
+</section>
+<section class="module" id="module-3" style="background: var(--color-bg);">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">03</span>
+      <h1 class="module-title">一个模型接口，万家供应商</h1>
+      <p class="module-subtitle">一套词汇，翻译给每一家</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- ── Screen 1 ─────────────────────────────────────────── -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">翻译局：局里只有一种话</h2>
+
+        <p>在 pi 里敲 <code>/model</code>，屏幕上排着 OpenAI、Anthropic、Bedrock、Vertex、DeepSeek、智谱……几十个名字。点任何一个，跑的都是同一段请求代码——差别只发生在翻译局的柜台上。</p>
+
+        <p>pi 里有一座翻译局：对内只有一套公文语，对外每个<span class="term" data-definition="提供模型的公司或服务，比如 OpenAI、Anthropic、智谱。在 pi 里，一个 provider 就是一位译员，专门负责一家的方言。">供应商（provider）</span>开一个柜台，柜台后面那位译员负责把公文语翻成该厂商的<span class="term" data-definition="各家厂商自己约定的报文格式。同一个意思，Anthropic 写 tool_use，OpenAI 写 tool_calls，谁都不肯改口。">线格式</span>。</p>
+
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="flow-step-num">1</div>
+            <p>你的一句请求</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">2</div>
+            <p>统一词汇（公文语）</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">3</div>
+            <p>各家的译员</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">4</div>
+            <p>厂商线格式</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">5</div>
+            <p>厂商</p>
+          </div>
+        </div>
+
+        <p>agent 循环从头到尾不认识 OpenAI，也不认识 Anthropic。它只通过一个<span class="term" data-definition="程序和程序之间约定好的一种互相调用方式。你对 AI 说「读一下这个文件」，pi 内部就是一层层调用 API 才把文件读出来的。">API</span>说那套统一词汇，翻译是译员自己的事。</p>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">记住这一条</strong>
+            <p>加一家新供应商 = 加一位译员 + 在名单上登记。agent 循环一行都不用动。以后你在 pi 里看到任何一句「不支持 / 没找到 / 没有」的错误，都能先问一句：这是翻译局哪个岗位没干活？</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Screen 2 ─────────────────────────────────────────── -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">公文语：一份统一词汇表</h2>
+
+        <p>这套词汇写在 <code>packages/ai/src/types.ts</code>。左边是 pi 的原话，右边是它到底干了什么。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · types.ts</span>
+            <pre><code><span class="code-line">| { type: <span class="code-string">"text_delta"</span>; contentIndex: number; delta: string; partial: AssistantMessage }</span>
+<span class="code-line">| { type: <span class="code-string">"text_end"</span>; contentIndex: number; content: string; partial: AssistantMessage }</span>
+<span class="code-line">| { type: <span class="code-string">"thinking_start"</span>; contentIndex: number; partial: AssistantMessage }</span>
+<span class="code-line">| { type: <span class="code-string">"thinking_delta"</span>; contentIndex: number; delta: string; partial: AssistantMessage }</span>
+<span class="code-line">| { type: <span class="code-string">"thinking_end"</span>; contentIndex: number; content: string; partial: AssistantMessage }</span>
+<span class="code-line">| { type: <span class="code-string">"toolcall_start"</span>; contentIndex: number; partial: AssistantMessage }</span>
+<span class="code-line">| { type: <span class="code-string">"toolcall_delta"</span>; contentIndex: number; delta: string; partial: AssistantMessage }</span>
+<span class="code-line">| { type: <span class="code-string">"toolcall_end"</span>; contentIndex: number; toolCall: ToolCall; partial: AssistantMessage }</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">又吐出一个字。delta 就是这一小段新增的文字。</p>
+              <p class="tl">这段文字到此收尾，完整内容在 content 里。</p>
+              <p class="tl">模型开始思考，先给你一个思考段的起点。</p>
+              <p class="tl">思考过程的一小段，模型一边想一边往外蹦。</p>
+              <p class="tl">想完了，思考段收尾。</p>
+              <p class="tl">工具单写到一半：只说了要调哪个工具。</p>
+              <p class="tl">工具单又续了一段：参数还在往外冒。</p>
+              <p class="tl">工具单写完了，参数齐全，可以执行。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/ai/src/types.ts : 824-831</span>
+
+        <p>除了事件，统一的正文也只有四种形状。写新译员时，你必须把它们原样吐出来，agent 循环才能接得住：</p>
+
+        <div class="badge-list">
+          <div class="badge-item">
+            <code class="badge-code">TextContent</code>
+            <span class="badge-desc">模型说给你听的正文，就是屏幕上滚过去的那些字。</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">ThinkingContent</code>
+            <span class="badge-desc">模型的思考过程。有的模型会显式返回，pi 把它单独装进这一种块里。</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">ImageContent</code>
+            <span class="badge-desc">图片（多模态模型用），数据和类型一起送。</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">ToolCall</code>
+            <span class="badge-desc">要动手的请求：工具名 + 参数 + 一个对号入座的 id。</span>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🔍</div>
+          <div class="callout-content">
+            <strong class="callout-title">落点</strong>
+            <p>模型输出不是一段完整字符串，而是一串<span class="term" data-definition="一件事发生的记录。pi 把模型输出拆成 start、text_delta、toolcall_end、done 这样的小事件，一件一件往外送。">事件</span>。这就是屏幕能逐字刷新的原因：每来一个 text_delta，界面就多贴一行字；done 到了，这一轮才算完。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Screen 3 ─────────────────────────────────────────── -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">同一张单子，两个柜台</h2>
+
+        <p>同一个工具调用请求，送到两个柜台，出去的写法完全不同；回来的话也要各自翻回公文语。点「下一条」，看翻译局内部怎么走。</p>
+
+        <div class="chat-window" id="m3-chat-providers">
+          <div class="chat-messages">
+            <div class="chat-message" data-sender="caller" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">你</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">你（调用方）</span>
+                <p>帮我读一下 packages/ai/src/types.ts。统一词汇的写法是：ToolCall { name: "read", arguments: { path: "packages/ai/src/types.ts" } }。</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="vocab" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-4)">词</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-4)">统一术语（公文语）</span>
+                <p>收到。这套词汇只描述三件事：调哪个工具、参数是什么、结果是什么。谁家的方言都跟我没关系。</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="anthropic" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-5)">A</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-5)">Anthropic 柜台</span>
+                <p>我来翻：tool_use + input。input 放的是真的对象，不是字符串。</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="openai" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-5)">O</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-5)">OpenAI 柜台</span>
+                <p>我翻成另一种：tool_calls + function.arguments，而 arguments 必须是一段 JSON 字符串。</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="anthropic" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-5)">A</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-5)">Anthropic 柜台</span>
+                <p>厂商的回话也翻回公文语：text_delta 一段一段送上来，toolcall_end 带着写完的工具单。</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="openai" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-5)">O</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-5)">OpenAI 柜台</span>
+                <p>我也翻回同一套词汇：一样是 text_delta 和 toolcall_end。</p>
+              </div>
+            </div>
+            <div class="chat-message" data-sender="caller" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">你</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">你（调用方）</span>
+                <p>两张单子写法不一样，我看到的形状完全一样。</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-typing" style="display:none">
+            <div class="chat-avatar" id="m3-chat-providers-typing-avatar" style="background: var(--color-text-muted)">?</div>
+            <div class="chat-typing-dots">
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+          </div>
+
+          <div class="chat-controls">
+            <button class="btn chat-next-btn">下一条</button>
+            <button class="btn chat-all-btn">全部播放</button>
+            <button class="btn chat-reset-btn">重来</button>
+            <span class="chat-progress"></span>
+          </div>
+        </div>
+
+        <p>柜台后面那位译员，就是 <code>packages/ai/src/api/</code> 里的代码。它只干一件事：把统一词汇改写成某家的方言。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · anthropic-messages.ts</span>
+            <pre><code><span class="code-line">} <span class="code-keyword">else if</span> (block.type === <span class="code-string">"toolCall"</span>) {</span>
+<span class="code-line">    blocks.push({</span>
+<span class="code-line">        type: <span class="code-string">"tool_use"</span>,</span>
+<span class="code-line">        id: block.id,</span>
+<span class="code-line">        name: isOAuthToken ? toClaudeCodeName(block.name) : block.name,</span>
+<span class="code-line">        input: block.arguments ?? {},</span>
+<span class="code-line">    });</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">这一块是工具调用，就改写成 Anthropic 的写法。</p>
+              <p class="tl">type 写成 tool_use。</p>
+              <p class="tl">id 原样带过去，用来对号入座。</p>
+              <p class="tl">name 是工具名；如果这次是用 OAuth 登录的，就换成 Claude Code 那边认的名字。</p>
+              <p class="tl">input 直接放参数本身，是真的对象。</p>
+              <p class="tl">一个统一词汇的块，改完就是一个 Anthropic 的请求块。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/ai/src/api/anthropic-messages.ts : 1473-1480</span>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · openai-completions.ts</span>
+            <pre><code><span class="code-line">return {</span>
+<span class="code-line">    id: tc.id,</span>
+<span class="code-line">    type: <span class="code-string">"function"</span>,</span>
+<span class="code-line">    function: {</span>
+<span class="code-line">        name: tc.name,</span>
+<span class="code-line">        arguments: JSON.stringify(tc.arguments),</span>
+<span class="code-line">    },</span>
+<span class="code-line">};</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">同一个工具调用，改写成 OpenAI 的写法。</p>
+              <p class="tl">id 原样带过去。</p>
+              <p class="tl">type 写成 function。</p>
+              <p class="tl">function.name 是工具名。</p>
+              <p class="tl">arguments 必须是一段 <span class="term" data-definition="一种到处都在用的数据文本格式，用大括号包住键值对，写法像 { \"name\": \"read\" }。JSON.stringify 就是把一个对象转成这种文本。">JSON</span> 字符串，所以要把参数对象 stringify 一下。</p>
+              <p class="tl">两家写法完全不同，但 pi 收到的是同一份统一词汇。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/ai/src/api/openai-completions.ts : 1362-1369</span>
+
+        <p>译员存在的意义，就是让 agent 循环永远看不到这种差别：<code>input</code> 是真的对象，<code>arguments</code> 必须是 JSON 字符串——这些细节被关在译员里面，出不了柜台。</p>
+      </section>
+
+      <!-- ── Screen 4 ─────────────────────────────────────────── -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">换模型，不换代码</h2>
+
+        <p>换个模型会发生什么？<code>Models.stream()</code> 只负责按模型名找到该找的 provider，翻译是 provider 自己的事。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · models.ts</span>
+            <pre><code><span class="code-line">const transcript = normalizeContext(context);</span>
+<span class="code-line">return lazyStream(</span>
+<span class="code-line">    model,</span>
+<span class="code-line">    async () => {</span>
+<span class="code-line">        const provider = this.requireChatProvider(model);</span>
+<span class="code-line">        const { requestModel, requestOptions } = await this.applyAuth(</span>
+<span class="code-line">            model,</span>
+<span class="code-line">            options as ModelsApiStreamOptions&lt;Api&gt; | undefined,</span>
+<span class="code-line">        );</span>
+<span class="code-line">        return provider.stream(requestModel, transcript, requestOptions as ApiStreamOptions&lt;TApi&gt;);</span>
+<span class="code-line">    },</span>
+<span class="code-line">    observeModelRequest(model, options, false),</span>
+<span class="code-line">);</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">先把上下文整理成统一词汇（归一化：把不同形状的东西统一成同一种形状）。</p>
+              <p class="tl">真正发请求的时候才干活：先按模型名找到该找的 provider。</p>
+              <p class="tl">再把钥匙（凭据）装进请求选项里。</p>
+              <p class="tl">最后一句才是关键：交给 provider 去发。翻译在它那边发生。</p>
+              <p class="tl">所以你换一个模型，这段代码一个字都不用改。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/ai/src/models.ts : 906-918</span>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · models.ts</span>
+            <pre><code><span class="code-line">const dispatch = (</span>
+<span class="code-line">    model: Model&lt;Api&gt;,</span>
+<span class="code-line">    run: (streams: ProviderStreams) =&gt; AssistantMessageEventStream,</span>
+<span class="code-line">): AssistantMessageEventStream =&gt; {</span>
+<span class="code-line">    const streams = apiFor(model);</span>
+<span class="code-line">    <span class="code-keyword">if</span> (!streams) {</span>
+<span class="code-line">        return lazyStream(model, async () =&gt; {</span>
+<span class="code-line">            throw <span class="code-keyword">new</span> ModelsError(<span class="code-string">"stream"</span>, `Provider ${input.id} has no API implementation for "${model.api}"`);</span>
+<span class="code-line">        });</span>
+<span class="code-line">    }</span>
+<span class="code-line">    return run(streams);</span>
+<span class="code-line">};</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">分派：这个模型该走哪一套实现。</p>
+              <p class="tl">apiFor 按模型身上的 api 字段去找对应实现。</p>
+              <p class="tl">找不到？先别急着发请求，等真的用到时才抛这句错。</p>
+              <p class="tl">错的内容是：这个 provider 没有这种 api 的实现。</p>
+              <p class="tl">找得到就照常跑。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/ai/src/models.ts : 1108-1119</span>
+
+        <p>第二段是排错用的：模型清单里写着它属于哪种 <code>api</code>，柜台那边没有对应实现时，错就出在这里。另外别手改 <code>packages/ai/src/models.generated.ts</code>——它是脚本（<code>npm run generate-models</code>）生成的；几十个供应商由 <code>providers/all.ts</code> 的 <code>builtinProviders()</code> 统一<span class="term" data-definition="登记到名单里，好让 pi 知道它存在。加新供应商时，改的就是这个名单。">注册</span>。</p>
+      </section>
+
+      <!-- ── Screen 5 ─────────────────────────────────────────── -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">找钥匙：凭据从哪来</h2>
+
+        <p>译员上岗前得先拿到钥匙。每个供应商对应哪几个<span class="term" data-definition="程序启动前从外面读进来的配置值，通常写在系统的 shell 配置或 .env 文件里，比如 OPENAI_API_KEY=sk-...。">环境变量</span>，<code>findEnvKeys</code> 负责去找它们。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · env-api-keys.ts</span>
+            <pre><code><span class="code-line">export function findEnvKeys(provider: string, env?: ProviderEnv): string[] | undefined {</span>
+<span class="code-line">    const envVars = getApiKeyEnvVars(provider);</span>
+<span class="code-line">    <span class="code-keyword">if</span> (!envVars) return undefined;</span>
+<span class="code-line"></span>
+<span class="code-line">    const found = envVars.filter((envVar) =&gt; !!getProviderEnvValue(envVar, env));</span>
+<span class="code-line">    return found.length &gt; 0 ? found : undefined;</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">问：这个供应商可能用哪些环境变量当钥匙？</p>
+              <p class="tl">这家根本不用环境变量（比如只能 OAuth 登录），那就直接说没有。</p>
+              <p class="tl">把真的填了值的那些挑出来。</p>
+              <p class="tl">一个都没填，就当没有钥匙。</p>
+              <p class="tl">所以报「没有 API key」时，先查这张表，别急着改代码。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/ai/src/env-api-keys.ts : 138-144</span>
+
+        <p>翻译局里其实只有四个岗位。把这四张卡记住，任何一句报错都能直接落到一个文件上：</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4);">
+            <div class="pattern-icon" style="background: var(--color-actor-4);">🗂</div>
+            <h4 class="pattern-title">归一化类型</h4>
+            <p class="pattern-desc"><code>packages/ai/src/types.ts</code>：TextContent / ThinkingContent / ImageContent / ToolCall。<br>什么时候需要它：你要写一个新译员时——它必须原样吐出这几种，agent 循环才接得住。</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4);">
+            <div class="pattern-icon" style="background: var(--color-actor-4);">🧭</div>
+            <h4 class="pattern-title">路由</h4>
+            <p class="pattern-desc"><code>packages/ai/src/models.ts</code>：Models.stream() → requireChatProvider → provider.stream。<br>什么时候需要它：换模型时——换模型不换代码的地方。</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4);">
+            <div class="pattern-icon" style="background: var(--color-actor-4);">🔑</div>
+            <h4 class="pattern-title">凭据</h4>
+            <p class="pattern-desc"><code>packages/ai/src/env-api-keys.ts</code>：findEnvKeys() 按供应商找环境变量。<br>什么时候需要它：报「没有 API key」时——先看这里。</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4);">
+            <div class="pattern-icon" style="background: var(--color-actor-4);">📨</div>
+            <h4 class="pattern-title">流式事件</h4>
+            <p class="pattern-desc"><code>AssistantMessageEvent</code>：start / text_* / thinking_* / toolcall_* / done / error。<br>什么时候需要它：打字机效果、还有「该不该停下」的判断，都来自这一串事件。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Screen 6 ─────────────────────────────────────────── -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">练一练：这句话该找谁</h2>
+
+        <div class="quiz-container" id="quiz-module-3">
+          <div class="quiz-question-block"
+               data-correct="q1-a"
+               data-explanation-right="对。agent 循环只认统一词汇，厂商差异应该被关在译员里：新厂商 = 在 packages/ai/src/api/ 加一个实现 + 在 providers/all.ts 注册，其余代码一行都不用动。"
+               data-explanation-wrong="方向错了：厂商差异应该被关在译员里。agent 循环、coding-agent 的工具层都只认统一词汇，所以正确做法是加一个译员实现 + 在 providers/all.ts 注册，其余代码不用动。">
+            <h3 class="quiz-question">你要接一家新供应商，它沿用现有的 OpenAI 风格线格式。代码最少要动哪几个地方？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="q1-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>只动 packages/ai/src/api/：加一个译员实现，再在 providers/all.ts 注册；agent 循环一行都不用改</span>
+              </button>
+              <button class="quiz-option" data-value="q1-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>改 packages/agent/src/agent-loop.ts，让它认识新供应商的字段名</span>
+              </button>
+              <button class="quiz-option" data-value="q1-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>在 packages/coding-agent/src/core/tools/ 里加一个按供应商分支的判断</span>
+              </button>
+              <button class="quiz-option" data-value="q1-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>改 packages/ai/src/types.ts，给事件类型加一个供应商专属的分支</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="q2-b"
+               data-explanation-right="对。这句错来自 models.ts 的 dispatch：它按模型身上的 api 字段去找对应实现，找不到才抛错。密钥问题会报另一种错，跟这句没关系。"
+               data-explanation-wrong="这句错跟密钥无关——它说的是「这个 provider 没有这种 api 的实现」，密钥缺失会是另一种错误。先去 models.ts 的 dispatch / apiFor 对照模型清单里的 api 字段。">
+            <h3 class="quiz-question">模型在 /model 里能选中，一发请求就报 “Provider X has no API implementation for …”。这是密钥问题还是译员问题？你先查哪两处？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="q2-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>密钥问题——先去把 API key 配好</span>
+              </button>
+              <button class="quiz-option" data-value="q2-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>译员/路由问题——对照 models.ts 里的 dispatch / apiFor，再看模型清单里这个模型的 api 字段</span>
+              </button>
+              <button class="quiz-option" data-value="q2-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>模型名打错了——在模型列表里重新搜一遍</span>
+              </button>
+              <button class="quiz-option" data-value="q2-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>coding-agent 的界面 bug——重装一次 pi</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="q3-a"
+               data-explanation-right="对。findEnvKeys 决定了 pi 会去读哪些环境变量（例如 OPENAI_API_KEY），getEnvApiKey 是真正取值的那一步；再对照模型清单里这个模型属于哪个 provider，就知道它该拿哪把钥匙、你的 CI 里有没有那把。"
+               data-explanation-wrong="别去扫磁盘，先搞清楚代码会读哪些变量才是关键。env-api-keys.ts 里的 findEnvKeys / getEnvApiKey 列出了每个 provider 对应的环境变量名并负责取值，对照模型清单里的 provider 归属就能定位是哪把钥匙被用了。">
+            <h3 class="quiz-question">你怀疑某个模型在你的 CI 里偷偷用了你本机的个人 key。你会去看哪两处代码？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="q3-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>packages/ai/src/env-api-keys.ts 的 findEnvKeys / getEnvApiKey，加上模型清单里这个模型归属的 provider</span>
+              </button>
+              <button class="quiz-option" data-value="q3-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>packages/agent/src/agent-loop.ts 和 coding-agent 的界面代码</span>
+              </button>
+              <button class="quiz-option" data-value="q3-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>我本机的 shell 配置文件和 IDE 的设置</span>
+              </button>
+              <button class="quiz-option" data-value="q3-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>让 AI agent 自己扫一遍磁盘，把找到的 key 都列出来</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module-3')">看看我的判断</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module-3')">再想一遍</button>
+        </div>
+
+        <p>所以下次 pi 报错，你不用猜：一句话先落到翻译局的某个岗位上——“这个供应商不支持这种 api”是译员的活，“没找到密钥”是凭据的活，“模型列表里没有它”是路由的活。<strong>把这层说准，AI agent 改代码时就不会去动不该动的地方。</strong></p>
+      </section>
+
+    </div>
+  </div>
+</section>
+<section class="module" id="module-4" style="background: var(--color-bg-warm);">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">04</span>
+      <h1 class="module-title">工具：AI 的手</h1>
+      <p class="module-subtitle">模型只能提要求，手负责照单执行</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- ── Screen 1 ─────────────────────────────────────────── -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">模型够不到任何东西</h2>
+
+        <p>你在 pi 里看到模型说「我来读一下这个文件」——下一秒，终端里真的多出了一段文件内容。中间发生了什么？那句「我来读一下」本身，没有任何执行力。</p>
+
+        <p>模型是个离不开桌子的人：它够不到你的文件，也跑不了你的命令。它能做的只有一件事——写一张<span class="term" data-definition="一张字段固定的单子：工具名 + 参数。模型把单子填好递过来，pi 才知道该做什么、去做什么。">工具单</span>。单子递过来，<span class="term" data-definition="模型够不到你的文件，只能开口要人替它拿。这个「人」就是工具：读文件、跑命令、改文件。">工具</span>就照单执行，一个字不多做、一步不乱改；单子没写清，手就停下来，把问题写在回执上。</p>
+
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="flow-step-num">1</div>
+            <p>模型提要求</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">2</div>
+            <p>工具单</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">3</div>
+            <p>手照单执行</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">4</div>
+            <p>回执</p>
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <div class="callout-icon">⚠️</div>
+          <div class="callout-content">
+            <strong class="callout-title">最容易踩的坑</strong>
+            <p>模型输出里的散文<b>永远不会被当成命令执行</b>。只有结构化的 toolCall 内容块才是请求。所以「我现在运行 ls」这句话，在 pi 眼里只是聊天——真正干活的是另一条通道。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Screen 2 ─────────────────────────────────────────── -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">工具单长什么样</h2>
+
+        <p>工具单有两张纸：一张在 <code>packages/ai/src/types.ts</code>（所有工具共用的那张），一张在 <code>packages/agent/src/types.ts</code>（agent 运行时用的那张，多了两栏）。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · types.ts</span>
+            <pre><code><span class="code-line">export interface Tool&lt;TParameters extends TSchema = TSchema&gt; {</span>
+<span class="code-line">    name: string;</span>
+<span class="code-line">    description: string;</span>
+<span class="code-line">    parameters: TParameters;</span>
+<span class="code-line">    constrainedSampling?: false | ConstrainedSamplingConfig;</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">name：工具的名字。模型靠它点名。</p>
+              <p class="tl">description：这工具干什么用的一句话。会原样发给模型，所以要写得像人话。</p>
+              <p class="tl">parameters：参数说明书，一张 <span class="term" data-definition="一张字段说明书：规定参数叫什么名字、是文字还是数字、必填还是可选。模型填错名字或漏填必填项，pi 就能当场拦下来。">schema</span>。</p>
+              <p class="tl">constrainedSampling：要不要请厂商照这张说明书来限制模型输出（可选）。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/ai/src/types.ts : 769-774</span>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · types.ts</span>
+            <pre><code><span class="code-line">export interface AgentTool&lt;TParameters extends TSchema = TSchema, TDetails = any&gt; extends Tool&lt;TParameters&gt; {</span>
+<span class="code-line">    <span class="code-comment">/** Human-readable label for UI display. */</span></span>
+<span class="code-line">    label: string;</span>
+<span class="code-line">    <span class="code-comment">/**</span></span>
+<span class="code-line">     * Optional compatibility shim for raw tool-call arguments before schema validation.</span>
+<span class="code-line">     * Must return an object that matches `TParameters`.</span>
+<span class="code-line">     */</span>
+<span class="code-line">    prepareArguments?: (args: unknown) =&gt; Static&lt;TParameters&gt;;</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">agent 用的工具，在上面那张纸之外多两栏。</p>
+              <p class="tl">label：界面上给你看的名字，比如「读文件」。</p>
+              <p class="tl">prepareArguments：可选的补丁。在校验之前，先把模型填的参数整理成合规的形状。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/agent/src/types.ts : 466-473</span>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · types.ts</span>
+            <pre><code><span class="code-line"><span class="code-comment">/**</span></span>
+<span class="code-line"> * Execute the tool call. Throw on failure, or return a result with `isError: true`; do not only</span>
+<span class="code-line"> * describe the failure in `content`.</span>
+<span class="code-line"> */</span>
+<span class="code-line">execute: (</span>
+<span class="code-line">    toolCallId: string,</span>
+<span class="code-line">    params: Static&lt;TParameters&gt;,</span>
+<span class="code-line">    signal?: AbortSignal,</span>
+<span class="code-line">    onUpdate?: AgentToolUpdateCallback&lt;TDetails&gt;,</span>
+<span class="code-line">) =&gt; Promise&lt;AgentToolResult&lt;TDetails&gt;&gt;;</span>
+<span class="code-line"><span class="code-comment">/** Recovery policy for an effect whose durable intent exists but whose outcome is unknown. */</span></span>
+<span class="code-line">replay?: <span class="code-string">"never"</span> | <span class="code-string">"safe"</span>;</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">execute：真正干活的那一段。失败了要么抛错，要么交一张写着 isError 的回执——别只在正文里描述失败。</p>
+              <p class="tl">四个参数：给我单号、给我填好的<span class="term" data-definition="工具单上要填的那些值，比如 read 工具的 path、offset、limit。">参数</span>、要不要随叫随停（signal 是一个喊停开关，按 Ctrl+C 它就变成 true，工具该立刻收手）、中途有没有进度要报。</p>
+              <p class="tl">replay：这活儿出了岔子时，允许不允许重做。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/agent/src/types.ts : 479-490</span>
+
+        <p>这张接口就是一份<span class="term" data-definition="接口约好的规矩：谁来实现、传什么、返回什么。你加新工具时照着它写，agent 循环自然就认。">契约</span>：工具名、参数说明书、怎么执行，三件事说清楚，模型和 pi 就都不用猜。</p>
+      </section>
+
+      <!-- ── Screen 3 ─────────────────────────────────────────── -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">从一句话到一次执行</h2>
+
+        <p>点「下一步」，跟着这张工具单走完全程：谁提出、谁校验、谁动手、结果去哪。</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-m4-actor-1","label":"模型在回复里写下一张工具单：工具名 + 参数。旁边的散文只是给人看的说明"},
+          {"highlight":"flow-m4-actor-2","label":"agent-loop 按 c.type === 「toolCall」 把请求挑出来，同一条回复里的文字块被完全忽略","packet":true,"from":"m4-actor-1","to":"m4-actor-2"},
+          {"highlight":"flow-m4-actor-3","label":"按工具名找到 AgentTool，先用 schema 校验参数；不合法就当场回一张写明原因的失败回执，根本不会碰到文件系统","packet":true,"from":"m4-actor-2","to":"m4-actor-3"},
+          {"highlight":"flow-m4-actor-4","label":"参数合法，手照单执行真实代码：读文件、起子进程、写盘","packet":true,"from":"m4-actor-3","to":"m4-actor-4"},
+          {"highlight":"flow-m4-actor-3","label":"工具把结果交回 agent-loop","packet":true,"from":"m4-actor-4","to":"m4-actor-3"},
+          {"highlight":"flow-m4-actor-2","label":"结果被包成一条 role 为 「toolResult」 的消息，追加进上下文","packet":true,"from":"m4-actor-3","to":"m4-actor-2"},
+          {"highlight":"flow-m4-actor-1","label":"下一轮模型才看见这段输出——它读到的就是这张回执","packet":true,"from":"m4-actor-2","to":"m4-actor-1"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-m4-actor-1">
+              <div class="flow-actor-icon" style="background: var(--color-actor-5); color: #FFFFFF;">模</div>
+              <span>模型</span>
+            </div>
+            <div class="flow-actor" id="flow-m4-actor-2">
+              <div class="flow-actor-icon" style="background: var(--color-actor-3); color: #FFFFFF;">循</div>
+              <span>agent-loop</span>
+            </div>
+            <div class="flow-actor" id="flow-m4-actor-3">
+              <div class="flow-actor-icon" style="background: var(--color-actor-2); color: #FFFFFF;">手</div>
+              <span>工具</span>
+            </div>
+            <div class="flow-actor" id="flow-m4-actor-4">
+              <div class="flow-actor-icon" style="background: var(--color-surface-warm); color: var(--color-text-secondary);">盘</div>
+              <span>文件系统</span>
+            </div>
+          </div>
+
+          <div class="flow-packet"></div>
+
+          <div class="flow-step-label">点「下一步」开始</div>
+
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">下一步</button>
+            <button class="btn flow-reset-btn">重来</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+
+        <p>回执不是一句客套话，它是一条真的<span class="term" data-definition="模型这一轮能看到的全部消息。工具结果会被追加进去，成为上下文的一部分——模型下一轮读到的就是你刚看到的这段。">上下文</span>消息：</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · agent-loop.ts</span>
+            <pre><code><span class="code-line">return {</span>
+<span class="code-line">    role: <span class="code-string">"toolResult"</span>,</span>
+<span class="code-line">    toolCallId: finalized.toolCall.id,</span>
+<span class="code-line">    toolName: finalized.toolCall.name,</span>
+<span class="code-line">    <span class="code-comment">// Untyped tools (JS extensions) can return results without content; normalize</span></span>
+<span class="code-line">    <span class="code-comment">// so the null never enters session history or provider payloads.</span></span>
+<span class="code-line">    content: finalized.result.content ?? [],</span>
+<span class="code-line">    details: finalized.result.details,</span>
+<span class="code-line">    usage: finalized.result.usage,</span>
+<span class="code-line">    isError: finalized.isError,</span>
+<span class="code-line">    ...(finalized.durationMs === undefined ? {} : { durationMs: finalized.durationMs }),</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">role 是 toolResult：这是一条新消息，不是模型说的正文。</p>
+              <p class="tl">toolCallId：对应之前那张工具单，模型靠它把回执对回请求。</p>
+              <p class="tl">toolName：这是哪个工具的回执。</p>
+              <p class="tl">content：工具返回的内容。没有内容也给个空数组，不让空值混进历史记录。</p>
+              <p class="tl">details / usage：额外信息，比如结构化数据和用量。</p>
+              <p class="tl">isError：失败也是一张回执，只是这张上写着失败原因。</p>
+              <p class="tl">最后一行：量过耗时才带上耗时。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/agent/src/agent-loop.ts : 941-951</span>
+      </section>
+
+      <!-- ── Screen 4 ─────────────────────────────────────────── -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">参数要先过一遍</h2>
+
+        <p>每张工具单都带一张参数说明书，模型照着填。手在动手之前，先对着说明书核一遍。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · read.ts</span>
+            <pre><code><span class="code-line">const readSchema = Type.Object({</span>
+<span class="code-line">    path: Type.String({ description: <span class="code-string">"Path to the file to read (relative or absolute)"</span> }),</span>
+<span class="code-line">    offset: Type.Optional(Type.Number({ description: <span class="code-string">"Line number to start reading from (1-indexed)"</span> })),</span>
+<span class="code-line">    limit: Type.Optional(Type.Number({ description: <span class="code-string">"Maximum number of lines to read"</span> })),</span>
+<span class="code-line">});</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">这就是 read 工具的参数说明书：一张表。</p>
+              <p class="tl">path 必填：要读哪个文件，相对路径、绝对路径都行。</p>
+              <p class="tl">offset 可选：从第几行开始读（从 1 开始数）。</p>
+              <p class="tl">limit 可选：最多读多少行。</p>
+              <p class="tl">这张表会原样发给模型，所以每一项都写得像一句人话。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/coding-agent/src/core/tools/read.ts : 14-18</span>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · edit.ts</span>
+            <pre><code><span class="code-line">const editSchema = Type.Object(</span>
+<span class="code-line">    {</span>
+<span class="code-line">        path: Type.String({ description: <span class="code-string">"Path to the file to edit (relative or absolute)"</span> }),</span>
+<span class="code-line">        edits: Type.Array(replaceEditSchema, {</span>
+<span class="code-line">            description:</span>
+<span class="code-line">                <span class="code-string">"One or more targeted replacements. Each edit is matched against the original file, not incrementally. Do not include overlapping or nested edits. If two changes touch the same block or nearby lines, merge them into one edit instead."</span>,</span>
+<span class="code-line">        }),</span>
+<span class="code-line">    },</span>
+<span class="code-line">    {},</span>
+<span class="code-line">);</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">edit 工具的参数说明书：path 必填，edits 必填，而且一次可以改好几处。</p>
+              <p class="tl">那一大段说明文字，是写给模型看的规矩：每一处替换都拿原文比对，不是接着上一次改；不要重叠；挨得太近的两处，合成一处。</p>
+              <p class="tl">说明书既是给模型的提示，也是 pi 校验时用的标准答案。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/coding-agent/src/core/tools/edit.ts : 32-41</span>
+
+        <p>真正干活的地方在这里——先找到工具，再核参数，最后才执行：</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · agent-loop.ts</span>
+            <pre><code><span class="code-line">const tool = tools.find((t) =&gt; t.name === toolCall.name);</span>
+<span class="code-line"><span class="code-keyword">if</span> (!tool) {</span>
+<span class="code-line">    return {</span>
+<span class="code-line">        kind: <span class="code-string">"immediate"</span>,</span>
+<span class="code-line">        result: createErrorToolResult(`Tool ${toolCall.name} not found`),</span>
+<span class="code-line">        isError: true,</span>
+<span class="code-line">    };</span>
+<span class="code-line">}</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-keyword">try</span> {</span>
+<span class="code-line">    const preparedToolCall = prepareToolCallArguments(tool, toolCall);</span>
+<span class="code-line">    const validatedArgs = validateToolArguments(tool, preparedToolCall);</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">按工具名，找到对应的那只手。</p>
+              <p class="tl">找不到？先别执行，直接回一张失败回执。</p>
+              <p class="tl">回执上写清楚是哪个工具没找到，模型下一轮自己改。</p>
+              <p class="tl">找到了才继续：先把参数整理成合规的形状。</p>
+              <p class="tl">再对说明书校验。这一步不通过，工具根本不会被调用——失败发生在执行之前。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/agent/src/agent-loop.ts : 726-737</span>
+      </section>
+
+      <!-- ── Screen 5 ─────────────────────────────────────────── -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">内置的八只手</h2>
+
+        <p>pi 出厂就带着这几只手。你让 AI agent 加新工具时，也是照这个样子加。</p>
+
+        <div class="badge-list">
+          <div class="badge-item">
+            <code class="badge-code">read</code>
+            <span class="badge-desc">读文件。内容太长就按行截断，并提示模型「用 offset=N 继续读」（tools/read.ts）</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">write</code>
+            <span class="badge-desc">整个文件覆写掉（tools/write.ts）</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">edit</code>
+            <span class="badge-desc">精确替换一段文字 oldText → newText，回执里带一份 <span class="term" data-definition="改动前后的对比文本：哪几行被删了，哪几行换成了新的。">diff</span>（tools/edit.ts）</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">bash</code>
+            <span class="badge-desc">在 shell 里跑命令，收 <span class="term" data-definition="stdout 是命令的正常输出，stderr 是命令自己写的错误信息。两个都在同一根管子里回来。">stdout</span> 和 stderr；超时会杀掉<span class="term" data-definition="另起一个进程去跑命令，和 pi 自己不是同一个进程；超时时得把它连同子进程一起杀掉，不然它会在后台继续跑。">子进程</span> 树（tools/bash.ts）</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">powershell</code>
+            <span class="badge-desc">同上，Windows 这一侧（tools/powershell.ts）</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">grep</code>
+            <span class="badge-desc">按<span class="term" data-definition="一种描述「怎么找文字」的规则写法，比如把所有以 TODO 开头的行找出来。">正则</span>或字面量搜文件内容（tools/grep.ts）</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">find</code>
+            <span class="badge-desc">按 <span class="term" data-definition="一种通配符写法，比如 src/**/*.ts 表示 src 目录下所有 .ts 文件。">glob</span> 找文件（tools/find.ts）</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">ls</code>
+            <span class="badge-desc">列目录（tools/ls.ts）</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">executionMode</code>
+            <span class="badge-desc">这只手一次接几张单子：默认 parallel（同一时刻一起跑），工具自己声明 sequential 就排队（sequential = 排好队一个接一个执行）</span>
+          </div>
+        </div>
+
+        <p>排队还是并行，是 agent 循环在做决定：</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · agent-loop.ts</span>
+            <pre><code><span class="code-line">const toolCalls = assistantMessage.content.filter((c) =&gt; c.type === <span class="code-string">"toolCall"</span>);</span>
+<span class="code-line">const hasSequentialToolCall = toolCalls.some(</span>
+<span class="code-line">    (tc) =&gt; currentContext.tools?.find((t) =&gt; t.name === tc.name)?.executionMode === <span class="code-string">"sequential"</span>,</span>
+<span class="code-line">);</span>
+<span class="code-line"><span class="code-keyword">if</span> (config.toolExecution === <span class="code-string">"sequential"</span> || hasSequentialToolCall) {</span>
+<span class="code-line">    return executeToolCallsSequential(currentContext, assistantMessage, toolCalls, config, signal, emit);</span>
+<span class="code-line">}</span>
+<span class="code-line">return executeToolCallsParallel(currentContext, assistantMessage, toolCalls, config, signal, emit);</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">先把这一轮里的工具单挑出来——只挑 toolCall 那种块。</p>
+              <p class="tl">再看这堆单子里，有没有哪个工具自己声明了必须排队。</p>
+              <p class="tl">只要整轮被设成 sequential，或者有一只手必须排队，这轮就排队。</p>
+              <p class="tl">否则默认一起执行——模型一轮要读三个文件，就一次读三个。</p>
+            </div>
+          </div>
+        </div>
+        <span class="file-ref">📦 packages/agent/src/agent-loop.ts : 525-532</span>
+      </section>
+
+      <!-- ── Screen 6 ─────────────────────────────────────────── -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">练一练：这张单子该递给谁</h2>
+
+        <div class="quiz-container" id="quiz-module-4">
+          <div class="quiz-question-block"
+               data-correct="q1-a"
+               data-explanation-right="对。三件事分属三处：工具的实现和它的参数说明书写在 coding-agent 的 core/tools/，执行前那次校验在 agent 循环里（validateToolArguments）。分工清楚，模型填错时 pi 能在动手之前就拦下来。"
+               data-explanation-wrong="分工记反了：参数说明书和实现是一体的，都写在工具文件里；校验不在工具里，而在 agent 循环里——工具只负责被调用时正确执行。">
+            <h3 class="quiz-question">你要加一个新工具「查数据库并返回表格」。工具本体写在哪一层？参数说明书由谁声明？谁负责在执行前把模型填的参数校验一遍？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="q1-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>实现写在 packages/coding-agent/src/core/tools/；参数说明书由工具自己声明成 schema；校验由 agent 循环负责</span>
+              </button>
+              <button class="quiz-option" data-value="q1-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>实现写在 packages/agent/src/；参数用一句自然语言描述就行，让模型自己保证填对</span>
+              </button>
+              <button class="quiz-option" data-value="q1-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>实现写在 packages/ai/src/api/；参数说明从模型名字里推断出来</span>
+              </button>
+              <button class="quiz-option" data-value="q1-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>全写在 coding-agent 的界面里，让模型自己拼数据库请求</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="q2-b"
+               data-explanation-right="对。参数先过 schema 校验，不合法根本碰不到文件系统；失败被包成一条 isError 的工具结果追加回上下文，模型下一轮就能看到错在哪、自己改。"
+               data-explanation-wrong="工具失败不是崩溃：pi 会把失败写成一条 isError 的工具结果消息，让模型自己看到并修正。而且校验发生在执行之前——文件根本没被读。">
+            <h3 class="quiz-question">模型调 read 时少填了必填的 path。这次失败发生在执行之前还是之后？错误会出现在哪一类消息里？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="q2-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>执行之后——错误打在终端的 stderr 里</span>
+              </button>
+              <button class="quiz-option" data-value="q2-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>执行之前——校验先于执行，失败被包成一条 isError 的工具结果，模型能读到并自己改</span>
+              </button>
+              <button class="quiz-option" data-value="q2-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>执行之前——pi 直接崩掉退出</span>
+              </button>
+              <button class="quiz-option" data-value="q2-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>模型会被自动重试，直到把参数填对为止</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="q3-b"
+               data-explanation-right="对。模型输出里的文字永远不会被当作命令执行；只有结构化的 toolCall 块会被挑出来送去执行。这就是它叫「工具单」而不是「聊天」的原因。"
+               data-explanation-wrong="这句话是模型的口头说明，不是命令。pi 只执行结构化的工具调用块；模型想说「我现在运行 ls」而没发出工具单，那就真的什么都不会发生。">
+            <h3 class="quiz-question">对话记录里模型写了「我现在运行 ls 看看」，却没有任何工具结果消息。为什么没执行？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="q3-a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>ls 这个工具根本不存在</span>
+              </button>
+              <button class="quiz-option" data-value="q3-b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>散文不是指令——只有结构化的 toolCall 块才触发执行，模型只说不做，就没人替它做</span>
+              </button>
+              <button class="quiz-option" data-value="q3-c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>因为 bash 被禁用了</span>
+              </button>
+              <button class="quiz-option" data-value="q3-d" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>因为工具结果消息还没刷新出来</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module-4')">看看我的判断</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module-4')">再想一遍</button>
+        </div>
+
+        <p>以后你在对话里看到模型说「我来读一下这个文件」，别急着信它——真正干活的是另一条通道。<strong>只有一条 role 为 toolResult 的消息，才是它真的动了手</strong>；参数不合法时，失败发生在动手之前。你能分清「模型想执行」和「模型已执行」，就不会被它的语气骗。</p>
+      </section>
+
+    </div>
+  </div>
+</section>
+<section class="module" id="module-5" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">05</span>
+      <h1 class="module-title">记忆：会话、上下文与压缩</h1>
+      <p class="module-subtitle">断电之后靠什么接上</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- SCREEN 1 · 两种「记得」 -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">两种「记得」</h2>
+        <p>你昨天关掉 pi，今天重开，<span class="term" data-definition="session：一次连续的对话记录。pi 把它存成一个文件，关掉再打开还能接着聊。">会话</span>还在——可模型却「忘了」你早先说过的一个路径。这两件事同时为真，因为 pi 的记忆其实是两样东西。</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-actor-1)">📓</div>
+            <h4 class="pattern-title">磁盘上的 <span class="term" data-definition="JSON Lines：一种纯文本格式，一行写一条记录，像账本一行一笔。这里每一行就是一条会话条目。"><code>.jsonl</code></span></h4>
+            <p class="pattern-desc">整本笔记本摊在桌上，一行都不撕。只追加、不覆盖，关掉再打开还在——原始记录永远不丢。</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+            <div class="pattern-icon" style="background: var(--color-actor-5)">📖</div>
+            <h4 class="pattern-title">模型面前的<span class="term" data-definition="context window：模型一次能同时看见的文字总量上限。超了就装不下，所以必须先扔掉一些。">上下文窗口</span></h4>
+            <p class="pattern-desc">真正摊开给模型看的，只是书签压住的那几页。有硬上限（按 <span class="term" data-definition="token：模型计字的单位，一个 token 大致是四分之一个英文词。上下文上限和账单都按它算。">token</span> 计），装不下就必须丢掉旧的。</p>
+          </div>
+        </div>
+
+        <p>「存在磁盘上」和「此刻被模型看到」是两件事。分清这条线，你就知道「它忘了」该往哪儿治：去翻文件，还是在提示词里再提醒一次。</p>
+      </section>
+
+      <!-- SCREEN 2 · 磁盘上的笔记本 -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">磁盘上的笔记本</h2>
+        <p>笔记本不会凭空出现。它是一个文件，落在 <code>~/.pi/agent/sessions/</code> 下面；抽屉的名字，由你当时所在的项目路径改写而来。</p>
+
+        <div class="translation-code">
+          <span class="translation-label">TypeScript · session-manager.ts</span>
+          <pre><code><span class="code-line"><span class="code-keyword">function</span> <span class="code-function">getDefaultSessionDirPath</span>(cwd: string, agentDir: string = <span class="code-function">getDefaultAgentDir</span>()): string {</span>
+<span class="code-line">    <span class="code-keyword">const</span> resolvedCwd = <span class="code-function">resolvePath</span>(cwd);</span>
+<span class="code-line">    <span class="code-keyword">const</span> resolvedAgentDir = <span class="code-function">resolvePath</span>(agentDir);</span>
+<span class="code-line">    <span class="code-keyword">const</span> safePath = <span class="code-string">`--${resolvedCwd.replace(/^[/\\]/, "").replace(/[/\\:]/g, "-")}--`</span>;</span>
+<span class="code-line">    <span class="code-keyword">return</span> <span class="code-function">join</span>(resolvedAgentDir, <span class="code-string">"sessions"</span>, safePath);</span>
+<span class="code-line">}</span></code></pre>
+        </div>
+        <span class="file-ref">📦 packages/coding-agent/src/core/session-manager.ts : 589-594</span>
+
+        <div class="file-tree">
+          <div class="ft-folder open">
+            <span class="ft-name">~/.pi/agent/sessions/</span>
+            <span class="ft-desc">每个项目一个抽屉</span>
+            <div class="ft-children">
+              <div class="ft-folder">
+                <span class="ft-name">--D--hpl-projects-pi--/</span>
+                <span class="ft-desc">由当前工作目录改写而成</span>
+                <div class="ft-children">
+                  <div class="ft-file">
+                    <span class="ft-name">2026-10-29T10-12-33-123Z_019a...jsonl</span>
+                    <span class="ft-desc">当前会话：一行一条记录</span>
+                  </div>
+                  <div class="ft-file">
+                    <span class="ft-name">2026-10-28T18-04-02-900Z_019b...jsonl</span>
+                    <span class="ft-desc">上一次会话</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p>路径里的 <code>/</code> 和 <code>:</code> 都被换成 <code>-</code>，首尾再包上 <code>--</code>。所以你在哪个项目里开的 pi，就落在哪个抽屉里——不同项目天然分目录，不会串。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · session-manager.ts</span>
+            <pre><code><span class="code-line"><span class="code-function">_persist</span>(entry: SessionEntry): void {</span>
+<span class="code-line">    <span class="code-keyword">if</span> (!<span class="code-keyword">this</span>.persist || !<span class="code-keyword">this</span>.sessionFile) <span class="code-keyword">return</span>;</span>
+<span class="code-line"></span>
+<span class="code-line">    <span class="code-keyword">if</span> (!<span class="code-keyword">this</span>.flushed) {</span>
+<span class="code-line">        <span class="code-keyword">if</span> (!<span class="code-keyword">this</span>._hasConversation()) <span class="code-keyword">return</span>;</span>
+<span class="code-line">        <span class="code-keyword">const</span> fd = <span class="code-function">openSync</span>(<span class="code-keyword">this</span>.sessionFile, <span class="code-string">"wx"</span>);</span>
+<span class="code-line">        <span class="code-keyword">try</span> {</span>
+<span class="code-line">            <span class="code-keyword">for</span> (<span class="code-keyword">const</span> e <span class="code-keyword">of</span> <span class="code-keyword">this</span>.fileEntries) {</span>
+<span class="code-line">                <span class="code-function">writeFileSync</span>(fd, <span class="code-string">`${JSON.stringify(e)}\n`</span>);</span>
+<span class="code-line">            }</span>
+<span class="code-line">        } <span class="code-keyword">finally</span> {</span>
+<span class="code-line">            <span class="code-function">closeSync</span>(fd);</span>
+<span class="code-line">        }</span>
+<span class="code-line">        <span class="code-keyword">this</span>.flushed = <span class="code-keyword">true</span>;</span>
+<span class="code-line">    } <span class="code-keyword">else</span> {</span>
+<span class="code-line">        <span class="code-function">appendFileSync</span>(<span class="code-keyword">this</span>.sessionFile, <span class="code-string">`${JSON.stringify(entry)}\n`</span>);</span>
+<span class="code-line">    }</span>
+<span class="code-line">}</span></code></pre>
+            <span class="file-ref">📦 packages/coding-agent/src/core/session-manager.ts : 1172-1189</span>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">不落盘、或者还没定下文件在哪，那就什么都不做。</p>
+              <p class="tl">第一次写：先确认这个会话确实有对话，再用 "wx" 新建文件——这个模式在文件已存在时会直接报错，所以旧文件永远不会被覆盖。</p>
+              <p class="tl">把之前攒下的每一条记录，一行一条写进去。</p>
+              <p class="tl">不管写成功还是写失败，都把文件关上。</p>
+              <p class="tl">标记成「已经写过」了。</p>
+              <p class="tl">之后每来一条新记录，就往文件末尾追加一行。</p>
+              <p class="tl">整段只有一个写文件的动作：追加。没有「覆盖重写」这一说——所以磁盘上的原始记录，永远不会被后来的写入抹掉。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 3 · 书签压不住了 -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">书签压不住了</h2>
+        <p>上下文窗口有硬上限。装不下时，pi 必须扔掉一些旧消息。扔哪一段、什么时候扔，由两处代码决定：先算阈值，再算切点。</p>
+
+        <div class="translation-code">
+          <span class="translation-label">TypeScript · compaction.ts</span>
+          <pre><code><span class="code-line"><span class="code-keyword">export function</span> <span class="code-function">shouldCompact</span>(contextTokens: number, contextWindow: number, settings: CompactionSettings): boolean {</span>
+<span class="code-line">    <span class="code-keyword">if</span> (!settings.enabled) <span class="code-keyword">return</span> <span class="code-number">false</span>;</span>
+<span class="code-line">    <span class="code-keyword">return</span> contextTokens &gt; contextWindow - settings.reserveTokens;</span>
+<span class="code-line">}</span></code></pre>
+        </div>
+        <span class="file-ref">📦 packages/coding-agent/src/core/compaction/compaction.ts : 267-270</span>
+
+        <p>三个数一比就有答案：<code>contextTokens</code> 是当前上下文占了多少，<code>contextWindow</code> 是模型能吃下的上限，<code>reserveTokens</code> 是预留的余量。离那条线还差一点，就该动手了。</p>
+
+        <div class="translation-code">
+          <span class="translation-label">TypeScript · agent-session.ts</span>
+          <pre><code><span class="code-line"><span class="code-keyword">private async</span> <span class="code-function">_compactBeforeNextAssistantResponse</span>(context: AgentContext): Promise&lt;AgentContext&gt; {</span>
+<span class="code-line">    <span class="code-keyword">const</span> projection = <span class="code-keyword">this</span>.sessionManager.<span class="code-function">buildSessionProjection</span>();</span>
+<span class="code-line">    <span class="code-comment">// A virtual selection is checked in prepareRequest, against the model the request is routed to.</span></span>
+<span class="code-line">    <span class="code-keyword">const</span> model = <span class="code-keyword">this</span>.model;</span>
+<span class="code-line">    <span class="code-keyword">if</span> (!model || <span class="code-function">isVirtualModel</span>(model) || !<span class="code-keyword">this</span>._exceedsCompactionThreshold(model, projection)) {</span>
+<span class="code-line">        <span class="code-keyword">return</span> { ...context, messages: projection.messages };</span>
+<span class="code-line">    }</span>
+<span class="code-line">    <span class="code-keyword">await</span> <span class="code-keyword">this</span>._runAutoCompaction(<span class="code-string">"threshold"</span>, <span class="code-number">false</span>);</span>
+<span class="code-line">    <span class="code-keyword">return</span> { ...context, messages: <span class="code-keyword">this</span>.sessionManager.<span class="code-function">buildSessionProjection</span>().messages };</span>
+<span class="code-line">}</span></code></pre>
+        </div>
+        <span class="file-ref">📦 packages/coding-agent/src/core/agent-session.ts : 792-801</span>
+
+        <p>压缩发生在「下一次模型回复之前」，而且全自动——你不用点任何按钮。第一行的 <code>buildSessionProjection()</code> 是关键：它算出模型这一轮到底看哪几页，这一步叫<span class="term" data-definition="projection：投影。从整本笔记本里挑出真正要摊开的那几页，其余的还躺在抽屉里。">投影</span>。</p>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">所以「它忘了」永远有出处</strong>
+            <p>消息还在磁盘上（只追加、不覆盖），但它可能没进这一轮的上下文。两种可能——被<span class="term" data-definition="compaction：压缩。上下文快满的时候，让模型把旧消息写成一段摘要，好腾出地方。">压缩</span>换成了摘要，或者压根没被摊开。这不是玄学，是两处代码决定的。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 4 · 一轮里数据怎么走 -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">一轮里，数据怎么走</h2>
+        <p>把上面几块拼起来，就是一轮对话的完整路线。点「下一步」，看每一步谁在动。</p>
+
+        <div class="flow-animation" data-steps='[
+  {"highlight":"flow-m5-actor-1","label":"你在输入框里敲下一句话"},
+  {"highlight":"flow-m5-actor-2","label":"prompt() 先检查模型和密钥配好没有","packet":true,"from":"m5-actor-1","to":"m5-actor-2"},
+  {"highlight":"flow-m5-actor-3","label":"这条消息被追加进磁盘上的 .jsonl","packet":true,"from":"m5-actor-2","to":"m5-actor-3"},
+  {"highlight":"flow-m5-actor-4","label":"每一轮开始，agent-loop 调用 prepareNextTurn 挂钩"},
+  {"highlight":"flow-m5-actor-6","label":"压缩检查：上下文快满了吗","packet":true,"from":"m5-actor-4","to":"m5-actor-6"},
+  {"highlight":"flow-m5-actor-6","label":"若超阈值，模型先写一段摘要，摘要也追加进 .jsonl","packet":true,"from":"m5-actor-6","to":"m5-actor-3"},
+  {"highlight":"flow-m5-actor-2","label":"buildSessionProjection() 重算一遍：模型这一轮看哪几页"},
+  {"highlight":"flow-m5-actor-5","label":"请求带着这几页发给模型","packet":true,"from":"m5-actor-2","to":"m5-actor-5"},
+  {"highlight":"flow-m5-actor-3","label":"磁盘上的原始行一条都没少，只是不再进上下文"}
+]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-m5-actor-1">
+              <div class="flow-actor-icon" style="color: var(--color-actor-1)">你</div>
+              <span>用户</span>
+            </div>
+            <div class="flow-actor" id="flow-m5-actor-2">
+              <div class="flow-actor-icon" style="color: var(--color-actor-2)">AS</div>
+              <span>agent-session</span>
+            </div>
+            <div class="flow-actor" id="flow-m5-actor-3">
+              <div class="flow-actor-icon" style="color: var(--color-actor-3)">J</div>
+              <span>session-manager (.jsonl)</span>
+            </div>
+            <div class="flow-actor" id="flow-m5-actor-4">
+              <div class="flow-actor-icon" style="color: var(--color-actor-4)">AL</div>
+              <span>agent-loop</span>
+            </div>
+            <div class="flow-actor" id="flow-m5-actor-5">
+              <div class="flow-actor-icon" style="color: var(--color-actor-5)">M</div>
+              <span>模型</span>
+            </div>
+            <div class="flow-actor" id="flow-m5-actor-6">
+              <div class="flow-actor-icon" style="color: var(--color-actor-2)">C</div>
+              <span>compaction</span>
+            </div>
+          </div>
+
+          <div class="flow-packet"></div>
+
+          <div class="flow-step-label">点击「下一步」开始</div>
+
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">下一步</button>
+            <button class="btn flow-reset-btn">重放</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+
+        <div class="translation-code">
+          <span class="translation-label">TypeScript · agent-loop.ts</span>
+          <pre><code><span class="code-line"><span class="code-keyword">if</span> (lastCompletedTurn) {</span>
+<span class="code-line">    <span class="code-keyword">const</span> nextTurnSnapshot = <span class="code-keyword">await</span> config.<span class="code-function">prepareNextTurn</span>?.(lastCompletedTurn);</span>
+<span class="code-line">    <span class="code-keyword">if</span> (nextTurnSnapshot) {</span>
+<span class="code-line">        currentContext = nextTurnSnapshot.context ?? currentContext;</span>
+<span class="code-line">        preparedMessages = nextTurnSnapshot.messages ?? [];</span></code></pre>
+        </div>
+        <span class="file-ref">📦 packages/agent/src/agent-loop.ts : 194-198</span>
+
+        <p>这是 agent-loop 留出来的<span class="term" data-definition="hook：钩子。代码在特定时机留一个插口，让别的地方插一脚。pi 把压缩挂在这个插口上，所以你什么都不用管。">钩子</span>：每一轮开始之前，它先问一句「这一轮该用什么上下文」。pi 把压缩挂在这个点上，于是压缩就自动发生了。</p>
+
+        <p>还有一件事值得记住：<span class="term" data-definition="tool call：工具调用。模型发出的一句「我要用某个工具、参数是这样」，交给 pi 去执行。">工具调用</span>的结果（toolResult）和你的消息一样，都是普通消息。所以模型这一轮看到的，就是「你的话 + 工具的话」，没有别的。</p>
+      </section>
+
+      <!-- SCREEN 5 · 你在它干活时递进去的便条 -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">你在它干活时递进去的便条</h2>
+        <p>它正忙着改文件的时候，你又想起一件事：应该用 pnpm，不是 npm。pi 给了你两个入口，差别只有一个——等多久。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · agent.ts</span>
+            <pre><code><span class="code-line"><span class="code-comment">/** Queue a message to be injected after the current assistant turn finishes. */</span></span>
+<span class="code-line"><span class="code-function">steer</span>(message: AgentMessage): void {</span>
+<span class="code-line">    <span class="code-keyword">this</span>.steeringQueue.<span class="code-function">enqueue</span>(message);</span>
+<span class="code-line">}</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-comment">/** Queue a message to run only after the agent would otherwise stop. */</span></span>
+<span class="code-line"><span class="code-function">followUp</span>(message: AgentMessage): void {</span>
+<span class="code-line">    <span class="code-keyword">this</span>.followUpQueue.<span class="code-function">enqueue</span>(message);</span>
+<span class="code-line">}</span></code></pre>
+            <span class="file-ref">📦 packages/agent/src/agent.ts : 307-315</span>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">注释就是说明书：排一条队，等当前这一轮回答结束就插进来。</p>
+              <p class="tl">steer：把消息塞进 steeringQueue（便条队列）。</p>
+              <p class="tl">注释：排一条队，只在 agent 本来就要停下来的时候才跑。</p>
+              <p class="tl">followUp：把消息塞进 followUpQueue（后续队列）。</p>
+              <p class="tl">两段注释的差别就是全部差别：steer 等「一轮结束」，followUp 等「彻底停下」。两个都不会打断正在跑的动作。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-window" id="m5-chat-steer">
+          <div class="chat-messages">
+            <div class="chat-message" data-msg="0" data-sender="user" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">你</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">你</span>
+                <p>README 里没有安装步骤，帮我补上。</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="1" data-sender="pi" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">π</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">pi</span>
+                <p>我先读 README，再改文件。</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="2" data-sender="user" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">你</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">你（递进去的便条）</span>
+                <p>等等，用 pnpm 不是 npm。</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="3" data-sender="pi" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">π</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">pi</span>
+                <p>这一轮的工具调用跑完了。</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="4" data-sender="pi" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">π</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">pi（机制）</span>
+                <p>下一轮请求之前，便条从 steering 队列里取出，作为一条 user 消息进上下文。</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="5" data-sender="model" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-5)">M</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-5)">模型</span>
+                <p>收到：改用 pnpm。安装步骤已更新。</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-typing" id="m5-chat-steer-typing" style="display:none">
+            <div class="chat-avatar" id="m5-chat-steer-typing-avatar">?</div>
+            <div class="chat-typing-dots">
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+          </div>
+
+          <div class="chat-controls">
+            <button class="btn chat-next-btn">下一条</button>
+            <button class="btn chat-all-btn">全部播放</button>
+            <button class="btn chat-reset-btn">重放</button>
+            <span class="chat-progress"></span>
+          </div>
+        </div>
+
+        <p>便条不是打断，是排队：当前这一轮照常跑完，便条在下一轮请求之前被取出，变成一条 user 消息进上下文。所以你插话的最佳时机是「它正在干活的时候」——正好赶在下一轮请求之前。</p>
+      </section>
+
+      <!-- SCREEN 6 · 收尾 -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">收尾：先判断，再动手</h2>
+
+        <div class="quiz-container" id="quiz-module-5">
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="磁盘上的 .jsonl 只追加、不覆盖，那条消息一定还在。真正的问题几乎总是「它这一轮没看到」——可能刚被压缩掉了。所以先分清这两件事，再决定是补提示词还是翻文件。"
+               data-explanation-wrong="记住这条分界线：.jsonl 是只追加的，磁盘上的原始记录永远不会丢。去翻文件能确认这一点，但不能让模型重新看到它。真正要做的是判断这条消息有没有进上下文。">
+            <h3 class="quiz-question">会话跑长了，模型突然「忘了」你早先给的一个文件路径。你第一步做什么？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>打开 ~/.pi/agent/sessions/ 下的 .jsonl，确认那条消息在不在文件里</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>先分清是「磁盘上没有」还是「模型这一轮没看到」：在提示词里把路径再给一遍，同时怀疑刚发生过压缩</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>把会话清掉重开，让一切从零开始</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="这正是 buildSessionProjection() 干的事：磁盘上一行不少，模型面前只摊开摘要加保留段。压缩换掉的是「摊开的几页」，不是「笔记本本身」。"
+               data-explanation-wrong="摘要恰恰是进上下文的那一部分——旧页被抽走时，助手会写一张索引卡替代它们。只留 firstKeptEntryId 之后，等于让模型从半截记忆开始。">
+            <h3 class="quiz-question">一次对话已经发生过压缩。下一轮模型实际收到的是哪几条？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>全部条目，从第一条到最后一条</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>压缩摘要 + firstKeptEntryId 之后的条目；更早的原始条目还留在磁盘上，但不再进上下文</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>只有 firstKeptEntryId 之后的条目，摘要只留在磁盘上</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="a"
+               data-explanation-right="两个入口都是排队，不会打断。差别只在等多久：steer 等一轮结束，followUp 等彻底停下。便条最终在「下一轮请求前」被取出，和压缩后的投影一起送进模型。"
+               data-explanation-wrong="两个队列都不打断正在跑的动作，区别只在什么时候被取出。steer 是「这一轮做完就插进来」，followUp 是「等它彻底停下来再说」。">
+            <h3 class="quiz-question">agent 跑到一半，你要纠正方向。该用 steer 还是 followUp？依据是哪一句？如果这段时间刚好触发了压缩，便条最后落在哪一步？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>steer——注释写的是 after the current assistant turn finishes，而 followUp 是 only after the agent would otherwise stop；便条在下一轮请求前被取出，和压缩后的投影一起进上下文</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>followUp——它排在 agent 完全结束之后，更干净，不会打扰正在进行的推理</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>steer——它会立刻打断当前这次工具调用，把便条插到动作中间去</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module-5')">检查答案</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module-5')">再试一次</button>
+        </div>
+
+        <p><strong>所以，下次它「忘了」，别急着换模型、别急着清会话。</strong>先问两个问题：那条消息还在磁盘上吗？这一轮它到底看到了哪几页？回答完这两个问题，你就知道该补一句提示词，还是该去动压缩的阈值。</p>
+      </section>
+
+    </div>
+  </div>
+</section>
+<section class="module" id="module-6" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">06</span>
+      <h1 class="module-title">当它出错时：读懂失败</h1>
+      <p class="module-subtitle">报错不是事故，是回执</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- SCREEN 1 · 失败是数据，不是崩溃 -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">失败是数据，不是崩溃</h2>
+        <p>别的工具报错，就弹个红框让你重试。pi 不这样——它把错误原封不动塞回给模型，让模型自己看着办。</p>
+        <p>在 pi 里，工具抛出的<span class="term" data-definition="exception：异常。代码出错时抛出来的一个错误对象，里面带着一句人能读的说明。">异常</span>不是一场事故，而是一条数据。它会被包成一条 <code>isError: true</code> 的 toolResult（工具结果消息），记进比赛记录（transcript，对话记录），原样递回给球员（模型）。球员据此改动作，比赛照常进行。</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">🔧</div>
+            <h4 class="pattern-title">工具自己失败了</h4>
+            <p class="pattern-desc">路径不存在、命令退出码非零、写入被拒。判罚单写在 toolResult 里，模型通常会换个写法重试。</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">📖</div>
+            <h4 class="pattern-title">上下文被压缩掉了</h4>
+            <p class="pattern-desc">模型说「我没见过这个文件」，未必是瞎说——那一页可能根本没摊在它面前（见模块 05 的<span class="term" data-definition="compaction：压缩。上下文快满时让模型把旧消息写成一段摘要，好腾出地方。">压缩</span>）。</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">👀</div>
+            <h4 class="pattern-title">模型压根没看到</h4>
+            <p class="pattern-desc">你压根没说，或者那一轮压根没发出去。跟工具、跟压缩都没关系，先查自己的提示词。</p>
+          </div>
+        </div>
+
+        <p>把这三类症状分开，你的调试就从「猜」变成了「定位」：先读判罚单上写的字，再判断它出自哪一层。</p>
+      </section>
+
+      <!-- SCREEN 2 · 判罚单长什么样 -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">判罚单长什么样</h2>
+        <p>看一张真的判罚单。下面这段是 pi 在「模型回复被切断、工具参数可能只写了一半」时生成的。注意：它没有崩，它只是在写一条给模型看的消息。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">TypeScript · agent-loop.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">const</span> finalized: FinalizedToolCallOutcome = {</span>
+<span class="code-line">    toolCall,</span>
+<span class="code-line">    result: <span class="code-function">createErrorToolResult</span>(</span>
+<span class="code-line">        <span class="code-string">`Tool call "${toolCall.name}" was not executed: the response hit the output token limit, so its arguments may be truncated. Re-issue the tool call with complete arguments.`</span>,</span>
+<span class="code-line">    ),</span>
+<span class="code-line">    isError: <span class="code-keyword">true</span>,</span>
+<span class="code-line">};</span></code></pre>
+            <span class="file-ref">📦 packages/agent/src/agent-loop.ts : 500-506</span>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">大白话</span>
+            <div class="translation-lines">
+              <p class="tl">把这次工具调用打包成一个结果：这次调用是什么、结果是什么、是不是错误。</p>
+              <p class="tl">结果不是空字符串，而是一句写给模型看的话。</p>
+              <p class="tl">这句话说的是：这次调用没有执行，因为回复撞上了输出长度上限，参数可能是被切断的；请用完整参数重新发起一次。</p>
+              <p class="tl">isError: true 标记这条是错误——但它仍然是一条普通消息，会回到上下文里，模型能读、能改。</p>
+              <p class="tl">重点：这里没有任何崩溃，也没有任何弹窗。这只是一条内容为「没做」的消息。</p>
+            </div>
+          </div>
+        </div>
+
+        <p>这就是 pi 的取向：失败不是终点，是给模型的一次纠正机会。你在对话记录里看到的每一段乱码般的报错，往往正是模型下一次改对的地方。</p>
+      </section>
+
+      <!-- SCREEN 3 · 失败的两张脸 -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">失败的两张脸</h2>
+        <p>不是所有失败都喂回模型。工具层面的失败写回上下文，让模型改动作；但有些失败会直接叫停。分清这两张脸，你就知道该去 transcript 里找，还是该去终端里找。</p>
+
+        <div class="translation-code">
+          <span class="translation-label">TypeScript · agent-loop.ts</span>
+          <pre><code><span class="code-line"><span class="code-keyword">if</span> (toolCalls.length &gt; <span class="code-number">0</span>) {</span>
+<span class="code-line">    <span class="code-comment">// A "length" stop means the output was cut off by the token limit, so</span></span>
+<span class="code-line">    <span class="code-comment">// every tool call in the message may carry truncated arguments. Fail</span></span>
+<span class="code-line">    <span class="code-comment">// them all instead of executing potentially borked calls.</span></span>
+<span class="code-line">    <span class="code-keyword">const</span> executedToolBatch =</span>
+<span class="code-line">        message.stopReason === <span class="code-string">"length"</span></span>
+<span class="code-line">            ? <span class="code-keyword">await</span> <span class="code-function">failToolCallsFromTruncatedMessage</span>(toolCalls, emit)</span>
+<span class="code-line">            : <span class="code-keyword">await</span> <span class="code-function">executeToolCalls</span>(currentContext, message, config, signal, emit);</span>
+<span class="code-line">    toolResults.<span class="code-function">push</span>(...executedToolBatch.messages);</span>
+<span class="code-line">    hasMoreToolCalls = !executedToolBatch.terminate;</span></code></pre>
+        </div>
+        <span class="file-ref">📦 packages/agent/src/agent-loop.ts : 272-281</span>
+
+        <p>注释就是判罚理由：模型回复被<span class="term" data-definition="truncation：截断。写到一半被长度上限切断，句子和参数都可能只写了一半。">截断</span>时（<code>stopReason === "length"</code>），这次回复里的每个工具调用，参数都可能是残缺的。所以 pi 选择全部判失败，而不是照着执行一个参数写了一半的调用——那可能真的改错文件。</p>
+
+        <div class="translation-code">
+          <span class="translation-label">TypeScript · agent-session.ts</span>
+          <pre><code><span class="code-line"><span class="code-keyword">if</span> (!hasConfiguredAuth) {</span>
+<span class="code-line">    <span class="code-keyword">const</span> isOAuth = <span class="code-keyword">this</span>._modelRuntime.<span class="code-function">isUsingOAuth</span>(<span class="code-keyword">this</span>.model.provider);</span>
+<span class="code-line">    <span class="code-keyword">if</span> (isOAuth) {</span>
+<span class="code-line">        <span class="code-keyword">throw new</span> Error(</span>
+<span class="code-line">            <span class="code-string">`Authentication failed for "${this.model.provider}". `</span> +</span>
+<span class="code-line">                <span class="code-string">`Credentials may have expired or network is unavailable. `</span> +</span>
+<span class="code-line">                <span class="code-string">`Run '/login ${this.model.provider}' to re-authenticate.`</span>,</span>
+<span class="code-line">        );</span>
+<span class="code-line">    }</span>
+<span class="code-line">    <span class="code-keyword">throw new</span> Error(<span class="code-function">formatNoApiKeyFoundMessage</span>(<span class="code-keyword">this</span>.model.provider));</span>
+<span class="code-line">}</span></code></pre>
+        </div>
+        <span class="file-ref">📦 packages/coding-agent/src/core/agent-session.ts : 2181-2191</span>
+
+        <p>另一张脸：<span class="term" data-definition="authentication：认证。证明「你有权用这个模型账号」的那一步，通常靠一把 API key（密钥）。">认证</span>失败——密钥过期、网络不通，或者压根没配 API key。这类失败不会变成一条 toolResult 让模型自己想办法，而是直接 throw 一个错误，把这一轮叫停，错误信息里还告诉你该跑 <code>/login</code>。</p>
+      </section>
+
+      <!-- SCREEN 4 · 唯一的接缝 -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">唯一的接缝，和它没有的东西</h2>
+        <p>要拦住一次工具调用，pi 留了一个接缝：<code>beforeToolCall</code>。扩展（extension，pi 额外加载的一段代码）可以在工具真正动手之前插一脚，返回 <code>{ block: true, reason }</code>，这次调用就被拦下——而且拦下之后，仍然是以一条错误消息的形式回给模型。</p>
+
+        <div class="translation-code">
+          <span class="translation-label">TypeScript · agent-loop.ts</span>
+          <pre><code><span class="code-line"><span class="code-keyword">if</span> (beforeResult?.block) {</span>
+<span class="code-line">    <span class="code-keyword">const</span> result = <span class="code-function">createErrorToolResult</span>(beforeResult.reason || <span class="code-string">"Tool execution was blocked"</span>);</span>
+<span class="code-line">    <span class="code-keyword">if</span> (beforeResult.terminate === <span class="code-keyword">true</span>) {</span>
+<span class="code-line">        result.terminate = <span class="code-keyword">true</span>;</span>
+<span class="code-line">    }</span>
+<span class="code-line">    <span class="code-keyword">return</span> {</span>
+<span class="code-line">        kind: <span class="code-string">"immediate"</span>,</span>
+<span class="code-line">        result,</span>
+<span class="code-line">        isError: <span class="code-keyword">true</span>,</span>
+<span class="code-line">    };</span>
+<span class="code-line">}</span></code></pre>
+        </div>
+        <span class="file-ref">📦 packages/agent/src/agent-loop.ts : 755-765</span>
+
+        <p>看清这个<span class="term" data-definition="hook：钩子。代码留出来的插口，让别处在特定时机插一脚。beforeToolCall 就是这样一个插口。">钩子</span>：拦下来之后，它调用的是 <code>createErrorToolResult</code>，不是抛异常。所以模型收到的是「这次没做成，因为 XXX」，然后自己换办法——比赛照常进行。</p>
+
+        <div class="callout callout-warning">
+          <div class="callout-icon">⚠️</div>
+          <div class="callout-content">
+            <strong class="callout-title">注意：pi 不提供任何内置权限系统</strong>
+            <p>README《Permissions & Containerization》原文：Pi does not include a built-in permission system for restricting filesystem, process, network, or credential access. By default, it runs with the permissions of the user and process that launched it. 也就是说，<code>beforeToolCall</code> 这个接缝得你自己写扩展去用；pi 自己不会替你拦任何东西。</p>
+          </div>
+        </div>
+
+        <p>想要真正的隔离，官方给的三条路是<span class="term" data-definition="container / sandbox：容器和沙箱。都是把程序关进一个限制好的盒子里，让它碰不到外面的文件、网络和密钥。">容器化</span>：</p>
+
+        <div class="badge-list">
+          <div class="badge-item">
+            <code class="badge-code">Gondolin extension</code>
+            <span class="badge-desc">pi 和 provider 认证留在宿主机，只把内置工具和 ! 命令送进一个本地 Linux 微虚拟机</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">Plain Docker</code>
+            <span class="badge-desc">整个 pi 进程跑在本地容器里，隔离最简单</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">OpenShell</code>
+            <span class="badge-desc">整个 pi 进程跑在受策略控制的沙箱里</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 5 · 四层定位 -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">先定位层，再动手</h2>
+        <p>同一句报错，落在不同层，修法完全不同。读完判罚单，下一步是判断它出自哪一层。点标签切换。</p>
+
+        <div class="layer-demo">
+          <div class="layer-tabs">
+            <button class="layer-tab active" onclick="showLayer('m6-layer-tui', this)">tui</button>
+            <button class="layer-tab" onclick="showLayer('m6-layer-loop', this)">agent-loop</button>
+            <button class="layer-tab" onclick="showLayer('m6-layer-provider', this)">provider</button>
+            <button class="layer-tab" onclick="showLayer('m6-layer-tool', this)">tool</button>
+          </div>
+
+          <div class="layer-viewport">
+            <div class="layer" id="m6-layer-tui" style="display:block">
+              <h4>终端界面层（tui）</h4>
+              <p>你看到的那层：画字、收按键，把你敲的话变成一条消息发给代理循环。</p>
+              <p><strong>典型症状：</strong>输入框没反应、界面不刷新、进度条卡住不动——这些都跟模型无关，先怀疑这一层。</p>
+              <p><strong>去哪儿看：</strong><code>packages/tui</code></p>
+            </div>
+            <div class="layer" id="m6-layer-loop" style="display:none">
+              <h4>代理循环层（agent-loop）</h4>
+              <p>跑对话的那台机器：什么时候调工具、什么时候收尾、失败怎么写回上下文、上下文怎么被压缩。</p>
+              <p><strong>典型症状：</strong>模型反复重试同一个工具、压缩发生得莫名其妙、你插的便条迟迟不进上下文——看 <code>packages/agent/src/agent-loop.ts</code>。</p>
+            </div>
+            <div class="layer" id="m6-layer-provider" style="display:none">
+              <h4>模型服务层（provider）</h4>
+              <p>把请求发出去的那段电缆：换格式、附上密钥、处理限流和超时。</p>
+              <p><strong>典型症状：</strong>认证失败、限流、连接被拒、响应被截断——先看这一层和你的密钥配置，别急着怀疑模型。</p>
+            </div>
+            <div class="layer" id="m6-layer-tool" style="display:none">
+              <h4>工具层（tool）</h4>
+              <p>真正动手的那只手：读文件、跑命令、改代码。它抛出的错会被包成 toolResult，递回给模型。</p>
+              <p><strong>典型症状：</strong>路径不存在、命令退出码非零、写入被拒——去看那条 toolResult 里写的具体原因，那才是判罚单正文。</p>
+            </div>
+          </div>
+
+          <p class="layer-description">四层里，错误几乎总能落到一层。先读判罚单上的字，再决定去 tui、agent-loop、provider 还是 tool 里找。</p>
+        </div>
+      </section>
+
+      <!-- SCREEN 6 · 收尾 -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">收尾：三步调试法</h2>
+
+        <div class="quiz-container" id="quiz-module-6">
+          <div class="quiz-question-block"
+               data-correct="b"
+               data-explanation-right="pi 把工具的失败原样写回上下文，所以记录里一定有一条 toolResult 写着失败原因。模型看到它才可能重试——这就是「失败是数据」的证据。"
+               data-explanation-wrong="要看的不是模型说了什么，而是模型收到了什么。工具结果消息（toolResult）里带 isError: true 和具体报错，那才是判罚单本身。">
+            <h3 class="quiz-question">用户报「pi 反复重试同一条命令」。你先看对话记录（transcript）里的哪一条消息？看到什么就能断定是工具失败，而不是模型没听懂？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>看 assistant 那条消息——模型自己说了什么</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>看紧跟在它后面的 toolResult 消息：如果 isError 是 true、内容是具体的报错文本，就说明是工具执行失败，模型是看见了失败才重试</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>看最后一条用户消息——确认指令本身没写错</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="a"
+               data-explanation-right="代码注释写得很直白：参数可能被截断，所以宁可失败也不要执行可能被弄坏的调用。验证方式在记录里——会有一条明确的 toolResult 写着 was not executed。"
+               data-explanation-wrong="这跟速度、跟 token 数量都没关系。理由只有一个：参数可能只写了一半，执行它有可能做出错误的事。判据在对话记录里——有一条写明 was not executed 的 toolResult。">
+            <h3 class="quiz-question">模型回复到一半被截断（stopReason === "length"），工具参数只写了一半。代码为什么选「失败」而不是「照着执行」？你怎么验证它确实没执行？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>因为参数可能不完整，执行它可能做错事；验证办法是看记录里有没有一条 toolResult 写着 was not executed，而且没有对应的工具副作用</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>因为工具调用太多会拖慢响应；验证办法是数一下这轮一共产生了几条 toolResult</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>因为长度上限是硬性的，参数写不下会自动截短；验证办法是看模型回复末尾有没有省略号</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="a"
+               data-explanation-right="pi 没有内置权限系统，能动的只有 beforeToolCall 这一个接缝。它是代码层面的拦截，比提示词可靠；提示词只是建议，模型有权不遵守。真要隔离，还得靠容器化。"
+               data-explanation-wrong="提示词是建议，不是保证——模型可能遵守，也可能不遵守。pi 里唯一能真正拦住一次工具调用的地方，是 beforeToolCall 这个接缝；再往外就是容器化。">
+            <h3 class="quiz-question">用户要禁止 agent 删文件。从哪个接缝下手？如果只靠在提示词里写一句「请不要删文件」，风险在哪？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>从 beforeToolCall 这个接缝下手：写一个扩展监听 tool_call 事件，删除类工具就返回 { block: true, reason }，拦下后仍以错误消息回给模型。只靠提示词的风险是：模型可能照做也可能不照做，提示词只是建议，不是保证</span>
+              </button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>从提示词下手，在系统提示里写死「禁止删除文件」——这样最稳，不用改代码</span>
+              </button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>从模型下手，换一个更听话、更严格遵守指令的模型</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module-6')">检查答案</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module-6')">再试一次</button>
+        </div>
+
+        <p><strong>所以，调试 pi 的顺序永远是三步：</strong>先读那张判罚单（错误文本写在哪儿），再判断它出自哪一层（tui / agent-loop / provider / tool），最后才决定是改代码、加一层扩展，还是改提示词。pi 把失败原样喂回模型，是为了让模型自己纠正；你不需要猜，你需要读。</p>
+      </section>
+
+    </div>
+  </div>
+</section>
+  </main>
+
+</body>
+</html>

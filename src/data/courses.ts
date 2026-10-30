@@ -82,6 +82,34 @@ export const COURSE_TAGS = [
     order: 60,
     aliases: [],
   },
+  {
+    id: 'agent-loop',
+    label: '代理循环',
+    group: 'mechanics',
+    order: 50,
+    aliases: ['agent loop', '工具循环'],
+  },
+  {
+    id: 'tool-calling',
+    label: '工具调用',
+    group: 'mechanics',
+    order: 55,
+    aliases: ['tool call', 'function call'],
+  },
+  {
+    id: 'context-compaction',
+    label: '上下文压缩',
+    group: 'mechanics',
+    order: 60,
+    aliases: ['compaction', '上下文裁剪'],
+  },
+  {
+    id: 'pi',
+    label: 'Pi',
+    group: 'product',
+    order: 70,
+    aliases: [],
+  },
 ] as const satisfies readonly {
   id: string
   label: string
@@ -134,6 +162,19 @@ export const COURSES: Course[] = [
     modules: 5,
     minutes: 25,
     tags: ['binary-scoring', 'llm2jev'],
+  },
+  {
+    slug: 'pi',
+    title: 'Pi 编码代理内部探秘',
+    subtitle: '跟着一句话,走完一个编码代理的六次接力',
+    description:
+      '从你在终端按下回车,到模型说「就到这里」:回车如何穿过 TUI、会话预检、代理循环、模型运行时与内置工具,上下文超限时如何压缩,每一步又如何落盘成 .jsonl。每个场景都配可交互架构图与逐行源码翻译。',
+    track: 'ai-infra',
+    format: 'source-walkthrough',
+    level: 'intermediate',
+    modules: 6,
+    minutes: 35,
+    tags: ['agent-loop', 'tool-calling', 'context-compaction', 'pi'],
   },
 ]
 
