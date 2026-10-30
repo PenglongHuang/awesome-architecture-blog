@@ -1,7 +1,16 @@
 ---
 const base = import.meta.env.BASE_URL
 ---
-<footer class="site-footer">
-  <span>© 2026 Penglong Huang · 内容整理自 <a href="https://github.com/study8677/awesome-architecture">Awesome Architecture</a> · MIT</span>
-  <span><a href={`${base}rss.xml`}>RSS</a> · <a href="https://github.com/PenglongHuang/awesome-architecture-blog">GitHub</a></span>
+<footer class="site-footer frame">
+  <div class="grid">
+    <p class="site-footer__name"><a href={base}>AI架构师之路</a></p>
+    <div class="site-footer__cols">
+      <a href={`${base}about/`}>关于</a>
+      <a href={`${base}rss.xml`}>RSS</a>
+      <a href="https://github.com/PenglongHuang/awesome-architecture-blog">GitHub</a>
+      <a href="https://github.com/study8677/awesome-architecture">内容来源：Awesome Architecture</a>
+      <span class="spacer"></span>
+      <span>© 2026 Penglong Huang · MIT</span>
+    </div>
+  </div>
 </footer>

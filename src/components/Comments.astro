@@ -5,9 +5,11 @@ const categoryId = import.meta.env.PUBLIC_GISCUS_CATEGORY_ID ?? ''
 const enabled = Boolean(repoId && categoryId)
 ---
 {enabled ? (
-  <section class="section" style="border-bottom:0" data-pagefind-ignore>
-    <div class="section__head"><b>评论</b><i>DISCUSSIONS</i></div>
-    <div id="giscus-host"></div>
+  <section class="section frame" style="padding-bottom: 40px" data-pagefind-ignore>
+    <div class="grid">
+      <h2 class="section__title" style="grid-column: 1 / 13; margin-bottom: 20px; font-size: var(--step-body);">评论</h2>
+      <div id="giscus-host" style="grid-column: 1 / 13;"></div>
+    </div>
     <script define:vars={{ repoId, categoryId }}>
       (() => {
         const theme = () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light')

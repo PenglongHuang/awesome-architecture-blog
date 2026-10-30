@@ -22,7 +22,7 @@ const next = idx >= 0 && idx < siblings.length - 1 ? siblings[idx + 1] : undefin
 const date = post.data.pubDate.toISOString().slice(0, 10)
 ---
 <BaseLayout title={post.data.title} description={post.data.description}>
-  <div class="article">
+  <div class="article frame">
     <article data-pagefind-body>
       <div class="crumb" data-pagefind-ignore>
         {channelLabel}

@@ -7,16 +7,25 @@ import BaseLayout from '../layouts/BaseLayout.astro'
     rel="modulepreload"
     href={`${import.meta.env.BASE_URL}_pagefind/pagefind.js`}
   />
-  <div class="section">
-    <p class="kicker">Search</p>
-    <h1 style="font-size:38px;font-weight:400;margin:10px 0 18px">搜索全站内容</h1>
-    <form class="search-form" id="search-form">
-      <input id="search-input" type="search" placeholder="试试「一致性」「抢票」「RAG」" autofocus />
-      <button type="submit">搜索</button>
-    </form>
-    <p id="search-status" class="dek">正在加载索引…</p>
-    <div id="search-results"></div>
+  <div class="page-head frame">
+    <div class="grid">
+      <p class="page-head__side">全站全文检索</p>
+      <h1 class="page-head__title">搜索</h1>
+      <p class="page-head__intro">试试「一致性」「抢票」「RAG」。</p>
+    </div>
   </div>
+  <section class="section frame">
+    <div class="grid">
+      <div style="grid-column: 1 / 13;">
+        <form class="search-form" id="search-form">
+          <input id="search-input" type="search" placeholder="试试「一致性」「抢票」「RAG」" autofocus />
+          <button class="button" type="submit">搜索</button>
+        </form>
+        <p id="search-status" class="dek">正在加载索引…</p>
+        <div id="search-results"></div>
+      </div>
+    </div>
+  </section>
 
   <script>
     const base = import.meta.env.BASE_URL

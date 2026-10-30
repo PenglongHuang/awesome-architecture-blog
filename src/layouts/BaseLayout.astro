@@ -27,7 +27,10 @@ const isSearchPage = path === '/search/' || path === '/search'
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <link rel="icon" href={`${base}favicon.svg`} />
+    <link rel="preconnect" href="https://api.fontshare.com" />
+    <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
+    <link href="https://api.fontshare.com/v2/css?f[]=erode@400,401,500,600&display=swap" rel="stylesheet" />
     {!isSearchPage && (
       <script
         type="speculationrules"
@@ -47,17 +50,17 @@ const isSearchPage = path === '/search/' || path === '/search'
         const stored = localStorage.getItem('theme');
         const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         document.documentElement.dataset.theme = stored || (dark ? 'dark' : 'light');
+        document.documentElement.classList.add('js');
       })();
     </script>
   </head>
   <body>
-    <div class="wrap">
-      <Masthead />
-      <main><slot /></main>
-      <Footer />
-    </div>
+    <Masthead />
+    <main><slot /></main>
+    <Footer />
     <script>
       import '../scripts/quiz'
+      import '../scripts/reveal'
     </script>
   </body>
 </html>

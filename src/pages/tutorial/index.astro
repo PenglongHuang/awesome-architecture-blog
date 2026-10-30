@@ -9,21 +9,28 @@ import { sortByDateDesc, postChannel } from '../../lib/posts'
 const all = await getCollection('posts')
 const series = SERIES.filter((s) => s.channel === 'tutorial').sort((a, b) => a.order - b.order)
 const recent = sortByDateDesc(all.filter((p) => postChannel(p) === 'tutorial')).slice(0, 6)
+const count = all.filter((p) => postChannel(p) === 'tutorial').length
 ---
 <BaseLayout title="入门教程">
-  <div class="hero">
-    <p class="kicker">入门教程 · 43 篇</p>
-    <h1>像架构师一样思考</h1>
-    <p>不教你任何语言或框架,只教你一种可迁移的判断力:在写代码之前,先把系统想清楚。</p>
-  </div>
-  <div class="section">
-    <div class="section__head"><b>系列</b><i>SERIES · {series.length}</i></div>
-    <div class="series-grid">
-      {series.map((s, i) => <SeriesCard series={s} count={all.filter((p) => p.data.series === s.id).length} index={i + 1} />)}
+  <div class="page-head frame">
+    <div class="grid">
+      <p class="page-head__side">{count} 篇 · {series.length} 条系列 · 每周更新</p>
+      <h1 class="page-head__title">像架构师一样思考</h1>
+      <p class="page-head__intro">不教你任何语言或框架，只教你一种可迁移的判断力：在写代码之前，先把系统想清楚。</p>
     </div>
   </div>
-  <div class="section">
-    <div class="section__head"><b>最近更新</b><i>RECENT</i></div>
-    <PostList posts={recent} />
-  </div>
+  <section class="section frame" aria-labelledby="tutorial-series">
+    <div class="grid">
+      <h2 class="section__title recent__title" id="tutorial-series">系列</h2>
+      <div class="series-grid">
+        {series.map((s) => <SeriesCard series={s} count={all.filter((p) => p.data.series === s.id).length} />)}
+      </div>
+    </div>
+  </section>
+  <section class="section frame" aria-labelledby="tutorial-recent">
+    <div class="grid">
+      <h2 class="section__title recent__title" id="tutorial-recent">最近更新</h2>
+      <PostList posts={recent} />
+    </div>
+  </section>
 </BaseLayout>

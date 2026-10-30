@@ -6,20 +6,20 @@ const items = [
   { href: `${base}templates/`, label: '架构地图', match: '/templates/' },
   { href: `${base}cases/`, label: '系统设计', match: '/cases/' },
   { href: `${base}learning/`, label: '项目学习', match: '/learning/' },
-  { href: `${base}about/`, label: '关于', match: '/about/' },
   { href: `${base}search/`, label: '搜索', match: '/search/' },
 ]
 ---
-<header class="masthead">
-  <a class="masthead__brand" href={base}>AI架构师之路</a>
-  <nav class="masthead__nav">
-    {items.map((it) => (
-      <a href={it.href} aria-current={path.includes(it.match) ? 'page' : undefined}>{it.label}</a>
-    ))}
-    <button id="theme-toggle" type="button" aria-label="切换深浅色" style="background:none;border:0;color:inherit;font:inherit;cursor:pointer">◐</button>
-  </nav>
+<header class="masthead frame">
+  <div class="grid">
+    <a class="masthead__brand" href={base}>AI架构师之路</a>
+    <nav class="masthead__nav" aria-label="主导航">
+      {items.map((it) => (
+        <a href={it.href} aria-current={path.includes(it.match) ? 'page' : undefined}>{it.label}</a>
+      ))}
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换深浅色">◐</button>
+    </nav>
+  </div>
 </header>
-<div class="subrule"></div>
 <script is:inline>
   document.getElementById('theme-toggle')?.addEventListener('click', () => {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';

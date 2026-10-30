@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'astro/config'
 import { unified } from '@astrojs/markdown-remark'
 import sitemap from '@astrojs/sitemap'
@@ -47,7 +48,20 @@ export default defineConfig({
   site: SITE,
   base: BASE,
   trailingSlash: 'always',
-  vite: { plugins: [courseDirectoryIndex()] },
+  vite: {
+    plugins: [courseDirectoryIndex()],
+    resolve: {
+      alias: [
+        // Astro 7's content sync runs inside a Vite 8 (rolldown) module-runner
+        // that inlines CJS packages raw and dies with "require is not defined".
+        // These shims (regenerate with scripts/build-cjs-shims.mjs) give the
+        // runner self-contained ESM builds instead.
+        { find: /^picomatch$/, replacement: fileURLToPath(new URL('./scripts/shims/picomatch.mjs', import.meta.url)) },
+        { find: /^yaml$/, replacement: fileURLToPath(new URL('./scripts/shims/yaml.mjs', import.meta.url)) },
+        { find: /^eventemitter3$/, replacement: fileURLToPath(new URL('./scripts/shims/eventemitter3.mjs', import.meta.url)) },
+      ],
+    },
+  },
   integrations: [
     sitemap({
       customPages: [

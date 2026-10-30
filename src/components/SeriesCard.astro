@@ -2,11 +2,10 @@
 import type { SeriesDef } from '../data/series'
 import { seriesHref } from '../lib/posts'
 interface Props { series: SeriesDef; count: number; index?: number }
-const { series, count, index } = Astro.props
+const { series, count } = Astro.props
 ---
 <a class="series-card" href={seriesHref(series.id)}>
-  <div class="series-card__n">{String(index ?? series.order).padStart(2, '0')}</div>
   <h3>{series.title}</h3>
   <p>{series.description}</p>
-  <div class="series-card__count">{count} 篇</div>
+  <div class="series-card__count">{count} 篇 →</div>
 </a>

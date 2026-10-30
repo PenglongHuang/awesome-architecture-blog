@@ -28,6 +28,7 @@
     "pagefind": "^1.5.2",
     "typescript": "^5.9.3",
     "unist-util-visit": "^5.0.0",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "yaml": "^2.9.1"
   }
 }

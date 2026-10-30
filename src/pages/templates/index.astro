@@ -9,21 +9,28 @@ import { sortByDateDesc, postChannel } from '../../lib/posts'
 const all = await getCollection('posts')
 const series = SERIES.filter((s) => s.channel === 'templates').sort((a, b) => a.order - b.order)
 const recent = sortByDateDesc(all.filter((p) => postChannel(p) === 'templates')).slice(0, 6)
+const count = all.filter((p) => postChannel(p) === 'templates').length
 ---
 <BaseLayout title="架构地图">
-  <div class="hero">
-    <p class="kicker">架构地图 · 31 篇</p>
-    <h1>真实系统长什么样</h1>
-    <p>只讲问题、组件、数据流和取舍。每张地图末尾都附真实开源项目与工程文档,可顺着去读源码。</p>
-  </div>
-  <div class="section">
-    <div class="section__head"><b>系列</b><i>SERIES · {series.length}</i></div>
-    <div class="series-grid">
-      {series.map((s, i) => <SeriesCard series={s} count={all.filter((p) => p.data.series === s.id).length} index={i + 1} />)}
+  <div class="page-head frame">
+    <div class="grid">
+      <p class="page-head__side">{count} 张地图 · {series.length} 条系列</p>
+      <h1 class="page-head__title">真实系统长什么样</h1>
+      <p class="page-head__intro">只讲问题、组件、数据流和取舍。每张地图末尾都附真实开源项目与工程文档，可顺着去读源码。</p>
     </div>
   </div>
-  <div class="section">
-    <div class="section__head"><b>最近更新</b><i>RECENT</i></div>
-    <PostList posts={recent} />
-  </div>
+  <section class="section frame" aria-labelledby="templates-series">
+    <div class="grid">
+      <h2 class="section__title recent__title" id="templates-series">系列</h2>
+      <div class="series-grid">
+        {series.map((s) => <SeriesCard series={s} count={all.filter((p) => p.data.series === s.id).length} />)}
+      </div>
+    </div>
+  </section>
+  <section class="section frame" aria-labelledby="templates-recent">
+    <div class="grid">
+      <h2 class="section__title recent__title" id="templates-recent">最近更新</h2>
+      <PostList posts={recent} />
+    </div>
+  </section>
 </BaseLayout>

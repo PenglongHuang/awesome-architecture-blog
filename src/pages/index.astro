@@ -1,45 +1,171 @@
 ---
 import { getCollection } from 'astro:content'
 import BaseLayout from '../layouts/BaseLayout.astro'
-import SeriesCard from '../components/SeriesCard.astro'
-import CourseCard from '../components/CourseCard.astro'
-import PostList from '../components/PostList.astro'
-import { SERIES } from '../data/series'
-import { COURSES } from '../data/courses'
-import { sortByDateDesc } from '../lib/posts'
+import { SERIES, CHANNELS } from '../data/series'
+import { COURSES, COURSE_FORMATS, COURSE_LEVELS, getTrackLabel } from '../data/courses'
+import { sortByDateDesc, postsInSeries, postHref, getSeries, seriesHref } from '../lib/posts'
+import { readingMinutes } from '../lib/reading-time'
 import { href } from '../lib/urls'
 
 const all = await getCollection('posts')
+const totalHours = Math.round(all.reduce((n, p) => n + readingMinutes(p.body ?? ''), 0) / 60)
 const recent = sortByDateDesc(all).slice(0, 6)
+
+const countTutorial = all.filter((p) => p.data.kind === 'tutorial').length
+const countTemplates = all.filter((p) => p.data.kind === 'template').length
+const countCases = all.filter((p) => p.data.kind === 'case').length
+
+// the learning path: every series except the single-system design channel,
+// grouped by channel the way the table blueprint groups rows
+const pathChannels = ['tutorial', 'templates'] as const
 const countOf = (id: string) => all.filter((p) => p.data.series === id).length
+
+// the route picker: three real entry points, first chapter and real minutes
+const routeStops = [
+  { key: 'start', series: 'foundations', label: '入门篇' },
+  { key: 'team', series: 'advanced', label: '进阶篇' },
+  { key: 'platform', series: 'cases', label: '系统设计篇' },
+]
+const routeData = Object.fromEntries(
+  routeStops.map(({ key, series, label }) => {
+    const posts = postsInSeries(all, series)
+    const first = posts[0]
+    return [
+      key,
+      {
+        label,
+        chapter: (first?.data.title ?? getSeries(series).title).replace(/^\d+\s*·\s*/, ''),
+        href: first ? postHref(first) : href('/tutorial/'),
+        minutes: posts.reduce((n, p) => n + readingMinutes(p.body ?? ''), 0),
+      },
+    ]
+  }),
+)
+
+const course = (slug: string) => COURSES.find((c) => c.slug === slug)!
+const litellm = course('litellm')
+const llm2jev = course('llm2jev')
+const courseCaption = (c: typeof litellm) =>
+  `${getTrackLabel(c.track)} · ${COURSE_FORMATS[c.format]} · ${c.modules} 个模块 · 约 ${c.minutes} 分钟 · ${COURSE_LEVELS[c.level]}`
 ---
 <BaseLayout title="AI架构师之路">
-  <div class="hero">
-    <p class="kicker">Architecture Notes · Vol. 2026</p>
-    <h1>先看清系统,<br />再动手写代码。</h1>
-    <p>写代码这件事正在消失,而判断力越来越值钱。这里收集 80 篇架构笔记:40 章入门教程、31 张架构地图、6 个系统设计,外加 1 门可交互的项目课程 —— 只讲架构,不讲语法。</p>
-    <div class="meta">自 2026 年 1 月起 · 每周两篇 · 中文</div>
-    <div><a class="cta" href={href('/tutorial/foundations/')}>从第一章开始 →</a></div>
-  </div>
-
-  <div class="section">
-    <div class="section__head"><b>学习路径</b><i>SERIES · {SERIES.length}</i></div>
-    <div class="series-grid">
-      {SERIES.filter((s) => s.channel !== 'cases').map((s, i) => (
-        <SeriesCard series={s} count={countOf(s.id)} index={i + 1} />
-      ))}
+  <section class="hero" aria-label="AI架构师之路">
+    <div class="band" data-in>
+      <div class="band__scene" data-ui role="img" aria-label="一张典型的 AI 网关架构地图：客户端经网关做路由、限流、计价，再转发到上游模型">
+        <p class="band__tag">架构地图 · AI 网关</p>
+        <div class="map-ui" aria-hidden="true">
+          <div class="map-ui__col">
+            <div class="ui-node">客户端</div>
+          </div>
+          <div class="map-ui__link"><span class="map-ui__label">请求</span><i class="ui-pulse"></i></div>
+          <div class="map-ui__col">
+            <div class="ui-node ui-node--focus">API 网关</div>
+            <div class="ui-chips"><span>路由</span><span>限流</span><span>计价</span></div>
+          </div>
+          <div class="map-ui__link"><span class="map-ui__label">转发</span><i class="ui-pulse ui-pulse--late"></i></div>
+          <div class="map-ui__col">
+            <div class="ui-node">模型 A</div>
+            <div class="ui-node">模型 B</div>
+            <div class="ui-node">模型 C</div>
+          </div>
+        </div>
+        <p class="band__note">跟着一条真实请求，穿过它该走的每一站。</p>
+      </div>
     </div>
-  </div>
-
-  <div class="section">
-    <div class="section__head"><b>项目学习</b><i>共 {COURSES.length} 门</i></div>
-    <div class="course-grid">
-      {COURSES.map((course) => <CourseCard course={course} />)}
+    <div class="grid frame">
+      <h1 class="hero__title" data-in>先看清系统，<br />再动手写代码。</h1>
+      <p class="hero__what" data-in>中文架构知识库：{countTutorial} 章入门教程、{countTemplates} 张架构地图、{countCases} 个系统设计、{COURSES.length} 门项目课程。从第一章走到能拍板，约 {totalHours} 小时。</p>
+      <p class="hero__deck" data-in>给已经会写代码、正在学着判断系统的人：只讲架构，不讲语法。</p>
+      <p class="hero__meta" data-in>自 2026 年 1 月起每周两篇，全部内容开源。</p>
+      <div class="route" data-in data-ui data-routes={JSON.stringify(routeData)}>
+        <p class="route__q">你在哪儿？</p>
+        <div class="route__stops">
+          {routeStops.map(({ key, label }) => (
+            <a class="route__stop" data-stop={key} href={routeData[key].href}>{label === '系统设计篇' ? '设计平台级系统' : label === '入门篇' ? '刚开始写代码' : '带团队做系统'}</a>
+          ))}
+        </div>
+        <p class="route__result" hidden></p>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <div class="section">
-    <div class="section__head"><b>最近更新</b><i>RECENT</i></div>
-    <PostList posts={recent} />
-  </div>
+  <section class="section" aria-labelledby="path-title">
+    <div class="grid frame">
+      <div class="path__head" data-in>
+        <h2 class="section__title" id="path-title">学习路径：<br /><span class="indent">从写代码到做判断</span></h2>
+      </div>
+      <div class="path__quiz" data-in>
+        <div class="quiz" data-ui data-answer="1">
+          <p class="quiz__kicker">第一章的随堂测验 · 真题</p>
+          <p class="quiz__q">在 AI 能秒出能跑代码的时代，一名工程师最该优先投资的能力是？</p>
+          <div class="quiz__opts">
+            <button type="button" class="quiz__opt" aria-pressed="false"><span class="quiz__key">A</span><span>记住更多 API、语法和框架细节，写得比 AI 更快</span></button>
+            <button type="button" class="quiz__opt" aria-pressed="false"><span class="quiz__key">B</span><span>在动手前判断系统该长什么样、会死在哪、愿意拿什么换什么</span></button>
+            <button type="button" class="quiz__opt" aria-pressed="false"><span class="quiz__key">C</span><span>尽量不让 AI 参与，所有代码都自己手写以保证质量</span></button>
+          </div>
+          <div class="quiz__actions"><button type="button" class="quiz__check">确认</button><button type="button" class="quiz__reset" hidden>重做</button></div>
+          <p class="quiz__feedback" role="status" hidden></p>
+          <p class="quiz__expl" hidden><strong>解析：</strong>实现的反馈快、错了好改、AI 越来越能代劳；架构判断反馈慢、错了可能要重写，且 AI 给不了在你的约束下哪个取舍才对。写代码在贬值，判断在升值。</p>
+        </div>
+      </div>
+      <div class="path__table">
+        {pathChannels.map((channel) => (
+          <div class="path__group" data-in>
+            <p class="path__kind">{CHANNELS[channel].title}</p>
+            {SERIES.filter((s) => s.channel === channel).map((s) => (
+              <a class="path__row" href={seriesHref(s.id)}>
+                <span class="path__name">{s.title}</span>
+                <span class="path__desc">{s.description}</span>
+                <span class="path__count">{countOf(s.id)} 篇 →</span>
+              </a>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="course-field" aria-labelledby="course-title">
+    <div class="frame">
+      <div class="grid">
+        <h2 class="section__title course__head" id="course-title" data-in>项目学习</h2>
+        <p class="course__intro" data-in>两门课都走进真实开源系统的源码：LiteLLM 把 AI 网关的路由、限流和计价逐行拆开；LLM2Jev 把一套 RAG 评测系统从数据到打分跑通。</p>
+        <div class="course__stage" data-in>
+          <a class="course__item" href={href(`/learning/${litellm.slug}/`)}>
+            <p class="course__word">LiteLLM</p>
+            <p class="course__cap">{courseCaption(litellm)}</p>
+          </a>
+          <a class="course__item" href={href(`/learning/${llm2jev.slug}/`)}>
+            <p class="course__word">LLM2Jev</p>
+            <p class="course__cap">{courseCaption(llm2jev)}</p>
+          </a>
+        </div>
+        <div class="course__decision" data-in data-ui>
+          <p class="decision__title">课程里每天都要做的推演 · 组件间通信：用同步调用，还是事件驱动？</p>
+          <div class="decision__cols">
+            <div><p class="decision__col-title">A · 同步调用</p><p>你直接命令对方去做 X 并等它做完。流程清晰、能立刻拿到结果、好调试。</p></div>
+            <div><p class="decision__col-title">B · 事件驱动</p><p>你只广播发生了 X，谁关心谁自己响应。高度解耦、易扩展，但整体流程看不见，要处理重复、乱序与最终一致。</p></div>
+          </div>
+          <p class="decision__verdict"><strong>怎么选：</strong>要立刻拿到结果、流程简单清晰 → 同步。一件事要扇出通知很多下游、且希望下游独立增减 → 事件驱动。别为了解耦把一条直路硬绕成迷宫。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="recent" aria-labelledby="recent-title">
+    <div class="frame">
+      <div class="grid">
+        <h2 class="section__title recent__title" id="recent-title" data-in>最近更新</h2>
+        <div class="recent__list" data-ui>
+          {recent.map((p) => (
+            <a class="recent__row" data-in href={postHref(p)}>
+              <span class="recent__title-cell">{p.data.title}</span>
+              <span class="recent__series">{getSeries(p.data.series).title}</span>
+              <span class="recent__date">{p.data.pubDate.toISOString().slice(0, 10)}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
 </BaseLayout>
