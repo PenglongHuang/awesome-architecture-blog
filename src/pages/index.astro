@@ -1,149 +1,75 @@
 ---
 import { getCollection } from 'astro:content'
 import BaseLayout from '../layouts/BaseLayout.astro'
-import { SERIES, CHANNELS } from '../data/series'
-import { COURSES, COURSE_FORMATS, COURSE_LEVELS, getTrackLabel } from '../data/courses'
-import { sortByDateDesc, postsInSeries, postHref, getSeries, seriesHref } from '../lib/posts'
+import BrandMark from '../components/BrandMark.astro'
+import CourseCard from '../components/CourseCard.astro'
+import { SERIES } from '../data/series'
+import { COURSES } from '../data/courses'
+import { sortByDateDesc, postHref, getSeries, seriesHref, postsInSeries } from '../lib/posts'
 import { readingMinutes } from '../lib/reading-time'
 import { href } from '../lib/urls'
 
 const all = await getCollection('posts')
-const totalHours = Math.round(all.reduce((n, p) => n + readingMinutes(p.body ?? ''), 0) / 60)
-const recent = sortByDateDesc(all).slice(0, 6)
-
-const countTutorial = all.filter((p) => p.data.kind === 'tutorial').length
-const countTemplates = all.filter((p) => p.data.kind === 'template').length
-const countCases = all.filter((p) => p.data.kind === 'case').length
-
-// the learning path: every series except the single-system design channel,
-// grouped by channel the way the table blueprint groups rows
-const pathChannels = ['tutorial', 'templates'] as const
-const countOf = (id: string) => all.filter((p) => p.data.series === id).length
-
-// the route picker: three real entry points, first chapter and real minutes
-const routeStops = [
-  { key: 'start', series: 'foundations', label: '入门篇' },
-  { key: 'team', series: 'advanced', label: '进阶篇' },
-  { key: 'platform', series: 'cases', label: '系统设计篇' },
+const recent = sortByDateDesc(all).slice(0, 4)
+const first = postsInSeries(all, 'foundations')[0]
+const firstHref = first ? postHref(first) : href('/tutorial/')
+const countTutorial = all.filter(p => p.data.kind === 'tutorial').length
+const countTemplates = all.filter(p => p.data.kind === 'template').length
+const countCases = all.filter(p => p.data.kind === 'case').length
+const tutorialSeries = SERIES.filter(s => s.channel === 'tutorial').sort((a,b) => a.order-b.order)
+const channels = [
+  { title: '入门教程', desc: '建立思考系统的方式。', count: `${countTutorial} 篇教程`, path: '/tutorial/', icon: 'book' },
+  { title: '架构地图', desc: '看懂真实系统的组织。', count: `${countTemplates} 张地图`, path: '/templates/', icon: 'layers' },
+  { title: '系统设计', desc: '从真实约束走向取舍。', count: `${countCases} 个案例`, path: '/cases/', icon: 'compass' },
 ]
-const routeData = Object.fromEntries(
-  routeStops.map(({ key, series, label }) => {
-    const posts = postsInSeries(all, series)
-    const first = posts[0]
-    return [
-      key,
-      {
-        label,
-        chapter: (first?.data.title ?? getSeries(series).title).replace(/^\d+\s*·\s*/, ''),
-        href: first ? postHref(first) : href('/tutorial/'),
-        minutes: posts.reduce((n, p) => n + readingMinutes(p.body ?? ''), 0),
-      },
-    ]
-  }),
-)
-
-const course = (slug: string) => COURSES.find((c) => c.slug === slug)!
-const litellm = course('litellm')
-const llm2jev = course('llm2jev')
-const courseCaption = (c: typeof litellm) =>
-  `${getTrackLabel(c.track)} · ${COURSE_FORMATS[c.format]} · ${c.modules} 个模块 · 约 ${c.minutes} 分钟 · ${COURSE_LEVELS[c.level]}`
 ---
 <BaseLayout title="AI架构师之路">
-  <section class="hero" aria-label="AI架构师之路">
-    <div class="grid frame">
-      <h1 class="hero__title" data-in>先看清系统，<br />再动手写代码。</h1>
-      <p class="hero__what" data-in>中文架构知识库：{countTutorial} 章入门教程、{countTemplates} 张架构地图、{countCases} 个系统设计、{COURSES.length} 门项目课程。从第一章走到能拍板，约 {totalHours} 小时。</p>
-      <p class="hero__deck" data-in>给已经会写代码、正在学着判断系统的人：只讲架构，不讲语法。</p>
-      <p class="hero__meta" data-in>自 2026 年 1 月起每周两篇，全部内容开源。</p>
-      <div class="route" data-in data-ui data-routes={JSON.stringify(routeData)}>
-        <p class="route__q">你在哪儿？</p>
-        <div class="route__stops">
-          {routeStops.map(({ key, label }) => (
-            <a class="route__stop" data-stop={key} href={routeData[key].href}>{label === '系统设计篇' ? '设计平台级系统' : label === '入门篇' ? '刚开始写代码' : '带团队做系统'}</a>
-          ))}
-        </div>
-        <p class="route__result" hidden></p>
+  <div class="home frame">
+    <section class="home-hero" aria-label="AI架构师之路">
+      <div class="home-hero__copy">
+        <p class="home-hero__intro"><span aria-hidden="true"></span> 一份持续生长的架构阅读集</p>
+        <h1>先看清系统，<br />再动手写代码。</h1>
+        <p class="home-hero__description">给已经会写代码，正在学着判断系统的人。<br class="desktop-break" />在阅读、拆解和实践中，建立自己的判断力。</p>
+        <div class="home-hero__actions"><a class="button" href={firstHref}>从第一章开始 <span aria-hidden="true">↗</span></a><a class="quiet-link" href="#knowledge">探索知识库 <span aria-hidden="true">↓</span></a></div>
       </div>
-    </div>
-  </section>
+      <a class="reading-object" href={firstHref} aria-label="阅读第一章：为什么先有架构思维">
+        <span class="reading-object__back" aria-hidden="true"></span>
+        <span class="reading-object__cover">
+          <span class="reading-object__edition">架构师之路 <span>阅读集</span></span>
+          <BrandMark class="reading-object__symbol" />
+          <strong>理解复杂，<br />做出判断。</strong>
+          <span class="reading-object__foot">从一个好问题开始 <span aria-hidden="true">↗</span></span>
+        </span>
+        <span class="reading-object__label" aria-hidden="true"><span>打开新的视角</span><svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </a>
+    </section>
 
-  <section class="section" aria-labelledby="path-title">
-    <div class="grid frame">
-      <div class="path__head" data-in>
-        <h2 class="section__title" id="path-title">学习路径：<br /><span class="indent">从写代码到做判断</span></h2>
-      </div>
-      <div class="path__quiz" data-in>
-        <div class="quiz" data-ui data-answer="1">
-          <p class="quiz__kicker">第一章的随堂测验 · 真题</p>
-          <p class="quiz__q">在 AI 能秒出能跑代码的时代，一名工程师最该优先投资的能力是？</p>
-          <div class="quiz__opts">
-            <button type="button" class="quiz__opt" aria-pressed="false"><span class="quiz__key">A</span><span>记住更多 API、语法和框架细节，写得比 AI 更快</span></button>
-            <button type="button" class="quiz__opt" aria-pressed="false"><span class="quiz__key">B</span><span>在动手前判断系统该长什么样、会死在哪、愿意拿什么换什么</span></button>
-            <button type="button" class="quiz__opt" aria-pressed="false"><span class="quiz__key">C</span><span>尽量不让 AI 参与，所有代码都自己手写以保证质量</span></button>
-          </div>
-          <div class="quiz__actions"><button type="button" class="quiz__check">确认</button><button type="button" class="quiz__reset" hidden>重做</button></div>
-          <p class="quiz__feedback" role="status" hidden></p>
-          <p class="quiz__expl" hidden><strong>解析：</strong>实现的反馈快、错了好改、AI 越来越能代劳；架构判断反馈慢、错了可能要重写，且 AI 给不了在你的约束下哪个取舍才对。写代码在贬值，判断在升值。</p>
-        </div>
-      </div>
-      <div class="path__table">
-        {pathChannels.map((channel) => (
-          <div class="path__group" data-in>
-            <p class="path__kind">{CHANNELS[channel].title}</p>
-            {SERIES.filter((s) => s.channel === channel).map((s) => (
-              <a class="path__row" href={seriesHref(s.id)}>
-                <span class="path__name">{s.title}</span>
-                <span class="path__desc">{s.description}</span>
-                <span class="path__count">{countOf(s.id)} 篇 →</span>
-              </a>
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
+    <section class="knowledge" id="knowledge" aria-label="探索知识库">
+      {channels.map(c => <a class="knowledge-card" href={href(c.path)}>
+        <span class="knowledge-card__icon" aria-hidden="true">
+          {c.icon==='book' ? <svg viewBox="0 0 24 24" fill="none"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1m0-15c3-2 6-2 9-1v15c-3-1-6-1-9 1V5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> : c.icon==='layers' ? <svg viewBox="0 0 24 24" fill="none"><path d="m3 8 9-5 9 5-9 5-9-5Zm0 5 9 5 9-5M3 18l9 5 9-5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> : <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="m16 8-2 6-6 2 2-6 6-2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>}
+        </span>
+        <div><h2>{c.title}</h2><p>{c.desc}</p></div><span class="knowledge-card__count">{c.count}<span aria-hidden="true">↗</span></span>
+      </a>)}
+    </section>
 
-  <section class="course-field" aria-labelledby="course-title">
-    <div class="frame">
-      <div class="grid">
-        <h2 class="section__title course__head" id="course-title" data-in>项目学习</h2>
-        <p class="course__intro" data-in>两门课都走进真实开源系统的源码：LiteLLM 把 AI 网关的路由、限流和计价逐行拆开；LLM2Jev 把一套 RAG 评测系统从数据到打分跑通。</p>
-        <div class="course__stage" data-in data-ui>
-          <a class="course__item" href={href(`/learning/${litellm.slug}/`)}>
-            <p class="course__word">LiteLLM</p>
-            <p class="course__cap">{courseCaption(litellm)}</p>
-          </a>
-          <a class="course__item" href={href(`/learning/${llm2jev.slug}/`)}>
-            <p class="course__word">LLM2Jev</p>
-            <p class="course__cap">{courseCaption(llm2jev)}</p>
-          </a>
-        </div>
-        <div class="course__decision" data-in data-ui>
-          <p class="decision__title">课程里每天都要做的推演 · 组件间通信：用同步调用，还是事件驱动？</p>
-          <div class="decision__cols">
-            <div><p class="decision__col-title">A · 同步调用</p><p>你直接命令对方去做 X 并等它做完。流程清晰、能立刻拿到结果、好调试。</p></div>
-            <div><p class="decision__col-title">B · 事件驱动</p><p>你只广播发生了 X，谁关心谁自己响应。高度解耦、易扩展，但整体流程看不见，要处理重复、乱序与最终一致。</p></div>
-          </div>
-          <p class="decision__verdict"><strong>怎么选：</strong>要立刻拿到结果、流程简单清晰 → 同步。一件事要扇出通知很多下游、且希望下游独立增减 → 事件驱动。别为了解耦把一条直路硬绕成迷宫。</p>
-        </div>
-      </div>
+    <div class="home-reading-grid">
+      <section class="home-feature" aria-labelledby="featured-title">
+        <div class="section-heading"><h2 id="featured-title">从这里读起</h2><span class="section-note">给判断力一个起点</span></div>
+        <a class="featured-story" href={firstHref}>
+          <span class="pill">入门篇 · 第一章</span><h3>{first?.data.title.replace(/^\d+\s*·\s*/, '') ?? '为什么先有架构思维'}</h3>
+          <p>当 AI 能够熟练地写出代码，决定该写什么、系统该长什么样，变得越来越重要。先从这个问题开始。</p>
+          <div class="story-meta"><span>{first ? `约 ${readingMinutes(first.body ?? '')} 分钟阅读` : '入门阅读'}</span><span>打开文章 <span aria-hidden="true">↗</span></span></div>
+        </a>
+      </section>
+      <aside class="home-series" aria-labelledby="series-title"><div class="section-heading"><h2 id="series-title">按系列探索</h2><a href={href('/tutorial/')} aria-label="查看全部教程系列">全部 <span aria-hidden="true">↗</span></a></div>
+        {tutorialSeries.slice(0,4).map(s => <a class="series-shortcut" href={seriesHref(s.id)}><span><strong>{s.title}</strong><small>{all.filter(p=>p.data.series===s.id).length} 篇文章</small></span><span aria-hidden="true">↗</span></a>)}
+      </aside>
     </div>
-  </section>
 
-  <section class="recent" aria-labelledby="recent-title">
-    <div class="frame">
-      <div class="grid">
-        <h2 class="section__title recent__title" id="recent-title" data-in>最近更新</h2>
-        <div class="recent__list" data-ui>
-          {recent.map((p) => (
-            <a class="recent__row" data-in href={postHref(p)}>
-              <span class="recent__title-cell">{p.data.title}</span>
-              <span class="recent__series">{getSeries(p.data.series).title}</span>
-              <span class="recent__date">{p.data.pubDate.toISOString().slice(0, 10)}</span>
-            </a>
-          ))}
-        </div>
-      </div>
-    </div>
-  </section>
+    <section class="home-courses" aria-labelledby="course-title"><div class="section-heading"><div><h2 id="course-title">走进真实项目</h2><p>沿着源码，把架构理解得再深一点。</p></div><a class="quiet-link" href={href('/learning/')}>全部课程 <span aria-hidden="true">↗</span></a></div><div class="course-grid">{COURSES.map(course => <CourseCard course={course} />)}</div></section>
+
+    <section class="home-recent" aria-labelledby="recent-title"><div class="section-heading"><h2 id="recent-title">最近更新</h2><span class="section-note">保持好奇，持续思考</span></div><div class="recent-stories">{recent.map(p => <a class="recent-story" href={postHref(p)}><span class="pill">{getSeries(p.data.series).title}</span><h3>{p.data.title.replace(/^(案例\s*)?\d+\s*·\s*/, '')}</h3><p>{p.data.description}</p><div class="story-meta"><time datetime={p.data.pubDate.toISOString()}>{p.data.pubDate.toISOString().slice(0,10)}</time><span aria-hidden="true">↗</span></div></a>)}</div></section>
+
+  </div>
 </BaseLayout>

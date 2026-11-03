@@ -1,0 +1,44 @@
+/* Shared by the Astro site and the standalone courses. */
+:root {
+  color-scheme: light;
+  --paper: #f2f1ef;
+  --card-paper: #fffefa;
+  --surface: #e8e3eb;
+  --ink: #343039;
+  --muted: #736c78;
+  --accent: #776180;
+  --accent-hover: #614e6a;
+  --accent-ink: #fffefa;
+  --soft: #eeebef;
+  --code-bg: #f0edf1;
+  --rule-line: #e5e0e8;
+  --mark-fold: #dedede;
+  --hero-bg: radial-gradient(ellipse at 82% 20%, #ffffff48, transparent 65%), #e8e1ec;
+  --shadow: 0 8px 32px #32323206, 0 1px 2px #32323203;
+  --shadow-raised: 0 16px 36px #32323212;
+  --surface-warm: #f7f7f7;
+  --muted-soft: #818181;
+  --border: #dedede;
+  --accent-muted: #a6a6a6;
+}
+[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: #211f24;
+  --card-paper: #2a272e;
+  --surface: #3c3343;
+  --ink: #eee9f0;
+  --muted: #b4a9bb;
+  --accent: #c1a9cf;
+  --accent-hover: #d5bfe0;
+  --accent-ink: #29212e;
+  --soft: #332e38;
+  --code-bg: #242129;
+  --rule-line: #413947;
+  --hero-bg: #393040;
+  --shadow: 0 8px 32px #0000000d;
+  --shadow-raised: 0 16px 36px #00000026;
+  --surface-warm: #343434;
+  --muted-soft: #a7a7a7;
+  --border: #515151;
+  --accent-muted: #a4a4a4;
+}

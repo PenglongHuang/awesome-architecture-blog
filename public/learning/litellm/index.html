@@ -637,13 +637,19 @@ footer code { color: #A6E3A1; font-family: var(--font-mono); font-size: var(--te
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
 </style>
+<link rel="icon" type="image/svg+xml" href="../../brand-mark.svg">
+<link rel="stylesheet" href="../../theme.css">
+<link rel="stylesheet" href="../reading-room.css">
+<script src="../../theme.js"></script>
 </head>
 <body>
 
 <nav class="nav" aria-label="课程导航">
   <div class="progress-bar" id="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
   <div class="nav-inner">
+    <a class="course-home" href="../../" aria-label="AI架构师之路 首页"><img src="../../brand-mark.svg" alt=""><span>AI架构师之路</span></a>
     <span class="nav-title">LiteLLM <span>内部漫游</span></span>
+    <button class="course-theme" data-theme-toggle type="button" aria-label="切换到暗黑主题"><span data-theme-icon aria-hidden="true">☾</span></button>
     <div class="nav-dots" role="tablist">
       <button class="nav-dot" data-target="hero" data-tooltip="封面" role="tab" aria-label="封面"></button>
       <button class="nav-dot" data-target="module-1" data-tooltip="01 请求之旅" role="tab" aria-label="模块 1"></button>

@@ -1,4 +1,5 @@
 ---
+import BrandMark from './BrandMark.astro'
 const base = import.meta.env.BASE_URL
 const path = Astro.url.pathname
 const items = [
@@ -6,25 +7,22 @@ const items = [
   { href: `${base}templates/`, label: '架构地图', match: '/templates/' },
   { href: `${base}cases/`, label: '系统设计', match: '/cases/' },
   { href: `${base}learning/`, label: '项目学习', match: '/learning/' },
-  { href: `${base}search/`, label: '搜索', match: '/search/' },
 ]
 ---
 <header class="masthead frame">
   <div class="grid">
-    <a class="masthead__brand" href={base}>AI架构师之路</a>
+    <a class="masthead__brand" href={base} aria-label="AI架构师之路"><span class="masthead__mark"><BrandMark /></span><span>AI架构师之路<small>理解系统，也理解取舍。</small></span></a>
     <nav class="masthead__nav" aria-label="主导航">
       {items.map((it) => (
         <a href={it.href} aria-current={path.includes(it.match) ? 'page' : undefined}>{it.label}</a>
       ))}
-      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换深浅色">◐</button>
     </nav>
+    <div class="masthead__actions">
+      <a class="nav-search" href={`${base}search/`} aria-label="搜索"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.7"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>搜索</span><kbd>/</kbd></a>
+      <button id="theme-toggle" class="theme-toggle" data-theme-toggle type="button" aria-label="切换到暗黑主题"><span data-theme-icon aria-hidden="true">☾</span></button>
+    </div>
   </div>
 </header>
-<script is:inline>
-  document.getElementById('theme-toggle')?.addEventListener('click', () => {
-    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = next;
-    localStorage.setItem('theme', next);
-    window.dispatchEvent(new CustomEvent('themechange', { detail: next }));
-  });
+<script>
+  import '../scripts/navigation'
 </script>

@@ -1,59 +1,14 @@
-/* AI架构师之路 — design tokens.
-   Direction: "The printed annual" (editorial-report), dealt by tasteskill v2, seed 1860620045.
-   Palette "Post red, mustard" mapped to roles; type = Erode (Latin display) + Noto Serif SC (CJK). */
-
+/* Layout and typography; palette is shared in public/theme.css. */
 :root {
-  /* ground / ink / accent */
-  --paper: #e2dccf;        /* bone ground */
-  --surface: #d7d0c1;      /* one tone step up: sections, tables */
-  --ink: #2a1110;          /* full ink, all running text */
-  --muted: #4d3b35;        /* secondary notes; still 7:1 on the bone ground */
-  --accent: #4a6f84;       /* slate: the one button, the active state */
-  --accent-ink: #ffffff;
-
-  /* colour pages (full-bleed fields) */
-  --field-red: #dc1928;    --field-red-ink: #ffffff;
-  --field-maroon: #952625; --field-maroon-ink: #f3ead9;
-  --field-mustard: #e0a912; --field-mustard-ink: #2a1110;
-  --field-slate: #4a6f84;  --field-slate-ink: #ffffff;
-
-  /* code surfaces stay quiet paper */
-  --code-bg: #cfc7b6;
-  --soft: #d7d0c1;
-
-  /* type. Erode is the Latin display face; Noto Serif SC carries CJK. Two families, no more. */
-  --font-display: "Erode", "Noto Serif SC", "Songti SC", Georgia, serif;
-  --font-text: "Noto Serif SC", "Songti SC", "Source Han Serif SC", Georgia, serif;
-  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; /* taste-skill-ignore: only real <code> blocks use it */
-
-  /* five sizes, no sixth */
-  --step-small: 1rem;                                            /* 16px captions and secondary notes */
-  --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);       /* 17–19px running text */
-  --step-lead: clamp(1.25rem, 1.1rem + 0.7vw, 1.5rem);           /* standfirst 20–24px */
-  --step-head: clamp(2rem, 1.3rem + 3.2vw, 4rem);                /* section headings */
-  --step-display: clamp(2.375rem, 1.72rem + 5.35vw, 7rem);       /* hero: 7 chars per line even on a phone */
-
-  /* the printed annual's fixed vertical axis: column 6 of 12 (42%) */
-  --axis: 41.6667%;
-  --margin: clamp(24px, 4vw, 72px);
-  --measure: 40em;
-  --section-gap: clamp(120px, 14vw, 220px);
-}
-
-[data-theme="dark"] {
-  /* the annual read by lamplight: same roles, inverted ground, fields deepened */
-  --paper: #17130f;
-  --surface: #211b15;
-  --ink: #ece4d3;
-  --muted: #b3a493;
-  --accent: #8fb0c4;
-  --accent-ink: #10161a;
-
-  --field-red: #8f1420;    --field-red-ink: #f7ede0;
-  --field-maroon: #6e1d1c; --field-maroon-ink: #f3ead9;
-  --field-mustard: #b8860e; --field-mustard-ink: #17130f;
-  --field-slate: #39586b;  --field-slate-ink: #f2f5f7;
-
-  --code-bg: #241f18;
-  --soft: #211b15;
+  --font-display: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-text: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'Cascadia Code', Consolas, 'Liberation Mono', monospace;
+  --step-small: .8125rem;
+  --step-body: 1rem;
+  --step-lead: 1.0625rem;
+  --step-head: clamp(1.875rem, 3.2vw, 2.625rem);
+  --step-display: clamp(2rem, 3.8vw, 3.25rem);
+  --margin: clamp(20px, 4vw, 56px);
+  --measure: 50rem;
+  --section-gap: 48px;
 }

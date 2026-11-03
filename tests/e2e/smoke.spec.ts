@@ -1,26 +1,29 @@
 import { test, expect } from '@playwright/test'
+import { COURSES } from '../../src/data/courses'
+
+const courseCount = COURSES.length
 
 test('首页 → 系列 → 文章', async ({ page }) => {
   await page.goto('')
   await expect(page.getByRole('heading', { name: /先看清系统/ })).toBeVisible()
-  await page.getByRole('link', { name: /入门篇/ }).first().click()
+  await page.locator('.home-series').getByRole('link', { name: /入门篇/ }).click()
   await expect(page.getByRole('heading', { name: '入门篇' })).toBeVisible()
   await page.getByRole('link', { name: /为什么先有架构思维/ }).click()
-  await expect(page.getByRole('heading', { name: '为什么先有架构思维' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /为什么先有架构思维/ })).toBeVisible()
   await expect(page.locator('.toc-desktop b')).toHaveText('本页目录')
 })
 
 test('新导航名称并进入项目学习', async ({ page }) => {
   await page.goto('')
-  await expect(page.getByRole('link', { name: 'AI架构师之路' })).toBeVisible()
-  await expect(page.getByRole('link', { name: '入门教程' })).toBeVisible()
-  await expect(page.getByText('共 1 门')).toBeVisible()
+  await expect(page.locator('.masthead').getByRole('link', { name: 'AI架构师之路', exact: true })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: '主导航' }).getByRole('link', { name: '入门教程', exact: true })).toBeVisible()
+  await expect(page.locator('[data-course-card]')).toHaveCount(courseCount)
 
-  await page.getByRole('link', { name: '系统设计' }).click()
+  await page.getByRole('navigation', { name: '主导航' }).getByRole('link', { name: '系统设计', exact: true }).click()
   await expect(page).toHaveURL(/cases\/$/)
   await expect(page.getByRole('heading', { name: '把架构从答案写成推理过程' })).toBeVisible()
 
-  const mapLink = page.getByRole('link', { name: '架构地图' })
+  const mapLink = page.getByRole('navigation', { name: '主导航' }).getByRole('link', { name: '架构地图', exact: true })
   await expect(mapLink).toBeVisible()
   await mapLink.click()
   await expect(page).toHaveURL(/templates\/$/)
@@ -33,7 +36,7 @@ test('新导航名称并进入项目学习', async ({ page }) => {
 
 test('项目学习课程页可打开并返回', async ({ page }) => {
   await page.goto('learning/')
-  await expect(page.getByText('项目学习 · 1 门')).toBeVisible()
+  await expect(page.locator('[data-course-card]')).toHaveCount(courseCount)
   await page.getByRole('link', { name: /LiteLLM 内部漫游指南/ }).click()
   await expect(page).toHaveURL(/learning\/litellm\/$/)
   await expect(page).toHaveTitle(/LiteLLM 内部漫游指南/)
@@ -47,7 +50,7 @@ test('项目学习可按方向与标签筛选并同步 URL', async ({ page }) =>
   await page.goto('learning/')
   const filter = page.locator('[data-course-filter]')
   await expect(filter).toBeVisible()
-  await expect(page.locator('[data-course-card]')).toHaveCount(1)
+  await expect(page.locator('[data-course-card]:visible')).toHaveCount(courseCount)
 
   const allTracks = filter.getByRole('button', { name: /^全部/ }).first()
   await expect(allTracks).toHaveAttribute('aria-pressed', 'true')
@@ -71,7 +74,7 @@ test('项目学习可按方向与标签筛选并同步 URL', async ({ page }) =>
     'rate-limiting',
   ])
   await expect(page.locator('[data-course-summary]')).toHaveText('显示 1 门 · 2 个标签')
-  await expect(page.locator('[data-course-card]')).toHaveCount(1)
+  await expect(page.locator('[data-course-card]:visible')).toHaveCount(1)
 
   await page.reload()
   await expect(filter.getByRole('button', { name: /AI 基础设施/ })).toHaveAttribute(
@@ -90,7 +93,7 @@ test('项目学习可按方向与标签筛选并同步 URL', async ({ page }) =>
     'ai-gateway',
     'rate-limiting',
   ])
-  await expect(page.locator('[data-course-card]')).toHaveCount(1)
+  await expect(page.locator('[data-course-card]:visible')).toHaveCount(1)
 
   await tagButton.click()
   expect(new URL(page.url()).searchParams.getAll('tag')).toEqual(['rate-limiting'])
@@ -100,8 +103,8 @@ test('项目学习可按方向与标签筛选并同步 URL', async ({ page }) =>
 
   await page.getByRole('button', { name: '清除筛选' }).click()
   await expect(page).toHaveURL(/learning\/$/)
-  await expect(page.locator('[data-course-summary]')).toHaveText('显示 1 门')
-  await expect(page.locator('[data-course-card]')).toHaveCount(1)
+  await expect(page.locator('[data-course-summary]')).toHaveText(`显示 ${courseCount} 门`)
+  await expect(page.locator('[data-course-card]:visible')).toHaveCount(courseCount)
 })
 
 test('课程卡片上的标签可直接筛选', async ({ page }) => {
@@ -120,7 +123,7 @@ test('课程卡片上的标签可直接筛选', async ({ page }) => {
   await expect(
     page.locator('[data-course-filter]').getByRole('button', { name: '限流' })
   ).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.locator('[data-course-card]')).toHaveCount(1)
+  await expect(page.locator('[data-course-card]:visible')).toHaveCount(1)
 })
 
 test('课程卡片标签支持键盘筛选', async ({ page }) => {
@@ -154,7 +157,8 @@ test.describe('项目学习无 JS 降级', () => {
   test('筛选栏隐藏且课程仍然可见', async ({ page }) => {
     await page.goto('learning/')
     await expect(page.locator('[data-course-filter]')).toBeHidden()
-    await expect(page.locator('[data-course-card]')).toBeVisible()
+    await expect(page.locator('[data-course-card]')).toHaveCount(courseCount)
+    await expect(page.locator('[data-course-card]').first()).toBeVisible()
     await expect(page.getByRole('link', { name: 'LiteLLM 内部漫游指南' })).toBeVisible()
     await expect(
       page.locator('[data-course-card] [data-tag-filter]').first()
@@ -175,11 +179,17 @@ test('主题切换会持久化', async ({ page }) => {
   await page.goto('')
   const html = page.locator('html')
   const before = await html.getAttribute('data-theme')
-  await page.getByRole('button', { name: '切换深浅色' }).click()
+  await page.getByRole('button', { name: /切换到.*主题/ }).click()
   const after = await html.getAttribute('data-theme')
   expect(after).not.toBe(before)
   await page.reload()
   await expect(html).toHaveAttribute('data-theme', after!)
+  await expect(page.locator('[data-theme-label]')).toHaveCount(0)
+  await page.goto('learning/litellm/')
+  await expect(html).toHaveAttribute('data-theme', after!)
+  await page.getByRole('button', { name: /切换到.*主题/ }).click()
+  await page.goto('')
+  await expect(html).toHaveAttribute('data-theme', before!)
 })
 
 test('搜索能返回结果', async ({ page }) => {

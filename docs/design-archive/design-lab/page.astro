@@ -1,0 +1,46 @@
+---
+import '@fontsource/noto-serif-sc/400.css'
+import '@fontsource/noto-serif-sc/600.css'
+import '../styles/design-lab.css'
+const base = import.meta.env.BASE_URL
+---
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>整站设计原型 · AI架构师之路</title>
+  </head>
+  <body data-direction="a" data-pagefind-ignore>
+    <aside class="lab-toolbar" aria-label="原型控制台">
+      <div class="lab-title">整站设计原型 <span>请选择方向，再深入体验</span></div>
+      <div class="direction-options" role="group" aria-label="设计方向">
+        <button data-direction="a" aria-pressed="true">A 纸本编辑部</button>
+        <button data-direction="b" aria-pressed="false">B 建筑手稿</button>
+        <button data-direction="c" aria-pressed="false">C 现代阅读室</button>
+      </div>
+      <a href={base}>返回当前网站</a>
+    </aside>
+    <div class="lab-caption"><p id="direction-description"></p><span>交互原型 / 示例内容，阅读记录仅保留在本次页面中</span></div>
+    <div id="prototype">
+      <header class="site-nav">
+        <a class="identity" href="#home" aria-label="AI架构师之路 首页">
+          <img class="identity-mark" src={`${base}brand-mark.svg`} width="40" height="40" alt="" />
+          <span>AI架构师之路<small>理解系统，也理解取舍。</small></span>
+        </a>
+        <nav aria-label="主导航"><a href="#home" data-nav="home">首页</a><a href="#tutorial" data-nav="tutorial">入门教程</a><a href="#maps" data-nav="maps">架构地图</a><a href="#cases" data-nav="cases">系统设计</a><a href="#learning" data-nav="learning">项目学习</a></nav>
+        <button class="search-trigger" data-search aria-label="搜索" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="1.5"/></svg><span>搜索</span><kbd>/</kbd></button>
+      </header>
+      <main id="screen" tabindex="-1"></main>
+      <footer class="site-end"><a href="#home">AI架构师之路</a><p>给已经会写代码，正在学着判断系统的人。</p><span>开源架构知识库 · 设计体验原型</span></footer>
+    </div>
+    <dialog id="search-dialog" aria-labelledby="search-title">
+      <div class="dialog-head"><h2 id="search-title">查找知识</h2><button data-close-search aria-label="关闭搜索">×</button></div>
+      <label class="search-field"><span>关键词</span><input id="search-input" type="search" placeholder="试试：架构、网关、一致性" autocomplete="off" /></label>
+      <p class="search-help">搜索原型中的示例文章与课程</p><div id="search-results" aria-live="polite"></div>
+    </dialog>
+    <noscript>这是可交互的设计原型，请启用 JavaScript。<a href={base}>返回博客</a></noscript>
+    <script src={`${base}design-lab/app.js`} is:inline></script>
+  </body>
+</html>

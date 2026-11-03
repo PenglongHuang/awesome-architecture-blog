@@ -24,8 +24,8 @@ const date = post.data.pubDate.toISOString().slice(0, 10)
 <BaseLayout title={post.data.title} description={post.data.description}>
   <div class="article frame">
     <article data-pagefind-body>
-      <h1 data-in>{post.data.title}</h1>
-      <div class="crumb" data-pagefind-ignore data-in>
+      <header class="article__header">
+      <div class="crumb" data-pagefind-ignore>
         {channelLabel}
         {showSeriesCrumb && (
           <>
@@ -35,9 +35,12 @@ const date = post.data.pubDate.toISOString().slice(0, 10)
         )}
         {' / '}第 {post.data.order} 篇
       </div>
-      {!(post.body ?? '').trimStart().startsWith('>') && <p class="dek" data-in>{post.data.description}</p>}
-      <div class="article__meta" data-pagefind-ignore data-in>{date} &nbsp;|&nbsp; 约 {readingMinutes(post.body ?? '')} 分钟 &nbsp;|&nbsp; 系列 {post.data.order} / {siblings.length}</div>
-      <div class="toc-mobile" data-pagefind-ignore><Toc headings={headings} /></div>
+      <h1>{post.data.title}</h1>
+      {!(post.body ?? '').trimStart().startsWith('>') && <p class="dek">{post.data.description}</p>}
+      <div class="article__meta" data-pagefind-ignore><time datetime={date}>{date}</time><span>约 {readingMinutes(post.body ?? '')} 分钟阅读</span><span>系列 {post.data.order} / {siblings.length}</span></div>
+      <div class="reading-controls" data-pagefind-ignore><button type="button" data-reading-size aria-pressed="false">大字阅读</button><button type="button" data-reading-focus aria-pressed="false">专注阅读</button></div>
+      </header>
+      <details class="toc-mobile" data-pagefind-ignore><summary>本页目录</summary><Toc headings={headings} /></details>
       <div class="prose"><Content /></div>
       <PostNav prev={prev} next={next} />
       <Comments />
@@ -45,3 +48,6 @@ const date = post.data.pubDate.toISOString().slice(0, 10)
     <div class="toc-desktop"><Toc headings={headings} /></div>
   </div>
 </BaseLayout>
+<script>
+  import '../../scripts/reading'
+</script>
