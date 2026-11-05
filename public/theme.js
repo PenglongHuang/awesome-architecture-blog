@@ -10,7 +10,16 @@
   function syncButton(button) {
     const dark = root.dataset.theme === 'dark';
     const label = `切换到${dark ? '明亮' : '暗黑'}主题`;
-    button.querySelector('[data-theme-icon]').textContent = dark ? '☀' : '☾';
+    const icon = button.querySelector('[data-theme-icon]');
+    const sun = icon?.querySelector?.('[data-icon-sun]');
+    const moon = icon?.querySelector?.('[data-icon-moon]');
+    if (sun && moon) {
+      // The masthead carries a pair of stroke icons; glyph buttons keep the text fallback.
+      sun.hidden = !dark;
+      moon.hidden = dark;
+    } else if (icon) {
+      icon.textContent = dark ? '☀' : '☾';
+    }
     button.setAttribute('aria-label', label);
     button.setAttribute('title', label);
   }
