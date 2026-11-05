@@ -148,8 +148,8 @@ describe('shared theme', () => {
     expect(picker.className).toBe('theme-picker')
     expect(picker.attrs.get('role')).toBe('menu')
     const options = page.optionsOf()
-    expect(options.map((option) => option.textContent)).toEqual(['明亮', '暗黑', '羊皮纸', '护眼绿'])
-    expect(options.map((option) => option.attrs.get('aria-checked'))).toEqual(['false', 'true', 'false', 'false'])
+    expect(options.map((option) => option.textContent)).toEqual(['明亮', '暗黑', '羊皮纸', '护眼绿', '纯白'])
+    expect(options.map((option) => option.attrs.get('aria-checked'))).toEqual(['false', 'true', 'false', 'false', 'false'])
     expect(page.attrs.get('aria-expanded')).toBe('true')
 
     page.click()
