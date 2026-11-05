@@ -175,21 +175,21 @@ test('Quiz 可以判分并展开解析', async ({ page }) => {
   await expect(quiz.locator('.quiz__expl')).toBeVisible()
 })
 
-test('主题切换会持久化', async ({ page }) => {
+test('主题风格可挑选并持久化', async ({ page }) => {
   await page.goto('')
   const html = page.locator('html')
-  const before = await html.getAttribute('data-theme')
-  await page.getByRole('button', { name: /切换到.*主题/ }).click()
-  const after = await html.getAttribute('data-theme')
-  expect(after).not.toBe(before)
+  await page.getByRole('button', { name: '选择主题风格' }).click()
+  await page.getByRole('menuitemradio', { name: '护眼绿' }).click()
+  await expect(html).toHaveAttribute('data-theme', 'green')
   await page.reload()
-  await expect(html).toHaveAttribute('data-theme', after!)
+  await expect(html).toHaveAttribute('data-theme', 'green')
   await expect(page.locator('[data-theme-label]')).toHaveCount(0)
   await page.goto('learning/litellm/')
-  await expect(html).toHaveAttribute('data-theme', after!)
-  await page.getByRole('button', { name: /切换到.*主题/ }).click()
+  await expect(html).toHaveAttribute('data-theme', 'green')
+  await page.getByRole('button', { name: '选择主题风格' }).click()
+  await page.getByRole('menuitemradio', { name: '明亮' }).click()
   await page.goto('')
-  await expect(html).toHaveAttribute('data-theme', before!)
+  await expect(html).toHaveAttribute('data-theme', 'light')
 })
 
 test('搜索能返回结果', async ({ page }) => {

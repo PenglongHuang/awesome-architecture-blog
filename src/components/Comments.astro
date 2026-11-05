@@ -12,7 +12,8 @@ const enabled = Boolean(repoId && categoryId)
     </div>
     <script define:vars={{ repoId, categoryId }}>
       (() => {
-        const theme = () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light')
+        // giscus only ships a light and a dark look; the tinted styles read as light.
+        const giscusTheme = () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light')
         const host = document.getElementById('giscus-host')
         if (!host) return
         let loaded = false
@@ -33,12 +34,12 @@ const enabled = Boolean(repoId && categoryId)
           s.dataset.reactionsEnabled = '1'
           s.dataset.emitMetadata = '0'
           s.dataset.inputPosition = 'top'
-          s.dataset.theme = theme()
+          s.dataset.theme = giscusTheme()
           s.dataset.lang = 'zh-CN'
           host.appendChild(s)
-          window.addEventListener('themechange', (e) => {
+          window.addEventListener('themechange', () => {
             const frame = document.querySelector('iframe.giscus-frame')
-            if (frame) frame.contentWindow?.postMessage({ giscus: { setConfig: { theme: e.detail } } }, 'https://giscus.app')
+            if (frame) frame.contentWindow?.postMessage({ giscus: { setConfig: { theme: giscusTheme() } } }, 'https://giscus.app')
           })
         }
 
