@@ -28,7 +28,7 @@
 - 内容构建时编译为 HTML
 - 搜索由 Pagefind 在浏览器本地用 WASM 完成
 - 评论由 giscus 承载，数据存在 GitHub Discussions
-- 主题、Quiz、课程筛选、目录等交互使用少量原生 JS；主题提供明亮 / 暗黑 / 羊皮纸 / 护眼绿四种风格，由站点与课程页共用的 `public/theme.css` + `public/theme.js` 承载
+- 主题、Quiz、课程筛选、目录等交互使用少量原生 JS；主题提供明亮 / 暗黑 / 羊皮纸 / 护眼绿 / 纯白五种风格，由站点与课程页共用的 `public/theme.css` + `public/theme.js` 承载
 
 ## 内容生产管线
 

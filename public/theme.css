@@ -1,5 +1,5 @@
 /* Shared by the Astro site and the standalone courses.
-   Four styles: 明亮 (default) / 暗黑 / 羊皮纸 / 护眼绿, keyed by <html data-theme>. */
+   Five styles: 明亮 (default) / 暗黑 / 羊皮纸 / 护眼绿 / 纯白, keyed by <html data-theme>. */
 :root {
   color-scheme: light;
   --paper: #f2f1ef;
@@ -88,6 +88,29 @@
   --accent-muted: #82a38b;
 }
 
+[data-theme='white'] {
+  color-scheme: light;
+  --paper: #ffffff;
+  --card-paper: #ffffff;
+  --surface: #f2f2f2;
+  --ink: #111111;
+  --muted: #6b6b6b;
+  --accent: #111111;
+  --accent-hover: #000000;
+  --accent-ink: #ffffff;
+  --soft: #f7f7f7;
+  --code-bg: #f4f4f4;
+  --rule-line: #eaeaea;
+  --mark-fold: #e0e0e0;
+  --hero-bg: radial-gradient(ellipse at 82% 20%, #ffffff48, transparent 65%), #f6f6f6;
+  --shadow: 0 8px 32px #0000000a, 0 1px 2px #00000005;
+  --shadow-raised: 0 16px 36px #00000014;
+  --surface-warm: #fafafa;
+  --muted-soft: #7a7a7a;
+  --border: #e2e2e2;
+  --accent-muted: #b5b5b5;
+}
+
 /* Theme picker, opened by any [data-theme-toggle] button on the site or in
    the standalone courses. The palette marker dot inherits the active accent. */
 [data-theme-icon] { color: var(--accent); }
@@ -135,3 +158,4 @@
 .theme-swatch[data-swatch='dark'] { background: linear-gradient(135deg, #211f24 50%, #c1a9cf 50%); }
 .theme-swatch[data-swatch='sepia'] { background: linear-gradient(135deg, #fbf6e8 50%, #9d5929 50%); }
 .theme-swatch[data-swatch='green'] { background: linear-gradient(135deg, #edf3e5 50%, #276e45 50%); }
+.theme-swatch[data-swatch='white'] { background: linear-gradient(135deg, #ffffff 50%, #111111 50%); }

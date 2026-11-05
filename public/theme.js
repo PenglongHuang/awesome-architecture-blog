@@ -7,6 +7,7 @@
     { id: 'dark', name: '暗黑' },
     { id: 'sepia', name: '羊皮纸' },
     { id: 'green', name: '护眼绿' },
+    { id: 'white', name: '纯白' },
   ]
   const STORAGE_KEY = 'theme'
   const root = document.documentElement
