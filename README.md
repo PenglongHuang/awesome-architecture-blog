@@ -6,7 +6,7 @@
 
 **线上入口：** [GitHub Pages](https://penglonghuang.github.io/awesome-architecture-blog/) · [自建镜像](http://118.196.50.229/awesome-architecture-blog/)
 
-80 篇架构笔记、1 门交互式项目课程、1 张可交互架构总览图，集中在一个纯静态站点里。
+80 篇架构笔记、3 门交互式项目课程、3 张可交互架构总览图，集中在一个纯静态站点里。
 
 ## 站点内容
 
@@ -15,13 +15,17 @@
 | [入门教程](https://penglonghuang.github.io/awesome-architecture-blog/tutorial/) | `/tutorial/` | 43 篇从架构思维到实战的入门教程 |
 | [架构地图](https://penglonghuang.github.io/awesome-architecture-blog/templates/) | `/templates/` | 31 张真实系统的架构地图 |
 | [系统设计](https://penglonghuang.github.io/awesome-architecture-blog/cases/) | `/cases/` | 6 个端到端的系统设计推演 |
-| [项目学习](https://penglonghuang.github.io/awesome-architecture-blog/learning/) | `/learning/` | 交互式项目课程，首门为 LiteLLM 源码漫游 |
+| [项目学习](https://penglonghuang.github.io/awesome-architecture-blog/learning/) | `/learning/` | 3 门交互式项目课程：LiteLLM / LLM2Jev / Pi |
 | [搜索](https://penglonghuang.github.io/awesome-architecture-blog/search/) | `/search/` | Pagefind 本地静态索引 |
+| [RSS](https://penglonghuang.github.io/awesome-architecture-blog/rss.xml) | `/rss.xml` | 全站文章订阅源 |
 
-项目学习除了课程正文，还包含一张可交互架构总览图：
+每门项目课程除了课程正文，还配一张可交互架构总览图：
 
-- [LiteLLM 内部漫游指南](https://penglonghuang.github.io/awesome-architecture-blog/learning/litellm/)
-- [LiteLLM Proxy 架构总览](https://penglonghuang.github.io/awesome-architecture-blog/learning/litellm/architecture.html)
+| 课程 | 课程正文 | 架构总览 |
+|---|---|---|
+| LiteLLM 内部漫游指南 | [课程](https://penglonghuang.github.io/awesome-architecture-blog/learning/litellm/) | [架构图](https://penglonghuang.github.io/awesome-architecture-blog/learning/litellm/architecture.html) |
+| LLM2Jev 决策引擎拆解 | [课程](https://penglonghuang.github.io/awesome-architecture-blog/learning/llm2jev/) | [架构图](https://penglonghuang.github.io/awesome-architecture-blog/learning/llm2jev/architecture.html) |
+| Pi 编码代理内部探秘 | [课程](https://penglonghuang.github.io/awesome-architecture-blog/learning/pi/) | [架构图](https://penglonghuang.github.io/awesome-architecture-blog/learning/pi/architecture.html) |
 
 站点是纯静态的多页应用（MPA），没有数据库和前端框架运行时：
 
@@ -50,8 +54,8 @@ Astro Content Collections ──────────────────
 | 环节 | 生产工具 | 在本站中的产物 |
 |---|---|---|
 | 文章整理 | [study8677/awesome-architecture](https://github.com/study8677/awesome-architecture) | `src/content/posts/` 下的 80 篇 Markdown |
-| 项目课程 | [codebase-to-course](https://github.com/zarazhangrui/codebase-to-course) | [LiteLLM 内部漫游指南](https://penglonghuang.github.io/awesome-architecture-blog/learning/litellm/) |
-| 架构图 | [Archify](https://github.com/tt-a1i/archify) | [LiteLLM Proxy 架构总览](https://penglonghuang.github.io/awesome-architecture-blog/learning/litellm/architecture.html) |
+| 项目课程 | [codebase-to-course](https://github.com/zarazhangrui/codebase-to-course) 与仓库内静态课程页 | 3 门课程：LiteLLM / LLM2Jev / Pi |
+| 架构图 | [Archify](https://github.com/tt-a1i/archify) | 与三门课程配套的可交互架构图 |
 | 站点构建 | Astro + Pagefind | GitHub Pages 与自建 Nginx 镜像 |
 
 ### codebase-to-course
@@ -65,15 +69,19 @@ Astro Content Collections ──────────────────
 - 课程是自包含的独立 HTML，不进入 Astro 组件树
 - 课程入口由 `/learning/` 统一索引、分类和筛选
 
+LLM2Jev 与 Pi 两门课程则以静态课程页的形式直接维护在 `public/learning/` 下，阅读体验与 LiteLLM 课程一致：可滚动模块、代码与解释并排、Quiz 与数据流动画。
+
 ### Archify
 
 [Archify](https://github.com/tt-a1i/archify) 是一个把系统结构渲染成可交互架构图的生产项目。它支持架构、工作流、时序、数据流、ERD 等多种图类型，并输出带主题切换、缩放、搜索和导出的独立 HTML。
 
-本站用它生成了 LiteLLM Proxy 架构总览：
+本站用它为三门课程各生成了一张可交互架构总览：
 
-- 从客户端、鉴权、Router、`acompletion` 到厂商翻译和 PostgreSQL
+- [LiteLLM Proxy 架构总览](https://penglonghuang.github.io/awesome-architecture-blog/learning/litellm/architecture.html)：从客户端、鉴权、Router、`acompletion` 到厂商翻译和 PostgreSQL
+- [LLM2Jev 决策架构总览](https://penglonghuang.github.io/awesome-architecture-blog/learning/llm2jev/architecture.html)：从 systemone 请求到二值打分、三后端与前缀缓存
+- [Pi 内部探秘架构总览](https://penglonghuang.github.io/awesome-architecture-blog/learning/pi/architecture.html)：从终端回车到代理循环、模型运行时与上下文压缩
 - 节点可点击、可搜索、可缩放，支持浅色 / 深色主题
-- 与课程正文互相链接，作为模块 1、2 的全局地图
+- 与对应课程正文互相链接，作为课程的全局地图
 - 同样是独立静态页，部署时和课程放在同一目录
 
 ## 技术栈
@@ -138,23 +146,26 @@ src/
 ├── data/
 │   ├── series.json             # 14 个系列的定义与匹配规则
 │   ├── series.ts               # 频道配置
-│   └── courses.ts              # 课程元数据、方向/形式/难度与标签注册表
-├── pages/                      # 路由与页面
+│   └── courses.ts              # 3 门课程的元数据、方向/形式/难度与标签注册表
+├── pages/                      # 路由与页面（含 RSS、about、404）
 ├── components/
+│   ├── Masthead.astro          # 顶部导航与主题切换
 │   ├── CourseCard.astro        # 课程卡片
-│   └── CourseTagButton.astro   # 可筛选标签按钮
-├── lib/
-│   └── course-filter.ts        # 课程筛选纯函数
-├── scripts/                    # 主题、Quiz、课程筛选等浏览器脚本
+│   ├── CourseTagButton.astro   # 可筛选标签按钮
+│   └── …                       # 文章列表、目录、页脚、giscus 评论等
+├── lib/                        # 课程筛选、文章集合、阅读时长等纯函数
+├── scripts/                    # 主题、导航、Quiz、阅读进度、课程筛选等浏览器脚本
 ├── layouts/BaseLayout.astro
 ├── plugins/                    # Markdown 编译插件
 └── styles/                     # 设计令牌与全局样式
 
-public/learning/litellm/
-├── index.html                  # LiteLLM 交互课程（静态 HTML）
-└── architecture.html           # LiteLLM 可交互架构总览
+public/learning/                # 交互式项目课程，每门一个目录
+├── litellm/                    # LiteLLM 课程 + architecture.html
+├── llm2jev/                    # LLM2Jev 课程 + architecture.html
+├── pi/                         # Pi 课程 + architecture.html
+└── reading-room.css            # 课程页共用的阅读样式
 
-scripts/                        # 内容导入、课程导入、内容校验
+scripts/                        # 内容导入、课程导入、内容校验、部署脚本与构建垫片
 tests/                          # 单元测试与 E2E
 ```
 
@@ -267,6 +278,8 @@ push main
       └─ rsync → 自建服务器
 ```
 
+Pull request 则由 `.github/workflows/ci.yml` 运行同样的 `validate / test / build` 校验。
+
 ### GitHub Pages
 
 仓库 Settings → Pages → Source 选择 **GitHub Actions**。
@@ -298,7 +311,10 @@ pnpm deploy:server
 
 - `BASE_PATH`：站点 base，默认 `/awesome-architecture-blog/`
 - `SITE_URL`：站点绝对地址
-- `PUBLIC_CANONICAL_BASE` / `PUBLIC_CANONICAL_SITE`：为镜像站覆盖 canonical 地址
+
+canonical 覆盖由 `src/layouts/BaseLayout.astro` 读取，用于镜像站：
+
+- `PUBLIC_CANONICAL_BASE` / `PUBLIC_CANONICAL_SITE`：覆盖 canonical 的 base 与站点地址
 
 ## 相关项目与许可
 
