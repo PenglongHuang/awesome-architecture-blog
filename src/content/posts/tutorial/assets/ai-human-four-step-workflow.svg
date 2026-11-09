@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="820" viewBox="0 0 1400 820">
+<rect width="1400" height="820" rx="28" fill="#F7F5F0"/>
+<text x="72" y="82" font-family="Arial,'Noto Sans SC',sans-serif" font-size="34" font-weight="700" fill="#202A35">把 AI 放进工作流，而不是放在驾驶座上</text>
+<text x="72" y="126" font-family="Arial,'Noto Sans SC',sans-serif" font-size="19" fill="#64748B">一个完整闭环：人定义方向，AI 扩展执行，人验证并把经验变成自己的能力</text>
+<g font-family="Arial,'Noto Sans SC',sans-serif">
+<rect x="70" y="220" width="280" height="330" rx="22" fill="#FFFFFF" stroke="#D8D4CC" stroke-width="2"/>
+<rect x="70" y="220" width="280" height="78" rx="22" fill="#E8EEF5"/>
+<text x="210" y="269" text-anchor="middle" font-size="25" font-weight="700" fill="#26384A">01 · THINK</text>
+<text x="210" y="354" text-anchor="middle" font-size="25" font-weight="700" fill="#26384A">先想清楚</text>
+<text x="210" y="406" text-anchor="middle" font-size="18" fill="#526273">目标是什么？</text>
+<text x="210" y="440" text-anchor="middle" font-size="18" fill="#526273">约束是什么？</text>
+<text x="210" y="474" text-anchor="middle" font-size="18" fill="#526273">我现在怎么判断？</text>
+<rect x="112" y="500" width="196" height="34" rx="10" fill="#E8EEF5"/><text x="210" y="524" text-anchor="middle" font-size="16" font-weight="700" fill="#35506A">人主导</text>
+<path d="M354 385 H386" stroke="#8794A1" stroke-width="4"/><path d="M376 375 L390 385 L376 395" fill="none" stroke="#8794A1" stroke-width="4"/>
+<rect x="394" y="220" width="280" height="330" rx="22" fill="#FFFFFF" stroke="#D8D4CC" stroke-width="2"/>
+<rect x="394" y="220" width="280" height="78" rx="22" fill="#E5F1EA"/>
+<text x="534" y="269" text-anchor="middle" font-size="25" font-weight="700" fill="#24543C">02 · AUGMENT</text>
+<text x="534" y="354" text-anchor="middle" font-size="25" font-weight="700" fill="#26384A">让 AI 增强</text>
+<text x="534" y="406" text-anchor="middle" font-size="18" fill="#526273">搜集、归纳、发散</text>
+<text x="534" y="440" text-anchor="middle" font-size="18" fill="#526273">生成草稿、执行重复项</text>
+<text x="534" y="474" text-anchor="middle" font-size="18" fill="#526273">暴露遗漏与候选方案</text>
+<rect x="436" y="500" width="196" height="34" rx="10" fill="#E5F1EA"/><text x="534" y="524" text-anchor="middle" font-size="16" font-weight="700" fill="#24543C">AI 主执行</text>
+<path d="M678 385 H710" stroke="#8794A1" stroke-width="4"/><path d="M700 375 L714 385 L700 395" fill="none" stroke="#8794A1" stroke-width="4"/>
+<rect x="718" y="220" width="280" height="330" rx="22" fill="#FFFFFF" stroke="#D8D4CC" stroke-width="2"/>
+<rect x="718" y="220" width="280" height="78" rx="22" fill="#F5EBDD"/>
+<text x="858" y="269" text-anchor="middle" font-size="25" font-weight="700" fill="#91612A">03 · JUDGE</text>
+<text x="858" y="354" text-anchor="middle" font-size="25" font-weight="700" fill="#26384A">独立做判断</text>
+<text x="858" y="406" text-anchor="middle" font-size="18" fill="#526273">查证据、找反例</text>
+<text x="858" y="440" text-anchor="middle" font-size="18" fill="#526273">看风险、比代价</text>
+<text x="858" y="474" text-anchor="middle" font-size="18" fill="#526273">决定采纳还是拒绝</text>
+<rect x="760" y="500" width="196" height="34" rx="10" fill="#F5EBDD"/><text x="858" y="524" text-anchor="middle" font-size="16" font-weight="700" fill="#91612A">人负责</text>
+<path d="M1002 385 H1034" stroke="#8794A1" stroke-width="4"/><path d="M1024 375 L1038 385 L1024 395" fill="none" stroke="#8794A1" stroke-width="4"/>
+<rect x="1042" y="220" width="280" height="330" rx="22" fill="#FFFFFF" stroke="#D8D4CC" stroke-width="2"/>
+<rect x="1042" y="220" width="280" height="78" rx="22" fill="#EEE9F5"/>
+<text x="1182" y="269" text-anchor="middle" font-size="25" font-weight="700" fill="#6F5790">04 · INTERNALIZE</text>
+<text x="1182" y="354" text-anchor="middle" font-size="25" font-weight="700" fill="#26384A">把经验留下</text>
+<text x="1182" y="406" text-anchor="middle" font-size="18" fill="#526273">脱离 AI 复述</text>
+<text x="1182" y="440" text-anchor="middle" font-size="18" fill="#526273">完成变式练习</text>
+<text x="1182" y="474" text-anchor="middle" font-size="18" fill="#526273">沉淀规则与模板</text>
+<rect x="1084" y="500" width="196" height="34" rx="10" fill="#EEE9F5"/><text x="1182" y="524" text-anchor="middle" font-size="16" font-weight="700" fill="#6F5790">能力内化</text>
+<path d="M1182 568 V630 H210 V568" fill="none" stroke="#8794A1" stroke-width="3" stroke-dasharray="9 8"/>
+<path d="M200 580 L210 566 L220 580" fill="none" stroke="#8794A1" stroke-width="3"/>
+<rect x="350" y="604" width="700" height="64" rx="16" fill="#253647"/>
+<text x="700" y="645" text-anchor="middle" font-size="23" font-weight="700" fill="#FFFFFF">下一次面对新问题，你会比这一次更能独立完成</text>
+<text x="700" y="735" text-anchor="middle" font-size="18" fill="#64748B">低风险重复任务可缩短流程；学习与高风险决策要保留完整闭环</text>
+</g>
+</svg>
