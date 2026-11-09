@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="820" viewBox="0 0 1400 820">
+<rect width="1400" height="820" rx="28" fill="#F7F5F0"/>
+<text x="72" y="82" font-family="Arial,'Noto Sans SC',sans-serif" font-size="34" font-weight="700" fill="#202A35">AI 没有拿走思考，而是改变了思考发生的位置</text>
+<text x="72" y="126" font-family="Arial,'Noto Sans SC',sans-serif" font-size="19" fill="#64748B">同一项知识工作：从“亲自完成每一步”变成“生成更快、验证更重要”</text>
+<rect x="72" y="174" width="600" height="500" rx="22" fill="#FFFFFF" stroke="#D8D4CC" stroke-width="2"/>
+<rect x="728" y="174" width="600" height="500" rx="22" fill="#FFFFFF" stroke="#D8D4CC" stroke-width="2"/>
+<rect x="72" y="174" width="600" height="72" rx="22" fill="#E8EEF5"/>
+<rect x="728" y="174" width="600" height="72" rx="22" fill="#E5F1EA"/>
+<text x="112" y="220" font-family="Arial,'Noto Sans SC',sans-serif" font-size="26" font-weight="700" fill="#26384A">没有生成式 AI 时</text>
+<text x="768" y="220" font-family="Arial,'Noto Sans SC',sans-serif" font-size="26" font-weight="700" fill="#24543C">使用 AI 之后</text>
+<g font-family="Arial,'Noto Sans SC',sans-serif" font-size="21" fill="#26384A">
+<rect x="126" y="282" width="492" height="54" rx="12" fill="#F2F5F8"/><text x="156" y="317">① 定义问题</text>
+<path d="M372 338 V354" stroke="#94A3B8" stroke-width="3"/><path d="M364 347 L372 357 L380 347" fill="none" stroke="#94A3B8" stroke-width="3"/>
+<rect x="126" y="362" width="492" height="54" rx="12" fill="#F2F5F8"/><text x="156" y="397">② 搜集资料</text>
+<path d="M372 418 V434" stroke="#94A3B8" stroke-width="3"/><path d="M364 427 L372 437 L380 427" fill="none" stroke="#94A3B8" stroke-width="3"/>
+<rect x="126" y="442" width="492" height="54" rx="12" fill="#F2F5F8"/><text x="156" y="477">③ 阅读、比较、推理</text>
+<path d="M372 498 V514" stroke="#94A3B8" stroke-width="3"/><path d="M364 507 L372 517 L380 507" fill="none" stroke="#94A3B8" stroke-width="3"/>
+<rect x="126" y="522" width="492" height="54" rx="12" fill="#F2F5F8"/><text x="156" y="557">④ 形成结论</text>
+<path d="M372 578 V594" stroke="#94A3B8" stroke-width="3"/><path d="M364 587 L372 597 L380 587" fill="none" stroke="#94A3B8" stroke-width="3"/>
+<rect x="126" y="602" width="492" height="42" rx="12" fill="#DDE8F2"/><text x="156" y="631" font-weight="700">⑤ 人理解并承担结果</text>
+</g>
+<g font-family="Arial,'Noto Sans SC',sans-serif" font-size="21" fill="#24543C">
+<rect x="782" y="282" width="492" height="54" rx="12" fill="#F1F7F3"/><text x="812" y="317">人：定义问题与成功标准</text>
+<path d="M1028 338 V354" stroke="#83A992" stroke-width="3"/><path d="M1020 347 L1028 357 L1036 347" fill="none" stroke="#83A992" stroke-width="3"/>
+<rect x="782" y="362" width="492" height="54" rx="12" fill="#E2F0E7"/><text x="812" y="397">AI：搜集、归纳、生成初稿</text>
+<path d="M1028 418 V434" stroke="#83A992" stroke-width="3"/><path d="M1020 427 L1028 437 L1036 427" fill="none" stroke="#83A992" stroke-width="3"/>
+<rect x="782" y="442" width="492" height="54" rx="12" fill="#F1F7F3"/><text x="812" y="477">人：核验来源、找反例、做取舍</text>
+<path d="M1028 498 V514" stroke="#83A992" stroke-width="3"/><path d="M1020 507 L1028 517 L1036 507" fill="none" stroke="#83A992" stroke-width="3"/>
+<rect x="782" y="522" width="492" height="54" rx="12" fill="#F1F7F3"/><text x="812" y="557">人：整合结论、决定是否采纳</text>
+<path d="M1028 578 V594" stroke="#83A992" stroke-width="3"/><path d="M1020 587 L1028 597 L1036 587" fill="none" stroke="#83A992" stroke-width="3"/>
+<rect x="782" y="602" width="492" height="42" rx="12" fill="#CFE5D7"/><text x="812" y="631" font-weight="700">人：理解并承担结果</text>
+</g>
+<rect x="72" y="710" width="1256" height="66" rx="16" fill="#253647"/>
+<text x="700" y="752" text-anchor="middle" font-family="Arial,'Noto Sans SC',sans-serif" font-size="25" font-weight="700" fill="#FFFFFF">危险不在于 AI 做得多，而在于人把“核验、理解、判断”也一并省略</text>
+</svg>
