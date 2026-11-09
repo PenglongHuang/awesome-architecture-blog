@@ -25,7 +25,7 @@ const posts = walk(POSTS).map((file) => {
   return { rel, data: parsed.data, body: parsed.content }
 })
 
-if (posts.length !== 80) errors.push(`expected 80 posts, got ${posts.length}`)
+if (posts.length !== 83) errors.push(`expected 83 posts, got ${posts.length}`)
 
 const bySeries = new Map()
 const slugs = new Map()
