@@ -13,7 +13,7 @@ tags: ["AI 时代的人类自我保护篇", "人机协作", "教程"]
 
 ## 一、先看完整工作流
 
-![Think、Augment、Judge、Internalize 四步人机协作工作流](../../images/tutorial/ai-human-four-step-workflow.svg)
+![Think、Augment、Judge、Internalize 四步人机协作工作流](./assets/ai-human-four-step-workflow.svg)
 
 四步不是要求每件事都人工参与。简单、低风险、容易验证的任务可以缩短流程；但只要任务涉及学习、专业判断或较大风险，就不要跳过定义问题和核验结果。
 
