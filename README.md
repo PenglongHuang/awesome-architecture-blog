@@ -173,10 +173,6 @@ tests/                          # 单元测试与 E2E
 
 新增文章、专题、架构地图或项目课程时，按 [内容开发指南](docs/content-authoring.md) 同步更新站点结构、SEO 元数据与 GEO 内容要素。
 
-## 内容贡献
-
-新增文章、专题、架构地图和独立课程的完整步骤、Frontmatter 字段、SEO/GEO 检查清单与部署注意事项统一维护在 [内容开发指南](docs/content-authoring.md)。请以该指南为准，避免 README 和实际开发流程出现两套规则。
-
 ## 搜索与评论
 
 ### Pagefind
