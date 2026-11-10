@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f5f0e8"/>
+  <path d="M0 470C190 390 300 560 520 470S850 360 1200 450V630H0Z" fill="#e9e0d4"/>
+  <rect x="82" y="72" width="1036" height="486" rx="24" fill="#fffdf9" stroke="#d9d0c4" stroke-width="2"/>
+  <path d="M142 152h72M142 174h42" stroke="#c65c42" stroke-width="8" stroke-linecap="round"/>
+  <text x="142" y="285" fill="#292723" font-family="Arial, sans-serif" font-size="66" font-weight="700">AI架构师之路</text>
+  <text x="146" y="354" fill="#625d55" font-family="Arial, sans-serif" font-size="30">理解系统，也理解取舍。</text>
+  <g transform="translate(850 170)" fill="none" stroke="#c65c42" stroke-width="5">
+    <rect x="0" y="0" width="100" height="72" rx="12"/>
+    <rect x="140" y="0" width="100" height="72" rx="12"/>
+    <rect x="70" y="150" width="100" height="72" rx="12"/>
+    <path d="M100 36h40M50 72v42l70 36M190 72v42l-70 36"/>
+  </g>
+  <text x="146" y="493" fill="#8a8176" font-family="Arial, sans-serif" font-size="20" letter-spacing="3">SOFTWARE ARCHITECTURE · AI ENGINEERING · SYSTEM DESIGN</text>
+</svg>
