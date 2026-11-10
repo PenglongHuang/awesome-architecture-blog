@@ -7,7 +7,7 @@
   --step-body: 1rem;
   --step-lead: 1.0625rem;
   --step-head: clamp(1.875rem, 3.2vw, 2.625rem);
-  --step-display: clamp(2rem, 3.8vw, 3.25rem);
+  --step-display: clamp(2.125rem, 4.4vw, 3.625rem);
   --margin: clamp(20px, 4vw, 56px);
   --measure: 50rem;
   --section-gap: 48px;

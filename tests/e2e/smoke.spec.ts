@@ -6,7 +6,7 @@ const courseCount = COURSES.length
 test('首页 → 系列 → 文章', async ({ page }) => {
   await page.goto('')
   await expect(page.getByRole('heading', { name: /先看清系统/ })).toBeVisible()
-  await page.locator('.home-series').getByRole('link', { name: /入门篇/ }).click()
+  await page.locator('.home-path').getByRole('link', { name: /入门篇/ }).click()
   await expect(page.getByRole('heading', { name: '入门篇' })).toBeVisible()
   await page.getByRole('link', { name: /为什么先有架构思维/ }).click()
   await expect(page.getByRole('heading', { name: /为什么先有架构思维/ })).toBeVisible()
