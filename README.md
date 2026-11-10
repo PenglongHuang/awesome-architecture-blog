@@ -124,7 +124,7 @@ BASE_PATH=/ pnpm dev
 | `pnpm dev` | 启动开发服务器 |
 | `pnpm build` | 构建站点并生成 Pagefind 索引 |
 | `pnpm preview` | 预览构建产物 |
-| `pnpm validate` | 校验 文章、系列和链接 |
+| `pnpm validate` | 校验文章、系列、链接与 SEO 元数据 |
 | `pnpm test` | 运行 Vitest 单元测试 |
 | `pnpm test:e2e` | 构建并运行 Playwright E2E |
 | `pnpm import` | 从上游 VitePress 内容重新导入文章 |
@@ -141,7 +141,7 @@ pnpm exec playwright install chromium
 
 ```text
 src/
-├── content/posts/              # 80 篇 Markdown（tutorial / templates / cases）
+├── content/posts/              # Markdown 文章（tutorial / templates / cases）
 ├── content.config.ts           # 内容集合与 frontmatter schema
 ├── data/
 │   ├── series.json             # 14 个系列的定义与匹配规则
@@ -173,83 +173,9 @@ tests/                          # 单元测试与 E2E
 
 新增文章、专题、架构地图或项目课程时，按 [内容开发指南](docs/content-authoring.md) 同步更新站点结构、SEO 元数据与 GEO 内容要素。
 
-## 写一篇文章
+## 内容贡献
 
-在 `src/content/posts/` 对应频道下新建 Markdown：
-
-```yaml
----
-title: "文章标题"
-description: "一句话说明这篇讲什么"
-series: foundations       # 必须是 src/data/series.json 中的 id
-order: 10                 # 在系列内的顺序
-pubDate: 2026-10-20
-kind: tutorial            # tutorial | template | case
-tags: ["入门篇", "架构思维"]
----
-```
-
-约定：
-
-- `kind` 决定路由频道：`tutorial` → `/tutorial/`，`template` → `/templates/`，`case` → `/cases/`
-- 文章 slug 取自文件名：`why-architecture-first.md` → `/tutorial/why-architecture-first/`
-- `series` 必须存在于 `src/data/series.json`，否则构建和 `pnpm validate` 会失败
-- 内部链接写相对 `.md` 路径即可，`remark-base-links` 会在构建时重写
-- 代码块、表格、ASCII 图和 `quiz` / `decision` 代码块会由对应插件处理
-
-新增系列时，在 `src/data/series.json` 增加一项：
-
-```json
-{
-  "id": "my-series",
-  "channel": "tutorial",
-  "title": "系列名称",
-  "description": "系列说明",
-  "order": 9,
-  "match": "^tutorial/my-series-"
-}
-```
-
-然后运行：
-
-```bash
-pnpm validate
-pnpm build
-```
-
-## 新增项目课程
-
-1. 用 [codebase-to-course](https://github.com/zarazhangrui/codebase-to-course) 从真实代码库生成课程目录
-2. 用 [Archify](https://github.com/tt-a1i/archify) 生成与课程配套的架构图
-3. 把课程 HTML 放到 `public/learning/<slug>/index.html`
-4. 把架构图放到同目录，例如 `public/learning/<slug>/architecture.html`
-5. 在课程页中加入架构图入口，并在 `src/data/courses.ts` 增加课程元数据
-6. 在 `astro.config.mjs` 的 sitemap `customPages` 中加入课程 URL
-7. 课程正文建议加 `data-pagefind-body`，让 Pagefind 只索引正文
-8. 不要依赖 Google Fonts 等远程字体；课程与架构图应尽量自包含
-
-课程元数据分为四个维度（前三项使用受控词表）：
-
-| 字段 | 作用 | 取值 |
-|---|---|---|
-| `track` | 一级方向，决定筛选 tab | `ai-infra` / `classic-systems` / `engineering` |
-| `format` | 课程形式，显示在卡片上 | `source-walkthrough` / `case-study` / `lab` |
-| `level` | 难度，显示在卡片元信息里 | `beginner` / `intermediate` / `advanced` |
-| `tags` | 细分主题，可点击筛选 | `COURSE_TAGS` 中的标签 id，每门课 2–5 个 |
-
-标签用注册表管理（`src/data/courses.ts` 中的 `COURSE_TAGS`），每个标签包含 `id`、`label`、`group`、`order` 和 `aliases`。课程只引用 `id`，显示时再取 `label`；这样改展示名不会破坏 URL，旧的中文标签 URL 也会通过 `label` / `aliases` 自动规范化。
-
-`/learning/` 会自动生成方向与标签筛选：方向单选，标签可多选，多选时命中任一标签即可。选中的标签会固定到「标签」行前部并带关闭按钮；标签超过 8 个时，未选中的标签收进按分组展示的「更多标签」。筛选状态会同步到 URL，例如 `?track=ai-infra&tag=ai-gateway&tag=rate-limiting`。筛选是渐进增强的：脚本不可用时筛选栏隐藏，所有课程仍然可见。
-
-LiteLLM 课程 HTML 由脚本从外部课程目录同步：
-
-```bash
-pnpm import:course
-# 或指定课程根目录
-pnpm import:course -- "D:/path/to/courses"
-```
-
-脚本会把课程 HTML 复制到 `public/learning/litellm/index.html`，并做几处站点化处理：注入返回链接、设置 Pagefind 索引范围、替换本地仓库路径、移除 Google Fonts。架构图作为独立的 `architecture.html` 放在同一目录，由课程页直接链接。
+新增文章、专题、架构地图和独立课程的完整步骤、Frontmatter 字段、SEO/GEO 检查清单与部署注意事项统一维护在 [内容开发指南](docs/content-authoring.md)。请以该指南为准，避免 README 和实际开发流程出现两套规则。
 
 ## 搜索与评论
 
