@@ -1,0 +1,6 @@
+---
+import { href } from '../../lib/urls'
+
+// Preserve the published T01 URL when deploying under either / or a site base.
+return Astro.redirect(href('/tutorial/t01-introduction-map/'), 301)
+---

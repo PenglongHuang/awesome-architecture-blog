@@ -39,7 +39,7 @@
   "tutorial/38-AI工作流架构.md": "ai-workflow-architecture",
   "tutorial/39-责任与治理架构.md": "responsibility-and-governance",
   "tutorial/40-AI原生组织演进路线.md": "ai-native-organization-roadmap",
-  "tutorial/T01-训练方案不是算法排行榜先把决策分层.md": "training-plan-decision-layers",
+  "tutorial/T01-训练方案不是算法排行榜先把决策分层.md": "t01-introduction-map",
   "tutorial/术语表.md": "glossary",
   "tutorial/演进触发信号.md": "evolution-trigger-signals"
 }
