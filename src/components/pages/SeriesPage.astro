@@ -10,9 +10,12 @@ const { seriesId } = Astro.props
 const series = getSeries(seriesId)
 const all = await getCollection('posts')
 const posts = postsInSeries(all, seriesId)
-const seriesUrl = new URL(seriesHref(seriesId), Astro.site ?? Astro.url.origin).href
-const siteRoot = new URL(import.meta.env.BASE_URL, Astro.site ?? Astro.url.origin).href
-const channelUrl = new URL(`${import.meta.env.BASE_URL}${series.channel}/`, Astro.site ?? Astro.url.origin).href
+const canonicalOrigin = String(import.meta.env.PUBLIC_CANONICAL_SITE || Astro.site || Astro.url.origin)
+const canonicalPrefix = import.meta.env.PUBLIC_CANONICAL_BASE || import.meta.env.BASE_URL
+const canonicalize = (url: string) => new URL(url.replace(import.meta.env.BASE_URL, canonicalPrefix), canonicalOrigin).href
+const seriesUrl = canonicalize(seriesHref(seriesId))
+const siteRoot = new URL(canonicalPrefix, canonicalOrigin).href
+const channelUrl = new URL(`${canonicalPrefix}${series.channel}/`, canonicalOrigin).href
 const collectionSchema = {
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
@@ -28,7 +31,7 @@ const collectionSchema = {
       '@type': 'ListItem',
       position: index + 1,
       name: post.data.title,
-      url: new URL(postHref(post), Astro.site ?? Astro.url.origin).href,
+      url: canonicalize(postHref(post)),
     })),
   },
 }
