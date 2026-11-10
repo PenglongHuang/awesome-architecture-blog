@@ -32,7 +32,7 @@ coverAlt: "展示文章核心架构的数据流图"
 6. 文章按 GEO 的「答案优先」结构写：先用一段话直接回答，再解释定义/边界、原理、架构、真实案例、失败模式、适用条件和参考来源。
 7. 优先提供原创图、真实代码/数据、可复现步骤和反例；不要堆关键词，也不要把泛化的 AI 总结当作独特内容。
 
-`author`、`editor`、`updatedDate` 和 `cover` 为可选字段；只有信息真实时才填写。设置 `cover` 时必须同时提供 `coverAlt`，本地图片必须存在于 `public/`。
+`author`、`editor`、`updatedDate` 和 `cover` 为可选字段；只有信息真实时才填写。设置 `cover` 时必须同时提供 `coverAlt`，本地图片必须存在于 `public/`；分享封面优先使用 1200×630 PNG/JPG。
 
 ## 新增一个专题 / 系列
 
@@ -99,5 +99,5 @@ pnpm preview
 
 - `SITE_URL` 是 Astro 的正式站点 Origin；`BASE_PATH` 是部署路径。Canonical、Sitemap 和 robots.txt 必须使用同一组配置。
 - 当前 GitHub Pages 是项目站点（URL 带 `/awesome-architecture-blog/`）。标准 robots.txt 位于域名根路径 `/robots.txt`，项目站点无法在 GitHub Pages 的域名根路径发布它；生成的 `/robots.txt` 只有部署到自有域名根路径或由反向代理映射到根路径时，才会被爬虫按标准位置读取。
-- 自有域名上线后，将 `SITE_URL` 指向 HTTPS 主域名、`BASE_PATH=/`，并确保 GitHub Pages / IP 镜像跳转或 canonical 指向唯一主站。
+- 自有域名上线后，将 `SITE_URL` 指向 HTTPS 主域名、`BASE_PATH=/`；若设置 `PUBLIC_CANONICAL_SITE` / `PUBLIC_CANONICAL_BASE`，必须与前两者保持一致，并同步更新独立课程 HTML 的 canonical。确保 GitHub Pages / IP 镜像跳转或 canonical 指向唯一主站。
 - `OAI-SearchBot` 用于 ChatGPT 搜索发现；`GPTBot` 是独立的训练数据爬虫。当前规则允许默认抓取，若要限制训练抓取，应单独评估 GPTBot 策略，不要误伤 OAI-SearchBot。
