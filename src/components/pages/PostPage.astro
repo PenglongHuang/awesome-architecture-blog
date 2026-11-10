@@ -23,13 +23,16 @@ const prev = idx > 0 ? siblings[idx - 1] : undefined
 const next = idx >= 0 && idx < siblings.length - 1 ? siblings[idx + 1] : undefined
 const date = post.data.pubDate.toISOString().slice(0, 10)
 const modifiedDate = (post.data.updatedDate ?? post.data.pubDate).toISOString().slice(0, 10)
-const pageUrl = new URL(postHref(post), Astro.site ?? Astro.url.origin).href
-const seriesUrl = new URL(seriesHref(series.id), Astro.site ?? Astro.url.origin).href
-const siteRoot = new URL(import.meta.env.BASE_URL, Astro.site ?? Astro.url.origin).href
+const canonicalOrigin = String(import.meta.env.PUBLIC_CANONICAL_SITE || Astro.site || Astro.url.origin)
+const canonicalPrefix = import.meta.env.PUBLIC_CANONICAL_BASE || import.meta.env.BASE_URL
+const canonicalize = (url: string) => new URL(url.replace(import.meta.env.BASE_URL, canonicalPrefix), canonicalOrigin).href
+const pageUrl = canonicalize(postHref(post))
+const seriesUrl = canonicalize(seriesHref(series.id))
+const siteRoot = new URL(canonicalPrefix, canonicalOrigin).href
 const imagePath = post.data.cover ? post.data.cover.split('/').filter(Boolean).join('/') : 'og-default.svg'
 const imageUrl = post.data.cover && (post.data.cover.startsWith('https://') || post.data.cover.startsWith('http://'))
   ? post.data.cover
-  : new URL(`${import.meta.env.BASE_URL}${imagePath}`, Astro.site ?? Astro.url.origin).href
+  : new URL(`${canonicalPrefix}${imagePath}`, canonicalOrigin).href
 const articleSchema = {
   '@context': 'https://schema.org',
   '@type': 'BlogPosting',
@@ -48,7 +51,7 @@ const articleSchema = {
     '@type': 'Organization',
     name: 'AI架构师之路',
     url: siteRoot,
-    logo: { '@type': 'ImageObject', url: new URL(`${import.meta.env.BASE_URL}brand-mark.svg`, Astro.site ?? Astro.url.origin).href },
+    logo: { '@type': 'ImageObject', url: new URL(`${canonicalPrefix}brand-mark.svg`, canonicalOrigin).href },
   },
   ...(post.data.author ? { author: { '@type': 'Person', name: post.data.author } } : {}),
   ...(post.data.editor ? { editor: { '@type': 'Person', name: post.data.editor } } : {}),
@@ -58,7 +61,7 @@ const breadcrumbSchema = {
   '@type': 'BreadcrumbList',
   itemListElement: [
     { '@type': 'ListItem', position: 1, name: '首页', item: siteRoot },
-    { '@type': 'ListItem', position: 2, name: channelLabel, item: new URL(`${import.meta.env.BASE_URL}${series.channel}/`, Astro.site ?? Astro.url.origin).href },
+    { '@type': 'ListItem', position: 2, name: channelLabel, item: new URL(`${canonicalPrefix}${series.channel}/`, canonicalOrigin).href },
     ...(showSeriesCrumb ? [{ '@type': 'ListItem', position: 3, name: series.title, item: seriesUrl }] : []),
     { '@type': 'ListItem', position: showSeriesCrumb ? 4 : 3, name: post.data.title, item: pageUrl },
   ],
