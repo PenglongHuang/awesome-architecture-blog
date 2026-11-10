@@ -6,7 +6,7 @@ import { postsInSeries } from '../../lib/posts'
 const all = await getCollection('posts')
 const posts = postsInSeries(all, 'cases')
 ---
-<BaseLayout title="系统设计">
+<BaseLayout title="系统设计" description="通过端到端系统设计案例，练习从业务约束、核心模型、架构方案到容量、可靠性和演进策略的完整推演。">
   <div class="page-head frame">
     <div class="grid">
       <p class="page-head__side">{posts.length} 个完整推演</p>
