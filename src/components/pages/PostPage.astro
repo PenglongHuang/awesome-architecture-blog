@@ -4,6 +4,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro'
 import Toc from '../Toc.astro'
 import PostNav from '../PostNav.astro'
 import Comments from '../Comments.astro'
+import RelatedKnowledge from '../RelatedKnowledge.astro'
+import StructuredData from '../StructuredData.astro'
 import type { Post } from '../../lib/posts'
 import { getSeries, postsInSeries, seriesHref, postHref } from '../../lib/posts'
 import { readingMinutes } from '../../lib/reading-time'
@@ -20,8 +22,59 @@ const idx = siblings.findIndex((p) => p.id === post.id)
 const prev = idx > 0 ? siblings[idx - 1] : undefined
 const next = idx >= 0 && idx < siblings.length - 1 ? siblings[idx + 1] : undefined
 const date = post.data.pubDate.toISOString().slice(0, 10)
+const modifiedDate = (post.data.updatedDate ?? post.data.pubDate).toISOString().slice(0, 10)
+const pageUrl = new URL(postHref(post), Astro.site ?? Astro.url.origin).href
+const seriesUrl = new URL(seriesHref(series.id), Astro.site ?? Astro.url.origin).href
+const siteRoot = new URL(import.meta.env.BASE_URL, Astro.site ?? Astro.url.origin).href
+const imagePath = post.data.cover ? post.data.cover.split('/').filter(Boolean).join('/') : 'og-default.svg'
+const imageUrl = post.data.cover && (post.data.cover.startsWith('https://') || post.data.cover.startsWith('http://'))
+  ? post.data.cover
+  : new URL(`${import.meta.env.BASE_URL}${imagePath}`, Astro.site ?? Astro.url.origin).href
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: post.data.title,
+  description: post.data.description,
+  url: pageUrl,
+  mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl },
+  image: [imageUrl],
+  datePublished: date,
+  dateModified: modifiedDate,
+  inLanguage: 'zh-CN',
+  articleSection: series.title,
+  keywords: post.data.tags,
+  isPartOf: { '@type': 'CollectionPage', name: series.title, url: seriesUrl },
+  publisher: {
+    '@type': 'Organization',
+    name: 'AI架构师之路',
+    url: siteRoot,
+    logo: { '@type': 'ImageObject', url: new URL(`${import.meta.env.BASE_URL}brand-mark.svg`, Astro.site ?? Astro.url.origin).href },
+  },
+  ...(post.data.author ? { author: { '@type': 'Person', name: post.data.author } } : {}),
+  ...(post.data.editor ? { editor: { '@type': 'Person', name: post.data.editor } } : {}),
+}
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: '首页', item: siteRoot },
+    { '@type': 'ListItem', position: 2, name: channelLabel, item: new URL(`${import.meta.env.BASE_URL}${series.channel}/`, Astro.site ?? Astro.url.origin).href },
+    ...(showSeriesCrumb ? [{ '@type': 'ListItem', position: 3, name: series.title, item: seriesUrl }] : []),
+    { '@type': 'ListItem', position: showSeriesCrumb ? 4 : 3, name: post.data.title, item: pageUrl },
+  ],
+}
 ---
-<BaseLayout title={post.data.title} description={post.data.description}>
+<BaseLayout
+  title={post.data.title}
+  description={post.data.description}
+  image={post.data.cover}
+  imageAlt={post.data.coverAlt ?? post.data.title}
+  ogType="article"
+>
+  <StructuredData slot="head" data={[articleSchema, breadcrumbSchema]} />
+  <meta slot="head" property="article:published_time" content={date} />
+  <meta slot="head" property="article:modified_time" content={modifiedDate} />
+  {post.data.author && <meta slot="head" name="author" content={post.data.author} />}
   <div class="article frame">
     <article data-pagefind-body>
       <header class="article__header">
@@ -37,11 +90,19 @@ const date = post.data.pubDate.toISOString().slice(0, 10)
       </div>
       <h1>{post.data.title}</h1>
       {!(post.body ?? '').trimStart().startsWith('>') && <p class="dek">{post.data.description}</p>}
-      <div class="article__meta" data-pagefind-ignore><time datetime={date}>{date}</time><span>约 {readingMinutes(post.body ?? '')} 分钟阅读</span><span>系列 {post.data.order} / {siblings.length}</span></div>
+      <div class="article__meta" data-pagefind-ignore>
+        <time datetime={date}>{date}</time>
+        {post.data.updatedDate && post.data.updatedDate.toISOString().slice(0, 10) !== date && <span>更新于 {modifiedDate}</span>}
+        {post.data.author && <span>作者 {post.data.author}</span>}
+        {post.data.editor && <span>编辑 {post.data.editor}</span>}
+        <span>约 {readingMinutes(post.body ?? '')} 分钟阅读</span>
+        <span>系列 {post.data.order} / {siblings.length}</span>
+      </div>
       <div class="reading-controls" data-pagefind-ignore><button type="button" data-reading-size aria-pressed="false">大字阅读</button><button type="button" data-reading-focus aria-pressed="false">专注阅读</button></div>
       </header>
       <details class="toc-mobile" data-pagefind-ignore><summary>本页目录</summary><Toc headings={headings} /></details>
       <div class="prose"><Content /></div>
+      <RelatedKnowledge post={post} allPosts={all} />
       <PostNav prev={prev} next={next} />
       <Comments />
     </article>
