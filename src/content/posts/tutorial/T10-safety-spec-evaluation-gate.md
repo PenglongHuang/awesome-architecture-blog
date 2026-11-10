@@ -7,13 +7,7 @@ pubDate: 2026-11-18
 kind: tutorial
 tags: ["基础模型训练决策专题", "模型评测", "AI 安全", "发布门禁"]
 ---
-> **发布需要一组覆盖能力、风险与运行约束的证据，单一榜单或拒绝率不足以支持放行。**
-
-读完可以把安全原则变成可测要求，写出带证据、责任人与回滚条件的发布门禁。
-
-[专题地图](/tutorial/t01-introduction-map/) · 可独立阅读；文末有本章决策练习。
-
-## 开场：全绿的发布评审，与两份事后补写的报告
+## 全绿的发布评审，与两份事后补写的报告
 
 先看一个熟悉的现场（教学合成场景，细节是编的，结构是真的）。
 
@@ -29,8 +23,6 @@ tags: ["基础模型训练决策专题", "模型评测", "AI 安全", "发布门
 - **分布偏移**：评测环境与生产环境的任务分布、上下文、用户行为都不同——模型甚至能"觉察到这是评测"；
 - **奖励投机**：训练信号被钻空子，分数涨而行为没变好（本章正式定义 Reward Hacking）；
 - **安全绕过与监控失效**：当模型本身是能改配置、改测试的 Agent，防线也是它能触碰的对象。
-
-> **本章只解决一件事：如何把安全要求变成可执行约束，并用独立、抗污染、可复现的评测证明模型是否达到发布标准？**
 
 本章把"安全"与"评测"当成一条链的两半，而不是两个清单：
 
@@ -183,7 +175,7 @@ tags: ["基础模型训练决策专题", "模型评测", "AI 安全", "发布门
   └──────── 任何一层被穿透，其余四层仍然在场 ──────────────┘
 ```
 
-### 2. Reward Hacking 的正式定义（引言移交的术语在这里落地）
+### 2. Reward Hacking 的定义
 
 第②层的主要失效方式，就是贯穿 T07、T08 的那个现象。本章给出正式定义：
 
@@ -637,14 +629,6 @@ GPT-6 Astra 系统卡里 750–1,250 Token 区间的 60.9%（Astra）与 16.1%�
 
 ---
 
-## 把判断用在合同助手上
-
-**教学推演，非真实训练结果。**合同助手的验收分开看字段抽取、引用可追溯、通用能力回退和风险请求处理。监控配置与隐藏测试不交给被测模型修改；不能把拒绝更多合同问题视为更安全，还要检查正常任务的误拒与完成率。
-
-**现在动手：**选一条上线要求，补齐评测方法、阈值负责人和触发回滚的条件。
-
----
-
 ## 🎯 随堂检验
 
 ```quiz
@@ -745,6 +729,6 @@ GPT-6 Astra 系统卡里 750–1,250 Token 区间的 60.9%（Astra）与 16.1%�
 
 ## 相关链接
 
-- 本系列：[T01 · 引言：训练决策的地图与坐标系](/tutorial/t01-introduction-map/) · [T07 · 偏好学习：奖励信号的生产与校准](/tutorial/t07-preference-reward-calibration/) · [T08 · 可验证强化学习：前提、归因与健康](/tutorial/t08-rlvr-prerequisites-attribution-health/) · [T09 · Agentic RL：环境、信用分配与异步拓扑](/tutorial/t09-agentic-rl-environment-credit-async/) · [T11 · 整机不是流水线模板：训练编排、模型生命周期与算力战略](/tutorial/t11-orchestration-lifecycle-strategy/)
+- 本系列：[T01 · 理解模型训练：从预训练到后训练](/tutorial/t01-introduction-map/) · [T07 · 偏好学习：奖励信号的生产与校准](/tutorial/t07-preference-reward-calibration/) · [T08 · 可验证强化学习：前提、归因与健康](/tutorial/t08-rlvr-prerequisites-attribution-health/) · [T09 · Agentic RL：环境、信用分配与异步拓扑](/tutorial/t09-agentic-rl-environment-credit-async/) · [T11 · 整机不是流水线模板：训练编排、模型生命周期与算力战略](/tutorial/t11-orchestration-lifecycle-strategy/)
 - 主案例（一手来源）：[GPT-6 Astra 系统卡](https://deploymentsafety.openai.com/gpt-6-astra) · [OpenAI 激活分类器](https://alignment.openai.com/training-activation-classifiers) · [评测-生产行为差距研究](https://alignment.openai.com/eval-production-behavior-gap) · [OpenAI 误对齐报告：抑制误对齐监控](https://alignment.openai.com/misalignment-reports/suppressing-misalignment-monitoring-alerts-and-disabling-misalignment-monitoring)
 - 研究与第三方：[GPT-6 Cyber 系统卡](https://deploymentsafety.openai.com/gpt-6-cyber) · [Goodfire：Mechanistic Shaping](https://www.goodfire.com/research/mechanistic-shaping) · [Anthropic：Model Spec Midtraining](https://alignment.anthropic.com/2026/msm/) · [METR 对 Anthropic 的 AI-R&D 加速度评估](https://metr.org/blog/2026-11-05-anthropic-ai-rd-acceleration-assessment)

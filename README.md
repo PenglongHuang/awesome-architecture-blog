@@ -19,7 +19,7 @@
 | [搜索](https://penglonghuang.github.io/awesome-architecture-blog/search/) | `/search/` | Pagefind 本地静态索引 |
 | [RSS](https://penglonghuang.github.io/awesome-architecture-blog/rss.xml) | `/rss.xml` | 全站文章订阅源 |
 
-**基础模型训练决策专题 · 11 篇**：[从八个问题开始](https://penglonghuang.github.io/awesome-architecture-blog/tutorial/t01-introduction-map/)，沿合同助手教学案例，逐步写出预算、数据、训练与发布决策。带着具体问题来读，也可以从 [训练费用怎么算](https://penglonghuang.github.io/awesome-architecture-blog/tutorial/t02-scaling-budget-three-ledgers/)、[RLVR 值不值得做](https://penglonghuang.github.io/awesome-architecture-blog/tutorial/t08-rlvr-prerequisites-attribution-health/) 或 [模型何时能上线](https://penglonghuang.github.io/awesome-architecture-blog/tutorial/t10-safety-spec-evaluation-gate/) 进入。
+**基础模型训练决策专题 · 11 篇**：[从预训练与后训练开始](https://penglonghuang.github.io/awesome-architecture-blog/tutorial/t01-introduction-map/)，依次讨论预算、数据、训练与发布决策，并在末章用合同助手演示完整方案。带着具体问题来读，也可以从 [训练费用怎么算](https://penglonghuang.github.io/awesome-architecture-blog/tutorial/t02-scaling-budget-three-ledgers/)、[RLVR 值不值得做](https://penglonghuang.github.io/awesome-architecture-blog/tutorial/t08-rlvr-prerequisites-attribution-health/) 或 [模型何时能上线](https://penglonghuang.github.io/awesome-architecture-blog/tutorial/t10-safety-spec-evaluation-gate/) 进入。
 
 每门项目课程除了课程正文，还配一张可交互架构总览图：
 

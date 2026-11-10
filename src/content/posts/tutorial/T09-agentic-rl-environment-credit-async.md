@@ -7,13 +7,7 @@ pubDate: 2026-11-17
 kind: tutorial
 tags: ["基础模型训练决策专题", "Agentic RL", "训练环境", "异步训练"]
 ---
-> **长程 Agent 训练必须把环境重置、轨迹归因和策略新鲜度一起纳入系统设计。**
-
-读完可以为工具交互任务写一份环境规格，并定位环境、奖励归因或异步调度的瓶颈。
-
-[专题地图](/tutorial/t01-introduction-map/) · 可独立阅读；文末有本章决策练习。
-
-## 开场：同一台 RL 机器，为什么跑不动一个真实仓库
+## 同一台 RL 机器，为什么跑不动一个真实仓库
 
 先把两个现场并排放。
 
@@ -34,8 +28,6 @@ tags: ["基础模型训练决策专题", "Agentic RL", "训练环境", "异步�
 归因断裂 → 第④层：信用分配选型（第 3 节）
 吞吐断裂 → 第⑦层：异步拓扑与调度（第 4 节）
 ```
-
-> **本章只解决一件事：如何构建可训练的 Agent 环境，并把长程交互转化为稳定、可扩展的学习信号？**
 
 本章的推导路线：
 
@@ -335,7 +327,7 @@ p99 长达 4 小时的轨迹必然遇到中断：Worker 掉线、环境崩溃、
 
 对照第 5 节 Inkling 账本的 sampler : trainer = 5 : 3 再想一层：Critic 属于 trainer 侧，组式路线省下的 Critic 算力，正好可以换更多采样——这也是"去 Critic"潮流在系统层面的真实动机之一。
 
-**第三，复用推理，不复制答案。**如果你的任务是短答案、同题能便宜地采出多条可比轨迹、Reward 有足够组内方差——GRPO 系仍然是更轻的选择。GLM-5.2 值得抄的不是"选 PPO"这个结论，而是"任务形态→轨迹形态→方法前提→系统拓扑"这条推理链（引言错误 4 的正面教材）。
+**第三，复用推理，不复制答案。**如果你的任务是短答案、同题能便宜地采出多条可比轨迹、Reward 有足够组内方差——GRPO 系仍然是更轻的选择。GLM-5.2 值得抄的不是"选 PPO"这个结论，而是"任务形态→轨迹形态→方法前提→系统拓扑"这条推理链。
 
 > **判断边界：**信用分配的选型不问"谁更强"，先问两个事实问题：我的轨迹经不经 Compaction、规不规则？我养得起 Critic 的资源与稳定性成本吗？两个答案凑齐，选型常常自己浮出来。
 
@@ -589,7 +581,7 @@ Trainer（Actor [+ Critic，按第 3 节选型]）
 
 [GLM-5 技术报告](https://arxiv.org/abs/2602.15763)披露其采用异步 RL 训练框架；第三方评述同时注意到这份报告"在基础设施上花了异常多篇幅"（定性观察）——这从侧面印证了本章的主线：agentic 训练的失败更多来自系统瓶颈而非算法瓶颈。报告的篇幅分配本身就是证据。
 
-> **架构智慧：**算法层的每一个选择都会在系统层长出新组件和新账单：组式路线长出成组采样与组完整性维护，Critic 路线长出价值模型与三类 GPU 调度，异步拓扑长出权重下发与 lag 监控。评审任何"我们换算法 X"的提案时，要求附一张组件图，标出每个框的显存与 GPU——引言错误 3 的 RL 版。
+> **架构智慧：**算法层的每一个选择都会在系统层长出新组件和新账单：组式路线长出成组采样与组完整性维护，Critic 路线长出价值模型与三类 GPU 调度，异步拓扑长出权重下发与 lag 监控。评审任何"我们换算法 X"的提案时，要求附一张组件图，标出每个框的显存与 GPU。
 
 ---
 
@@ -648,14 +640,6 @@ Terminal-Bench 跨版本不可比（TB 2.0/3.0/4.0 是三把不同的尺子）�
 ### 错误 6：高成功率但不可复现的环境照训不误
 
 环境不可复现意味着奖励噪声混入学习信号：组内比较失去可比性，失败无法归因（环境 bug 还是策略错误），消融全部失效。**纠正动作**：环境上线前先跑可复现性验收——同策略同版本重复运行，结果分布必须统计一致。
-
----
-
-## 把判断用在合同助手上
-
-**教学推演，非真实训练结果。**当前合同抽取若单轮即可完成，就跳过 Agentic RL。只有任务需要自主检索、比对附件并多轮调用工具时，才增加可重置的文档环境；先限制工具权限、隔离轨迹与隐藏验收，再考虑扩大并发。
-
-**现在动手：**先写一条不需要 Agentic RL 的理由；若仍需进入，列出环境重置失败时的样本处理规则。
 
 ---
 
@@ -759,7 +743,7 @@ Terminal-Bench 跨版本不可比（TB 2.0/3.0/4.0 是三把不同的尺子）�
 
 ## 相关链接
 
-- 本系列：[T01 · 引言：训练决策的地图与坐标系](/tutorial/t01-introduction-map/) · [T08 · 可验证强化学习：前提、归因与健康](/tutorial/t08-rlvr-prerequisites-attribution-health/) · [T10 · 防线不是一道墙：安全规格、全生命周期评测与发布门禁](/tutorial/t10-safety-spec-evaluation-gate/) · [T05 · 训练系统：从一步训练到分布式拓扑](/tutorial/t05-training-system-distributed-topology/)
+- 本系列：[T01 · 理解模型训练：从预训练到后训练](/tutorial/t01-introduction-map/) · [T08 · 可验证强化学习：前提、归因与健康](/tutorial/t08-rlvr-prerequisites-attribution-health/) · [T10 · 防线不是一道墙：安全规格、全生命周期评测与发布门禁](/tutorial/t10-safety-spec-evaluation-gate/) · [T05 · 训练系统：从一步训练到分布式拓扑](/tutorial/t05-training-system-distributed-topology/)
 - 主案例：[GLM-5 技术报告](https://arxiv.org/abs/2602.15763) · [GLM-5.2 官方说明](https://z.ai/blog/glm-5.2)
 - 异步 RL 生态：[Hugging Face · Keep the Tokens Flowing（16 个异步训练项目综述）](https://huggingface.co/blog/async-rl-training-landscape) · [vLLM · vime 发布（slime × vLLM 合流）](https://vllm.ai/blog/2026-06-09-announcing-vime) · [slime（THUDM）](https://github.com/THUDM/slime)
 - 账本与评测：[Inkling 2 Small 训练账本](https://thinkingmachines.ai/news/inkling-2-small) · [Agent Arena 榜单](https://arena.ai/leaderboard/agent) · [Kimi K3.1 Pro 模型页](https://huggingface.co/moonshotai/Kimi-K3.1-Pro)

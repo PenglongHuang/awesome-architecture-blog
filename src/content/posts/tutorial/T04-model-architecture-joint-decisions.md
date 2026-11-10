@@ -7,13 +7,7 @@ pubDate: 2026-11-12
 kind: tutorial
 tags: ["基础模型训练决策专题", "模型架构", "MoE", "长上下文"]
 ---
-> **容量、上下文与模态共享资源约束，架构选择要按实际工作负载一起算。**
-
-读完可以比较候选架构的容量、窗口和模态成本，并写出有备选、有取舍的架构决策。
-
-[专题地图](/tutorial/t01-introduction-map/) · 可独立阅读；文末有本章决策练习。
-
-## 开场：同一个任务，三份对不上的报价单
+## 同一个任务，三份对不上的报价单
 
 数据配方确定了模型要学什么；接下来，结构决定这些信息怎样被表示、计算和部署。
 
@@ -42,8 +36,6 @@ tags: ["基础模型训练决策专题", "模型架构", "MoE", "长上下文"]
 ```
 
 还有一个更隐蔽的问题：A 的卖点本身就是个口径游戏。3.7% 是**比例**，104B 是**绝对值**——每个 Token 动用的参数仍是 B 方案（40B 激活）的 2.6 倍。T02 引用过的官方 API 标价正好给出刻度（口径：每百万 Token，输入 / 输出）：GLM-5 为 $1.0 / $3.2，Kimi K3 为 $3 / $15——激活参数更多的模型，每 Token 价格确实更贵。**比较推理成本要看激活参数的绝对值，激活比例只说明「这个模型相对自己的总容量有多省」。**
-
-> **本章只解决一件事：给定任务与部署约束，如何选择 Dense / MoE、注意力结构、上下文长度和多模态路线？**
 
 本章的推导路线，也是三笔账的展开顺序：
 
@@ -504,7 +496,7 @@ Architecture ADR：把这张依赖图连同取舍理由一起存档
             每一处都要有人接住
 ```
 
-四步走完，一份「我们用某某结构」的提案就变成了一组可检验的陈述：它假设了什么约束、改写了哪几本账、代价由谁承接、用什么实验验证。任何一步答不上来，提案就还没到能拍板的状态——这与引言八层坐标系「在花算力之前先让假设破产」的用法完全一致。
+四步走完，一份「我们用某某结构」的提案就变成了一组可检验的陈述：它假设了什么约束、改写了哪几本账、代价由谁承接、用什么实验验证。任何一步答不上来，提案就还没到能拍板的状态——这些记录能帮助团队在正式训练前检查方案是否可行。
 
 > **架构智慧：**抄旗舰骨架的人抄到的是别人约束的解。K3 的 896 选 16、GLM-5.2 的 IndexShare，都是在「万亿容量 + 长程任务 + 自家集群」这组约束下解出来的；你的约束不同，同一个解就是错的。复用推理（依赖图 + 取舍理由），不复制答案（结构配置）。
 
@@ -638,14 +630,6 @@ K3 的 896 选 16、GLM-5.2 的 IndexShare 都是「万亿容量 + 长程任务 
 
 ---
 
-## 把判断用在合同助手上
-
-**教学推演，非真实训练结果。**先测合同问答究竟需要全文交叉阅读，还是检索片段即可完成。纯文本抽取不自动引入视觉模块；复用底座时，架构选择主要发生在选底座与选部署方案阶段，不能把改结构当作普通微调开关。
-
-**现在动手：**写出一个愿意舍弃的架构特性，以及舍弃它为部署节省的资源。
-
----
-
 ## 🎯 随堂检验
 
 ```quiz
@@ -746,7 +730,7 @@ K3 的 896 选 16、GLM-5.2 的 IndexShare 都是「万亿容量 + 长程任务 
 
 ## 相关链接
 
-- 本系列：[T01 · 引言：训练决策的地图与坐标系](/tutorial/t01-introduction-map/) · [T02 · Scaling 不是抄比例：三本总账](/tutorial/t02-scaling-budget-three-ledgers/) · [T03 · 数据不是越多越好](/tutorial/t03-data-recipe-quality-synthesis/) · [T05 · 训练系统：从一步训练到分布式拓扑](/tutorial/t05-training-system-distributed-topology/)
+- 本系列：[T01 · 理解模型训练：从预训练到后训练](/tutorial/t01-introduction-map/) · [T02 · Scaling 不是抄比例：三本总账](/tutorial/t02-scaling-budget-three-ledgers/) · [T03 · 数据不是越多越好](/tutorial/t03-data-recipe-quality-synthesis/) · [T05 · 训练系统：从一步训练到分布式拓扑](/tutorial/t05-training-system-distributed-topology/)
 - 架构披露：[Kimi K3 技术报告](https://arxiv.org/abs/2607.24653) · [GLM-5 技术报告](https://arxiv.org/abs/2602.15763) · [GLM-5.2 官方博客（IndexShare）](https://z.ai/blog/glm-5.2) · [Mistral Large 4 开源公告](https://mistral.ai/news/mistral-large-4-oss)
 - 分类学与机制：[注意力变体视觉指南（Raschka Magazine）](https://magazine.sebastianraschka.com/p/visual-attention-variants) · [GLM-5.2 IndexShare 第三方拆解](https://sebastianraschka.com/blog/2026/glm-5-2-indexshare.html)
 - 配置区间与生态：[长上下文窗口汇总（口径以官方文档为准）](https://codingscape.com/blog/llms-with-largest-context-windows) · [DeepSeek V4 混合芯片栈（MIT Technology Review）](https://www.technologyreview.com/2026/04/24/1136422/why-deepseeks-v4-matters)
