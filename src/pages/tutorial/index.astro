@@ -11,7 +11,7 @@ const series = SERIES.filter((s) => s.channel === 'tutorial').sort((a, b) => a.o
 const recent = sortByDateDesc(all.filter((p) => postChannel(p) === 'tutorial')).slice(0, 6)
 const count = all.filter((p) => postChannel(p) === 'tutorial').length
 ---
-<BaseLayout title="入门教程">
+<BaseLayout title="入门教程" description="面向软件工程师的中文软件架构教程，从架构思维、分布式系统到 AI 工程实践，结合真实案例建立系统设计与技术取舍能力。">
   <div class="page-head frame">
     <div class="grid">
       <p class="page-head__side">{count} 篇 · {series.length} 条系列 · 每周更新</p>

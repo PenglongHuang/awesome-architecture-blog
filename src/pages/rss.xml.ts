@@ -7,7 +7,7 @@ export async function GET(context: APIContext) {
   const posts = sortByDateDesc(await getCollection('posts'))
   return rss({
     title: 'AI架构师之路 · Awesome Architecture',
-    description: '专注架构思维的中文知识库:43 篇入门教程、31 张架构地图、6 个系统设计、3 门项目课程。',
+    description: '专注架构思维的中文知识库，涵盖入门教程、真实系统架构地图、端到端系统设计与交互式项目课程。',
     site: context.site!,
     items: posts.map((post) => {
       const channel = post.data.kind === 'template' ? 'templates' : post.data.kind === 'case' ? 'cases' : 'tutorial'

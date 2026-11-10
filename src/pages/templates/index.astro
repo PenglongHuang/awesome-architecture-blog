@@ -11,7 +11,7 @@ const series = SERIES.filter((s) => s.channel === 'templates').sort((a, b) => a.
 const recent = sortByDateDesc(all.filter((p) => postChannel(p) === 'templates')).slice(0, 6)
 const count = all.filter((p) => postChannel(p) === 'templates').length
 ---
-<BaseLayout title="架构地图">
+<BaseLayout title="架构地图" description="真实系统架构图与技术拆解，覆盖经典互联网系统、AI 基础设施和 Agent 工程，沿着组件、数据流和设计取舍理解系统。">
   <div class="page-head frame">
     <div class="grid">
       <p class="page-head__side">{count} 张地图 · {series.length} 条系列</p>

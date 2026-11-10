@@ -24,7 +24,7 @@ const trackCounts = new Map(
   tracks.map((track) => [track.id, COURSES.filter((course) => course.track === track.id).length])
 )
 ---
-<BaseLayout title="项目学习">
+<BaseLayout title="项目学习" description="通过 LiteLLM、LLM2Jev、Pi 等真实项目的交互式源码课程，沿着请求链路理解 AI 基础设施与编码 Agent 架构。">
   <div class="page-head frame">
     <div class="grid">
       <p class="page-head__side">{COURSES.length} 门 · 可交互</p>
