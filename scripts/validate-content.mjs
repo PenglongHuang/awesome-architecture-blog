@@ -25,8 +25,6 @@ const posts = walk(POSTS).map((file) => {
   return { rel, data: parsed.data, body: parsed.content }
 })
 
-if (posts.length !== 83) errors.push(`expected 83 posts, got ${posts.length}`)
-
 const bySeries = new Map()
 const slugs = new Map()
 
@@ -37,6 +35,18 @@ for (const post of posts) {
   }
   if (!SERIES_IDS.has(d.series)) errors.push(`${post.rel}: invalid series ${d.series}`)
   if (!(d.pubDate instanceof Date) || Number.isNaN(+d.pubDate)) errors.push(`${post.rel}: invalid pubDate`)
+  if (d.updatedDate !== undefined) {
+    if (!(d.updatedDate instanceof Date) || Number.isNaN(+d.updatedDate)) errors.push(`${post.rel}: invalid updatedDate`)
+    else if (d.pubDate instanceof Date && +d.updatedDate < +d.pubDate) errors.push(`${post.rel}: updatedDate is earlier than pubDate`)
+  }
+  for (const key of ['author', 'editor', 'cover', 'coverAlt']) {
+    if (d[key] !== undefined && (typeof d[key] !== 'string' || !d[key].trim())) errors.push(`${post.rel}: invalid ${key}`)
+  }
+  if (d.cover && !d.coverAlt) errors.push(`${post.rel}: cover requires coverAlt`)
+  if (d.cover && !d.cover.startsWith('http://') && !d.cover.startsWith('https://')) {
+    const coverFile = path.join(ROOT, 'public', d.cover.split('/').filter(Boolean).join(path.sep))
+    if (!fs.existsSync(coverFile)) errors.push(`${post.rel}: cover not found in public/: ${d.cover}`)
+  }
   if (!CHANNEL_OF_KIND[d.kind]) errors.push(`${post.rel}: invalid kind ${d.kind}`)
 
   const channel = CHANNEL_OF_KIND[d.kind] ?? 'unknown'
@@ -83,4 +93,4 @@ if (errors.length) {
   console.error(errors.join('\n'))
   process.exit(1)
 }
-console.log(`validated ${posts.length} posts across ${bySeries.size} series`)
+console.log(`validated ${posts.length} posts across ${bySeries.size} series (dynamic count)`)
