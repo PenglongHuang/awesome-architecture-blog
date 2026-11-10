@@ -7,13 +7,7 @@ pubDate: 2026-11-13
 kind: tutorial
 tags: ["基础模型训练决策专题", "分布式训练", "GPU 显存", "Checkpoint"]
 ---
-> **训练系统要同时回答四件事：状态放哪里、数据怎么走、计算怎么排、失败怎么恢复。**
-
-读完可以按模型状态与硬件约束推导训练配置，区分显存、通信和可靠性瓶颈。
-
-[专题地图](/tutorial/t01-introduction-map/) · 可独立阅读；文末有本章决策练习。
-
-## 开场：同一份模型方案，三种翻车
+## 同一份模型方案，三种翻车
 
 先拿一个真实体量当锚：[Inkling 2 Small](https://thinkingmachines.ai/news/inkling-2-small)（Thinking Machines，2026-11-05 官方训练账本页）是 594B 总参数 / 17B 激活参数的 MoE（口径：官方披露）。把一个最朴素的问题摆上桌——这套权重用 BF16 存（每个参数 2 字节）约 1.19TB，而单块 GPU 的显存以百 GB 计。**还没开始训练，光是"把模型放进去"就已经超出了任何单卡。**
 
@@ -34,9 +28,7 @@ tags: ["基础模型训练决策专题", "分布式训练", "GPU 显存", "Check
 
 三种翻车对应三笔账：显存账、通信账、时间线上的可靠性账。本章的推导顺序由此确定，也就是标题里那句方法论——**账本先行（先算显存装不装得下），组合随后（并行维度怎么乘起来），时间线裁决（精度、优化器与 Goodput 决定端到端到底多快）**。
 
-> **本章只解决一件事：给定模型、硬件和训练目标，如何设计训练并行、数值精度、优化器和容错机制？**
-
-还有一个题眼要说清：为什么说"训练系统不是运维"？运维回答"怎么让既有系统持续正常运行"；训练系统设计是架构决策——切几维并行、用什么精度、多久存一次 checkpoint，每一个选择都改写资源账单与失败模式，方向错了，监控看得再紧也救不回来。引言的判断边界在这里原样适用：一种技术只有改变数据形态、计算图、系统拓扑、资源账单或失败模式，才是本章要讨论的架构问题。
+还有一个题眼要说清：为什么说"训练系统不是运维"？运维回答"怎么让既有系统持续正常运行"；训练系统设计是架构决策——切几维并行、用什么精度、多久存一次 checkpoint，每一个选择都改写资源账单与失败模式，方向错了，监控看得再紧也救不回来。本章关注的是：一种技术只有改变数据形态、计算图、系统拓扑、资源账单或失败模式，才是本章要讨论的架构问题。
 
 本章的推导路线：
 
@@ -433,9 +425,9 @@ Muon 的设计直觉：对 2D 权重矩阵的更新做一次正交化（用 Newt
 
 训练系统设计的可靠性部分回答一个问题——**故障发生时，你丢多少进度、花多久恢复**。这不是运维细节：GLM-5 的技术报告（[arXiv:2602.15763](https://arxiv.org/html/2602.15763v1)，2026-02）被第三方评述指出"在基础设施上花了异常多篇幅"，其中 agentic 训练的失败更多指向系统瓶颈而非算法——可靠性工程是训练系统能不能交付模型的主变量之一。
 
-### 2. Checkpoint 状态机：引言的承诺，这里兑现
+### 2. Checkpoint 状态机：恢复训练需要保存什么
 
-引言的术语表只给了半句定义（"Checkpoint：训练快照与恢复所需的状态，完整状态机在 T05 定义"）。现在补全。**一个可用的 Checkpoint 是五件东西的整体，缺一件，恢复出来的就不是原来那个训练：**
+Checkpoint 要保存的内容取决于恢复目标。若要连续恢复训练，仅有模型权重还不够。**一个可用的 Checkpoint 是五件东西的整体，缺一件，恢复出来的就不是原来那个训练：**
 
 | 组件 | 是什么 | 缺了会怎样 |
 |---|---|---|
@@ -633,14 +625,6 @@ MFU 量的是"跑的时候多满"，故障、重启、回退吞掉的进度它�
 
 ---
 
-## 把判断用在合同助手上
-
-**教学推演，非真实训练结果。**合同助手若从 LoRA 验证起步，先按实际可训练参数、冻结权重与激活列账，不能直接套全参训练的静态合计。用真实长度分布测吞吐与峰值显存，并演练恢复；资源升级应由瓶颈测量驱动。
-
-**现在动手：**为当前方案列显存账，标出最大未知项，并安排一次峰值显存与恢复演练。
-
----
-
 ## 🎯 随堂检验
 
 ```quiz
@@ -741,7 +725,7 @@ MFU 量的是"跑的时候多满"，故障、重启、回退吞掉的进度它�
 
 ## 相关链接
 
-- 本系列：[T01 · 引言：训练决策的地图与坐标系](/tutorial/t01-introduction-map/) · [T02 · Scaling 不是抄比例：三本总账](/tutorial/t02-scaling-budget-three-ledgers/) · [T04 · 模型骨架的联合决策](/tutorial/t04-model-architecture-joint-decisions/) · 下一站 [T06 · 示范学习与能力迁移边界](/tutorial/t06-sft-distillation-transfer-boundary/)
+- 本系列：[T01 · 理解模型训练：从预训练到后训练](/tutorial/t01-introduction-map/) · [T02 · Scaling 不是抄比例：三本总账](/tutorial/t02-scaling-budget-three-ledgers/) · [T04 · 模型骨架的联合决策](/tutorial/t04-model-architecture-joint-decisions/) · 下一站 [T06 · 示范学习与能力迁移边界](/tutorial/t06-sft-distillation-transfer-boundary/)
 - 训练账本与案例：[Inkling 2 Small 官方训练账本](https://thinkingmachines.ai/news/inkling-2-small) · [GLM-5 技术报告](https://arxiv.org/html/2602.15763v1) · [MIT Technology Review · Why DeepSeek's V4 Matters](https://www.technologyreview.com/2026/04/24/1136422/why-deepseeks-v4-matters) · [SLAI T-Rex：Ascend SuperPOD 全参后训练](https://arxiv.org/abs/2607.20145)
 - 并行与框架：[NVIDIA · Wide Expert Parallelism on NVL72](https://developer.nvidia.com/blog/scaling-large-moe-models-with-wide-expert-parallelism-on-nvl72-rack-scale-systems) · [Mixture-of-Parallelisms（arXiv:2607.01844）](https://arxiv.org/html/2607.01844v1) · [torchtitan 0.4 与 TitanRL 更新](https://pytorch.org/blog/torchtitan-update-new-sota-models-performance-at-scale-titanrl) · [PyTorch · Using Muon Optimizer with DeepSpeed](https://pytorch.org/blog/using-muon-optimizer-with-deepspeed)
 

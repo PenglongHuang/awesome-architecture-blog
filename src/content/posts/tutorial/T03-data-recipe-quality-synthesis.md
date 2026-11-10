@@ -7,13 +7,7 @@ pubDate: 2026-11-11
 kind: tutorial
 tags: ["基础模型训练决策专题", "数据工程", "合成数据", "Mid-training"]
 ---
-> **数据配方的价值，要用目标能力的变化衡量；数据量和清洗保留率都只是中间读数。**
-
-读完可以从能力目标反推数据桶，并用配方表与质量记分卡检验清洗、合成和定向训练的收益。
-
-[专题地图](/tutorial/t01-introduction-map/) · 可独立阅读；文末有本章决策练习。
-
-## 开场：同样的 Token 预算，训出两个不一样的模型
+## 同样的 Token 预算，训出两个不一样的模型
 
 先看一个工程现场(以下为教学示意场景，数字是假设的预算，不是任何真实模型的数据)。
 
@@ -629,14 +623,6 @@ Kimi K3 开放了权重，但其数据配方并未随之披露。权重开放、
 
 ---
 
-## 把判断用在合同助手上
-
-**教学推演，非真实训练结果。**把条款抽取、带出处问答和澄清对话分别建桶；按合同来源或模板分离训练与评测，降低近重复泄漏。没有真实依据的合成风险解释不能直接入库。若基线显示知识来自检索即可补齐，就暂缓领域继续预训练。
-
-**现在动手：**选一个数据桶，写明它要改善的指标、固定预算对照与污染检查方法。
-
----
-
 ## 🎯 随堂检验
 
 前四题对应本章四个核心判断(配比取舍、合成验收、清洗归因、口径纪律),第五题检验词表接口的推理。都建议先自己想出答案，再看解析。
@@ -739,7 +725,7 @@ Kimi K3 开放了权重，但其数据配方并未随之披露。权重开放、
 
 ## 相关链接
 
-- 本系列：[T01 · 引言：训练决策的地图与坐标系](/tutorial/t01-introduction-map/) · [T02 · Scaling 不是抄比例：三本总账](/tutorial/t02-scaling-budget-three-ledgers/)
+- 本系列：[T01 · 理解模型训练：从预训练到后训练](/tutorial/t01-introduction-map/) · [T02 · Scaling 不是抄比例：三本总账](/tutorial/t02-scaling-budget-three-ledgers/)
 - 本仓库方法论：[08 · 架构决策记录与演进](/tutorial/adr-and-evolution/) · [05 · 数据与状态](/tutorial/data-and-state/)
 - 前沿实践综述：[Toloka · How Frontier Labs Build Pre-training Datasets](https://toloka.ai/blog/how-frontier-labs-build-pre-training-datasets)
 - 数据集换代：[2026 开源预训练语料综述](https://presenc.ai/research/open-pretraining-datasets-2026) · [Common Corpus(ICLR 2026 Oral)](https://arxiv.org/abs/2506.01732) · [智源 IndustryCorpus 5T](https://aihub.caict.ac.cn/datasets/zhinao/Pretraining-Corpus-5T)

@@ -7,13 +7,7 @@ pubDate: 2026-11-14
 kind: tutorial
 tags: ["基础模型训练决策专题", "SFT", "知识蒸馏", "LoRA"]
 ---
-> **示范训练要证明的是目标行为能迁移到新任务，而不只是训练答案更容易被复述。**
-
-读完可以选择示范来源与更新方式，写出包含泛化验证和回退防护的 SFT／蒸馏策略。
-
-[专题地图](/tutorial/t01-introduction-map/) · 可独立阅读；文末有本章决策练习。
-
-## 开场：模型会背答案，却不会解决新问题
+## 模型会背答案，却不会解决新问题
 
 先看一个工程现场（教学合成场景，数字为示意；但现象不是合成的——本章第五、六节的 2026 案例会给出它的真实版本）。
 
@@ -36,9 +30,7 @@ tags: ["基础模型训练决策专题", "SFT", "知识蒸馏", "LoRA"]
 
 本章把"从示范学习开始"拆开：SFT 到底在教什么（第一节）、该往参数里写多深（第二节）、把别的模型的示范搬过来叫蒸馏，搬的是什么（第三节）、数据来自谁的分布为什么是分水岭（第四节）、多阶段训练为什么会让前面教的又丢掉（第五节）、以及怎么证明这一切值得（第六节）。
 
-> **本章只解决一件事：如何选择 SFT、参数高效微调、全参数微调和蒸馏，并判断它们能否带来可迁移能力？**
-
-在引言的学习信号光谱表里，本章占据的是第一行：
+示范学习可以先用下面这条关系理解：
 
 | 光谱级行 | 最小训练数据 | 需要在线 Rollout | "更好"由谁定义 | 典型代价 |
 |---|---|---|---|---|
@@ -391,7 +383,7 @@ OPD:Student 走出 A→B'→C''(它自己的真实分布),
 | 风险：Teacher 偏差照样迁移 | 换了数据来源不等于换了能力来源——Teacher 错，Student 在自己的分布上跟着错 |
 | 风险：复杂度高一档 | 采样、过滤、信号回传、版本同步；离线一条批处理脚本的事，在线是一套系统 |
 
-这里要回对一次引言的光谱表：表里"示范"一行标注"不需要在线 Rollout"——那是离线 SFT 与 off-policy 蒸馏的口径。**OPD 是示范信号的在线变体**：信号本身仍是"Teacher 认为的正确"，但数据由 Student 在线生成，于是"需要在线 Rollout"这一列开始从"否"翻向"是"。光谱的分级说的是信号强度，不是方法名的户口。
+离线 SFT 与 off-policy 蒸馏通常读取预先准备的材料。**OPD 则让 Student 在训练期间生成尝试，再由 Teacher 提供反馈**，数据生成与更新形成循环。因此，示范信号也可以在线使用，不能仅凭信号类型判断是否需要采样系统。
 
 ### 3. 何时值得把蒸馏搬到线上
 
@@ -614,7 +606,7 @@ RL-通用段后   71       58     60      39        84   ← 通用涨,代码明
 
 ### 错误 1：把 SFT 当成教能力的万能键
 
-SFT 稳定教会的是格式、任务模式与行为边界；能力上限受示范质量与覆盖约束（引言光谱表第一级的典型代价）。2026 年"SFT 是 off-policy 模仿阶段、能力提升主要来自 RL"是值得参考的实践走向，但它是经验叙事，不是可跳过验证的定理——你的场景要你自己的对照来裁决。
+SFT 稳定教会的是格式、任务模式与行为边界；能力上限受示范质量与覆盖约束。2026 年"SFT 是 off-policy 模仿阶段、能力提升主要来自 RL"是值得参考的实践走向，但它是经验叙事，不是可跳过验证的定理——你的场景要你自己的对照来裁决。
 
 ### 错误 2：把"复述准确"当"能力迁移"
 
@@ -635,14 +627,6 @@ Teacher 会出错、有风格偏差，软标签与轨迹里能力与毛病混在
 ### 错误 6：多阶段训练不做回归评测
 
 顺序优化多个目标，参数只有一份，能力回退是默认结局而非事故——GLM-5 官方承认回退存在并专门编排了末段蒸馏修复。没有能力矩阵与晋级阈值的多阶段流水线，等于把回退的发现时机交给上线之后。
-
----
-
-## 把判断用在合同助手上
-
-**教学推演，非真实训练结果。**先用带来源的合同示范建立字段格式、原文引用和缺信息时追问的行为。Teacher 生成的数据需独立抽检；验收使用未见来源与模板，分开测格式正确、字段正确和引用正确，避免一个总分掩盖失败。
-
-**现在动手：**给“学会了”定义一个未见来源的测试，并写明哪种回退会阻止晋级。
 
 ---
 
@@ -746,6 +730,6 @@ Teacher 会出错、有风格偏差，软标签与轨迹里能力与毛病混在
 
 ## 相关链接
 
-- 本系列：[T01 · 引言：训练决策的地图与坐标系](/tutorial/t01-introduction-map/) · [T03 · 数据不是越多越好](/tutorial/t03-data-recipe-quality-synthesis/) · [T05 · 训练系统不是运维](/tutorial/t05-training-system-distributed-topology/) · [T07 · 偏好不是标注量](/tutorial/t07-preference-reward-calibration/)
+- 本系列：[T01 · 理解模型训练：从预训练到后训练](/tutorial/t01-introduction-map/) · [T03 · 数据不是越多越好](/tutorial/t03-data-recipe-quality-synthesis/) · [T05 · 训练系统不是运维](/tutorial/t05-training-system-distributed-topology/) · [T07 · 偏好不是标注量](/tutorial/t07-preference-reward-calibration/)
 - 2026 主案例：[GLM-5 技术报告](https://arxiv.org/abs/2602.15763) · [GLM-5.3 官方发布](https://z.ai/blog/glm-5.3) · [GLM-5.3 官方模型卡](https://huggingface.co/zai-org/GLM-5.3) · [Kimi K3.1 Pro 权重页](https://huggingface.co/moonshotai/Kimi-K3.1-Pro) · [Artificial Analysis：K3.1 Pro 评测](https://artificialanalysis.ai/articles/kimi-k3-1-pro-launch-benchmarks) · [Inkling 2 Small 训练账本](https://thinkingmachines.ai/news/inkling-2-small)
 - 方法起源/历史锚点：[DeepSeek-R1（R1-Distill 对照）](https://arxiv.org/abs/2501.12948) · [LIMA：Less Is More for Alignment](https://arxiv.org/abs/2305.11206) · [LoRA Learns Less and Forgets Less（预印本）](https://arxiv.org/abs/2405.09673) · [InstructGPT](https://arxiv.org/abs/2203.02155)

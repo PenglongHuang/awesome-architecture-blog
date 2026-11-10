@@ -8,13 +8,7 @@ updatedDate: 2026-11-10
 kind: tutorial
 tags: ["基础模型训练决策专题", "训练预算", "Scaling Law", "GPU 成本"]
 ---
-> **把一次训练、持续服务和研发试错放进同一个周期，才能判断模型规模是否划算。**
-
-读完可以把参数量与 Token 数换成带假设的卡时和费用区间，交付一张三本账齐全的预算表。
-
-[专题地图](/tutorial/t01-introduction-map/) · 可独立阅读；文末有本章决策练习。
-
-## 开场：同一个模型，两个"20:1"都够不着
+## 同一个模型，两个"20:1"都够不着
 
 [GLM-5 技术报告](https://arxiv.org/abs/2602.15763)披露了一组常被拿来当参照的数字：744B 总参数、40B 激活参数的 MoE，预训练 28.5T Token（口径：报告披露的预训练 Token 数，权重 MIT 开放）。
 
@@ -35,8 +29,6 @@ MoE 模型每个 Token 只激活一小部分专家，所以两个口径天然差
 第二个问题更重要：**Chinchilla 的 20:1 到底在优化什么？** 它优化的是"只花一次训练算力时，训练终点的损失最低"。它不管你训完之后要服务多少请求，不管你的研发路上要死多少次实验，也不管你的模型是 Dense 还是 MoE。一个只看训练终点的最优解，落到要持续服务、持续试错的真实业务里，"远离 20:1"不但不奇怪，反而可能是正确决策的结果。
 
 本章的任务，就是把这句话变成一套能落地的算法。
-
-> **本章只解决一件事：给定目标能力、预算和部署形态，如何决定模型规模、训练 Token 数与推理预算？**
 
 本章的推导路线，也是三本账的展开顺序：
 
@@ -654,14 +646,6 @@ K3 未披露 Token 与卡时，连"抄"的对象都不完整；GLM-5 披露 Toke
 
 ---
 
-## 把判断用在合同助手上
-
-**教学推演，非真实训练结果。**合同助手先比较现成模型＋检索与复用底座后训练，两条路线都要计入真实合同长度、输出量和评测费用。先做基线，再决定是否值得增加训练支出；从零预训练作为备选列账，不作为默认起点。
-
-**现在动手：**给预算表补上服务周期和调用量；若推理成本翻倍，原选择还成立吗？
-
----
-
 ## 🎯 随堂检验
 
 ```quiz
@@ -762,6 +746,6 @@ K3 未披露 Token 与卡时，连"抄"的对象都不完整；GLM-5 披露 Toke
 
 ## 相关链接
 
-- 本仓库方法论：[引言：训练决策的地图与坐标系](/tutorial/t01-introduction-map/) · [13 · 规模化的力学](/tutorial/mechanics-of-scale/) · [08 · 架构决策记录与演进](/tutorial/adr-and-evolution/)
+- 本仓库方法论：[理解模型训练：从预训练到后训练](/tutorial/t01-introduction-map/) · [13 · 规模化的力学](/tutorial/mechanics-of-scale/) · [08 · 架构决策记录与演进](/tutorial/adr-and-evolution/)
 - 方法来源：[Chinchilla：Training Compute-Optimal LLMs](https://arxiv.org/abs/2203.15556) · [细粒度 MoE 的 Scaling 律](https://arxiv.org/abs/2402.07871) · [Scaling Inference-Efficient Language Models](https://arxiv.org/abs/2501.18107)
 - 案例与数据：[GLM-5 技术报告](https://arxiv.org/abs/2602.15763) · [T²（Train-to-Test）Scaling](https://arxiv.org/abs/2604.01411) · [Inkling 2 Small 训练账本](https://thinkingmachines.ai/news/inkling-2-small) · [Epoch AI：最终训练 Run 占研发算力少数](https://epochai.substack.com/p/final-training-runs-account-for-a) · [LFM2.5-350M 发布说明](https://www.liquid.ai/blog/lfm2-5-350m-no-size-left-behind)
