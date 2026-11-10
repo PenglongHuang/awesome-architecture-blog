@@ -3,8 +3,22 @@ import '../styles/global.css'
 import Masthead from '../components/Masthead.astro'
 import Footer from '../components/Footer.astro'
 
-interface Props { title: string; description?: string }
-const { title, description = '专注架构思维的中文知识库。入门教程、真实系统架构地图、系统设计与可交互的项目课程。' } = Astro.props
+interface Props {
+  title: string
+  description?: string
+  image?: string
+  imageAlt?: string
+  ogType?: 'website' | 'article'
+  noindex?: boolean
+}
+const {
+  title,
+  description = '面向软件工程师的中文架构知识库，涵盖软件架构教程、真实系统架构图、系统设计案例与 AI Agent 工程实践。',
+  image,
+  imageAlt = title,
+  ogType = 'website',
+  noindex = false,
+} = Astro.props
 const siteName = 'AI架构师之路'
 const fullTitle = title === siteName ? title : `${title} · ${siteName}`
 const base = import.meta.env.BASE_URL
@@ -13,11 +27,40 @@ const overrideBase = import.meta.env.PUBLIC_CANONICAL_BASE
 const overrideSite = import.meta.env.PUBLIC_CANONICAL_SITE
 const useOverride = Boolean(overrideBase && overrideSite)
 const rawCanonicalBase = useOverride ? overrideBase : base
-const canonicalBase = rawCanonicalBase === '/' ? '' : `/${String(rawCanonicalBase).replace(/^\/+|\/+$/g, '')}`
+const canonicalBase = rawCanonicalBase === '/' ? '' : `/${String(rawCanonicalBase).split('/').filter(Boolean).join('/')}`
 const rawCanonicalSite = String(useOverride ? overrideSite : (Astro.site || 'https://penglonghuang.github.io'))
-const canonicalSite = /^https?:\/\//i.test(rawCanonicalSite) ? rawCanonicalSite : `https://${rawCanonicalSite.replace(/^\/+/, '')}`
-const canonical = new URL(`${canonicalBase}${path}`, canonicalSite)
+const canonicalSite = rawCanonicalSite.endsWith('/') ? rawCanonicalSite.slice(0, -1) : rawCanonicalSite
+const pagePath = path.startsWith('/') ? path : `/${path}`
+const canonical = new URL(`${canonicalBase}${pagePath}`, canonicalSite).href
+const imageBase = canonicalBase
+const imagePath = image ? image.split('/').filter(Boolean).join('/') : 'og-default.svg'
+const imageUrl = image && (image.startsWith('https://') || image.startsWith('http://'))
+  ? image
+  : new URL(`${imageBase}/${imagePath}`, canonicalSite).href
 const isSearchPage = path === '/search/' || path === '/search'
+const shouldNoindex = noindex || isSearchPage || path === '/404.html'
+const siteRoot = new URL(`${canonicalBase}/`, canonicalSite).href
+const logoUrl = new URL(`${imageBase}/brand-mark.svg`, canonicalSite).href
+const siteStructuredData = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${siteRoot}#organization`,
+      name: siteName,
+      url: siteRoot,
+      logo: { '@type': 'ImageObject', url: logoUrl },
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${siteRoot}#website`,
+      name: siteName,
+      url: siteRoot,
+      inLanguage: 'zh-CN',
+      publisher: { '@id': `${siteRoot}#organization` },
+    },
+  ],
+}).replace(/</g, '\\u003c')
 ---
 <!doctype html>
 <html lang="zh-CN">
@@ -26,7 +69,22 @@ const isSearchPage = path === '/search/' || path === '/search'
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    <meta name="robots" content={shouldNoindex ? 'noindex,follow' : 'index,follow,max-image-preview:large'} />
     <link rel="canonical" href={canonical} />
+    <link rel="alternate" type="application/rss+xml" title="AI架构师之路 RSS" href={`${base}rss.xml`} />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:alt" content={imageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
+    <script type="application/ld+json" set:html={siteStructuredData} />
     <link rel="icon" type="image/svg+xml" href={`${base}brand-mark.svg`} />
     <link rel="stylesheet" href={`${base}theme.css`} />
     <script is:inline src={`${base}theme.js`}></script>
