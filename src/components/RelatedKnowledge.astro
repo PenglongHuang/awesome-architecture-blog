@@ -1,0 +1,34 @@
+---
+import type { Post } from '../lib/posts'
+import { getSeries, postHref } from '../lib/posts'
+
+interface Props {
+  post: Post
+  allPosts: Post[]
+}
+const { post, allPosts } = Astro.props
+const currentTags = new Set(post.data.tags)
+const related = allPosts
+  .filter((candidate) => candidate.id !== post.id)
+  .map((candidate) => {
+    const sharedTags = candidate.data.tags.filter((tag) => currentTags.has(tag)).length
+    const sameSeries = candidate.data.series === post.data.series
+    return { post: candidate, score: sharedTags * 3 + (sameSeries ? 2 : 0), sharedTags, sameSeries }
+  })
+  .filter((item) => item.score > 0)
+  .sort((a, b) => b.score - a.score || +b.post.data.pubDate - +a.post.data.pubDate)
+  .slice(0, 3)
+---
+{related.length > 0 && (
+  <section class="related-knowledge prose" data-pagefind-ignore aria-labelledby="related-knowledge-title">
+    <h2 id="related-knowledge-title">延伸阅读</h2>
+    <ul>
+      {related.map(({ post: item, sameSeries, sharedTags }) => (
+        <li>
+          <a href={postHref(item)}>{item.data.title}</a>
+          <span> · {sameSeries ? getSeries(item.data.series).title : sharedTags ? '相关主题' : '继续阅读'}</span>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
