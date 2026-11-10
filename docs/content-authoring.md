@@ -97,7 +97,7 @@ pnpm preview
 
 ## 域名与爬虫注意事项
 
-- `SITE_URL` 是 Astro 的正式站点 Origin；`BASE_PATH` 是部署路径。Canonical、Sitemap 和 robots.txt 必须使用同一组配置。
+- `SITE_URL` 是 Astro 的正式站点 Origin；`BASE_PATH` 是部署路径。可在 GitHub 仓库 Settings → Secrets and variables → Actions → Variables 中配置；Canonical、Sitemap 和 robots.txt 必须使用同一组配置。
 - 当前 GitHub Pages 是项目站点（URL 带 `/awesome-architecture-blog/`）。标准 robots.txt 位于域名根路径 `/robots.txt`，项目站点无法在 GitHub Pages 的域名根路径发布它；生成的 `/robots.txt` 只有部署到自有域名根路径或由反向代理映射到根路径时，才会被爬虫按标准位置读取。
 - 自有域名上线后，将 `SITE_URL` 指向 HTTPS 主域名、`BASE_PATH=/`；若设置 `PUBLIC_CANONICAL_SITE` / `PUBLIC_CANONICAL_BASE`，必须与前两者保持一致，并同步更新独立课程 HTML 的 canonical。确保 GitHub Pages / IP 镜像跳转或 canonical 指向唯一主站。
 - `OAI-SearchBot` 用于 ChatGPT 搜索发现；`GPTBot` 是独立的训练数据爬虫。当前规则允许默认抓取，若要限制训练抓取，应单独评估 GPTBot 策略，不要误伤 OAI-SearchBot。
