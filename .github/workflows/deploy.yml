@@ -27,6 +27,10 @@ jobs:
       - run: pnpm test
       - run: pnpm build
         env:
+          SITE_URL: ${{ vars.SITE_URL }}
+          BASE_PATH: ${{ vars.BASE_PATH }}
+          PUBLIC_CANONICAL_SITE: ${{ vars.PUBLIC_CANONICAL_SITE }}
+          PUBLIC_CANONICAL_BASE: ${{ vars.PUBLIC_CANONICAL_BASE }}
           PUBLIC_GISCUS_REPO_ID: ${{ vars.GISCUS_REPO_ID }}
           PUBLIC_GISCUS_CATEGORY_ID: ${{ vars.GISCUS_CATEGORY_ID }}
       - uses: actions/upload-artifact@v4
