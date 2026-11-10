@@ -59,9 +59,9 @@
     "id": "model-training",
     "channel": "tutorial",
     "title": "基础模型训练决策专题",
-    "description": "从目标、任务、数据和学习信号出发,判断 SFT、DPO、PPO、GRPO 的适用条件。",
+    "description": "从训练预算、数据工程、模型架构与训练系统,到示范、偏好、可验证强化学习、Agentic RL、安全评测和模型生命周期,建立完整的基础模型训练决策方法论。",
     "order": 8,
-    "match": "^tutorial/T01-"
+    "match": "^tutorial/T[0-9]+-"
   },
   {
     "id": "appendix",
