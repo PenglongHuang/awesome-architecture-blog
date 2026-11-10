@@ -741,7 +741,7 @@ Kimi K3 开放了权重，但其数据配方并未随之披露。权重开放、
 
 ## 相关链接
 
-- 本系列：[T01 · 引言：训练决策的地图与坐标系](/tutorial/T01-introduction-map/) · [T02 · Scaling 不是抄比例：三本总账](/tutorial/T02-scaling-budget-three-ledgers/)
+- 本系列：[T01 · 引言：训练决策的地图与坐标系](/tutorial/t01-introduction-map/) · [T02 · Scaling 不是抄比例：三本总账](/tutorial/t02-scaling-budget-three-ledgers/)
 - 本仓库方法论：[08 · 架构决策记录与演进](/tutorial/adr-and-evolution/) · [05 · 数据与状态](/tutorial/data-and-state/)
 - 前沿实践综述：[Toloka · How Frontier Labs Build Pre-training Datasets](https://toloka.ai/blog/how-frontier-labs-build-pre-training-datasets)
 - 数据集换代：[2026 开源预训练语料综述](https://presenc.ai/research/open-pretraining-datasets-2026) · [Common Corpus(ICLR 2026 Oral)](https://arxiv.org/abs/2506.01732) · [智源 IndustryCorpus 5T](https://aihub.caict.ac.cn/datasets/zhinao/Pretraining-Corpus-5T)

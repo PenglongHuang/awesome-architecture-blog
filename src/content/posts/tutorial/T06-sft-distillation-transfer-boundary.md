@@ -749,6 +749,6 @@ Teacher 会出错、有风格偏差，软标签与轨迹里能力与毛病混在
 
 ## 相关链接
 
-- 本系列：[T01 · 引言：训练决策的地图与坐标系](/tutorial/T01-introduction-map/) · [T03 · 数据不是越多越好](/tutorial/T03-data-recipe-quality-synthesis/) · [T05 · 训练系统不是运维](/tutorial/T05-training-system-distributed-topology/) · [T07 · 偏好不是标注量](/tutorial/T07-preference-reward-calibration/)
+- 本系列：[T01 · 引言：训练决策的地图与坐标系](/tutorial/t01-introduction-map/) · [T03 · 数据不是越多越好](/tutorial/t03-data-recipe-quality-synthesis/) · [T05 · 训练系统不是运维](/tutorial/t05-training-system-distributed-topology/) · [T07 · 偏好不是标注量](/tutorial/t07-preference-reward-calibration/)
 - 2026 主案例：[GLM-5 技术报告](https://arxiv.org/abs/2602.15763) · [GLM-5.3 官方发布](https://z.ai/blog/glm-5.3) · [GLM-5.3 官方模型卡](https://huggingface.co/zai-org/GLM-5.3) · [Kimi K3.1 Pro 权重页](https://huggingface.co/moonshotai/Kimi-K3.1-Pro) · [Artificial Analysis：K3.1 Pro 评测](https://artificialanalysis.ai/articles/kimi-k3-1-pro-launch-benchmarks) · [Inkling 2 Small 训练账本](https://thinkingmachines.ai/news/inkling-2-small)
 - 方法起源/历史锚点：[DeepSeek-R1（R1-Distill 对照）](https://arxiv.org/abs/2501.12948) · [LIMA：Less Is More for Alignment](https://arxiv.org/abs/2305.11206) · [LoRA Learns Less and Forgets Less（预印本）](https://arxiv.org/abs/2405.09673) · [InstructGPT](https://arxiv.org/abs/2203.02155)

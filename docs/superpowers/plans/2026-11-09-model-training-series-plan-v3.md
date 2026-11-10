@@ -226,7 +226,7 @@ T01 瘦身后，以下各章必须在首次使用处自足讲清，不得引用"
 #### 2.4.5 落地变更
 
 1.  **frontmatter**：`title: "T01 · 引言：训练决策的地图与坐标系"`；`description` 改写为全局视角；`order: 1`、`series: model-training` 不变；`pubDate` 更新为改版发布日（正文全重写）。
-2.  **文件名**：现名 `training-plan-decision-layers.md` 与新定位不符；站内已确认无任何文件引用该 slug，改名无断链风险。建议改为 `T01-introduction-map.md`（与 T02--T11 的 `Txx-slug.md` 命名统一，并使 `series.json` 的 `match: "^tutorial/T[0-9]+-"` 真正生效）。若担心外部已有流量，可保留旧文件名仅改内容（二选一，落地时定）。
+2.  **文件名**：现名 `training-plan-decision-layers.md` 与新定位不符；站内无引用不代表外部分享、搜索收录与书签无断链风险。建议改为 `T01-introduction-map.md`（与 T02--T11 的 `Txx-slug.md` 命名统一，并使 `series.json` 的 `match: "^tutorial/T[0-9]+-"` 真正生效）。落地时保留旧 URL 的兼容跳转，并同步内容导入脚本的 slug 映射；Astro 生成的章节 URL 为小写 `t01-…`，正文链接与跳转目标必须使用实际生成的路径。
 3.  **章节互链**：各章"相关链接"回指引言的坐标系与地图；引言的地图链接到 T02--T11（写作期间逐章补齐）。
 4.  **重写时机**：T01 改版应在 T02--T11 中至少 T08/T09（最大承接章）结构样稿完成后定稿，避免引言承诺的"详见第 N 章"与实际章节内容错位（见 §7.3 写作顺序修订）。
 

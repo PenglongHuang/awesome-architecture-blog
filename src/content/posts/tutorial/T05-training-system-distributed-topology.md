@@ -151,11 +151,11 @@ tags: ["基础模型训练决策专题", "模型训练", "教程"]
 
 | 精度方案 | 参数 | 梯度 | FP32 主权重 | 优化器状态 | 静态合计 |
 |---|---:|---:|---:|---:|---:|
-| 全 FP32 | 4 | 4 | —（本体即主权重） | 8 | 12 |
+| 全 FP32 | 4 | 4 | —（本体即主权重） | 8 | 16 |
 | BF16 混合 + AdamW | 2 | 2 | 4 | 8 | 16 |
 | 权重 / 梯度 FP8 + FP32 状态 | 1 | 1 | 4 | 8 | 14 |
 
-读出两个反直觉的结论：其一，**BF16 混合（16）比全 FP32（12）更占显存**——因为要同时养 BF16 副本和 FP32 主权重；其二，**把权重梯度降到 FP8，静态账只省 2 字节**——FP8 的大头收益在计算吞吐与激活（第 4 节），不在静态账。这两条是"抄精度档位"最容易抄错的地方。
+读出两个反直觉的结论：其一，**在表中假设下，BF16 混合与全 FP32 的静态状态均为 16 字节 / 参数**——BF16 参数与梯度节省的空间，被额外的 FP32 主权重抵消；混合精度仍可改善计算吞吐与激活占用，不能只凭计算精度推断静态显存收益；其二，**把权重梯度降到 FP8，静态账只省 2 字节**——FP8 的大头收益在计算吞吐与激活（第 4 节），不在静态账。这两条是"抄精度档位"最容易抄错的地方。
 
 ### 4. 为什么需要 FP32 主权重
 
@@ -744,7 +744,7 @@ MFU 量的是"跑的时候多满"，故障、重启、回退吞掉的进度它�
 
 ## 相关链接
 
-- 本系列：[T01 · 引言：训练决策的地图与坐标系](/tutorial/T01-introduction-map/) · [T02 · Scaling 不是抄比例：三本总账](/tutorial/T02-scaling-budget-three-ledgers/) · [T04 · 模型骨架的联合决策](/tutorial/T04-model-architecture-joint-decisions/) · 下一站 [T06 · 示范学习与能力迁移边界](/tutorial/T06-sft-distillation-transfer-boundary/)
+- 本系列：[T01 · 引言：训练决策的地图与坐标系](/tutorial/t01-introduction-map/) · [T02 · Scaling 不是抄比例：三本总账](/tutorial/t02-scaling-budget-three-ledgers/) · [T04 · 模型骨架的联合决策](/tutorial/t04-model-architecture-joint-decisions/) · 下一站 [T06 · 示范学习与能力迁移边界](/tutorial/t06-sft-distillation-transfer-boundary/)
 - 训练账本与案例：[Inkling 2 Small 官方训练账本](https://thinkingmachines.ai/news/inkling-2-small) · [GLM-5 技术报告](https://arxiv.org/html/2602.15763v1) · [MIT Technology Review · Why DeepSeek's V4 Matters](https://www.technologyreview.com/2026/04/24/1136422/why-deepseeks-v4-matters) · [SLAI T-Rex：Ascend SuperPOD 全参后训练](https://arxiv.org/abs/2607.20145)
 - 并行与框架：[NVIDIA · Wide Expert Parallelism on NVL72](https://developer.nvidia.com/blog/scaling-large-moe-models-with-wide-expert-parallelism-on-nvl72-rack-scale-systems) · [Mixture-of-Parallelisms（arXiv:2607.01844）](https://arxiv.org/html/2607.01844v1) · [torchtitan 0.4 与 TitanRL 更新](https://pytorch.org/blog/torchtitan-update-new-sota-models-performance-at-scale-titanrl) · [PyTorch · Using Muon Optimizer with DeepSpeed](https://pytorch.org/blog/using-muon-optimizer-with-deepspeed)
 

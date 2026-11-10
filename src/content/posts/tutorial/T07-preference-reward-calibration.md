@@ -745,6 +745,6 @@ RM 学的是相对排序，分数跨 Prompt 不可比；同分布准确率不保
 
 ## 相关链接
 
-- 专题内上下文：[T01 · 引言：训练决策的地图与坐标系](/tutorial/T01-introduction-map/) · [T06 · 示范学习](/tutorial/T06-sft-distillation-transfer-boundary/) · [T08 · 可验证强化学习](/tutorial/T08-rlvr-prerequisites-attribution-health/) · [T10 · 安全与评测](/tutorial/T10-safety-spec-evaluation-gate/)
+- 专题内上下文：[T01 · 引言：训练决策的地图与坐标系](/tutorial/t01-introduction-map/) · [T06 · 示范学习](/tutorial/t06-sft-distillation-transfer-boundary/) · [T08 · 可验证强化学习](/tutorial/t08-rlvr-prerequisites-attribution-health/) · [T10 · 安全与评测](/tutorial/t10-safety-spec-evaluation-gate/)
 - 方法起源：[InstructGPT / RLHF](https://arxiv.org/abs/2203.02155) · [DPO](https://arxiv.org/abs/2305.18290) · [Reward Model Overoptimization](https://arxiv.org/abs/2210.10760)
 - 2026 奖励层现状：[Cameron Wolfe：Rubric RL 综述](https://cameronrwolfe.substack.com/p/rubric-rl) · [Hugging Face：Agentic RL 2026 综述](https://huggingface.co/blog/sergiopaniego/agentic-rl-2026) · [GLM-5 技术报告](https://arxiv.org/abs/2602.15763)

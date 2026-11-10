@@ -26,7 +26,7 @@ tags: ["基础模型训练决策专题", "模型训练", "教程"]
 
 28.3 ÷ 4.6 ≈ 6.2。**它意味着什么**：两个模型在预训练意义上是同一个模型——同样的参数骨架、同样的预训练数据历史——只因为后训练流水线被重写，终端类 Agent 基准就拉开了约六倍。这不是「新模型比旧模型强」的常规换代叙事，而是「训练编排本身成为一等生产力」的直接证据。
 
-同一份官方发布还给了两个配套刻度（口径：官方发布值）：DeepSWE v1.1 从 46.2 到 66.9（软件工程 Agent 基准），Agents' Last Exam 从 23.8 到 28.5（长程 Agent 基准）。同时，ExploitBench 分数翻倍——网络攻防能力同步上涨，官方与社区的 dual-use（军民两用风险）讨论随之而来（这条风险线在 [T10 · 安全与评测](/tutorial/T10-safety-spec-evaluation-gate/)已展开）。
+同一份官方发布还给了两个配套刻度（口径：官方发布值）：DeepSWE v1.1 从 46.2 到 66.9（软件工程 Agent 基准），Agents' Last Exam 从 23.8 到 28.5（长程 Agent 基准）。同时，ExploitBench 分数翻倍——网络攻防能力同步上涨，官方与社区的 dual-use（军民两用风险）讨论随之而来（这条风险线在 [T10 · 安全与评测](/tutorial/t10-safety-spec-evaluation-gate/)已展开）。
 
 先立好本章的第一条纪律（F17，后面反复用到）：
 
@@ -60,7 +60,7 @@ tags: ["基础模型训练决策专题", "模型训练", "教程"]
 第 6 节   Capstone：完整九段 Training ADR 与一次微型推演
 ```
 
-本章大量回指前面各章：预算三本账（[T02](/tutorial/T02-scaling-budget-three-ledgers/)）、数据配方与 mid-training（[T03](/tutorial/T03-data-recipe-quality-synthesis/)）、Checkpoint 状态机（T05）、示范与蒸馏（T06）、偏好（T07）、RLVR 前提（T08）、Agentic RL 成本（[T09](/tutorial/T09-agentic-rl-environment-credit-async/)）、发布门禁（[T10](/tutorial/T10-safety-spec-evaluation-gate/)）。它们在这里合体。
+本章大量回指前面各章：预算三本账（[T02](/tutorial/t02-scaling-budget-three-ledgers/)）、数据配方与 mid-training（[T03](/tutorial/t03-data-recipe-quality-synthesis/)）、Checkpoint 状态机（T05）、示范与蒸馏（T06）、偏好（T07）、RLVR 前提（T08）、Agentic RL 成本（[T09](/tutorial/t09-agentic-rl-environment-credit-async/)）、发布门禁（[T10](/tutorial/t10-safety-spec-evaluation-gate/)）。它们在这里合体。
 
 ---
 
@@ -749,5 +749,5 @@ sampler : trainer = 5 : 3 的披露说明采样侧大于训练侧；agentic 环�
 
 ## 相关链接
 
-- 专题内入口：[T01 · 引言：训练决策的地图与坐标系](/tutorial/T01-introduction-map/) · [T02 · Scaling 不是抄比例：三本总账](/tutorial/T02-scaling-budget-three-ledgers/) · [T09 · Agentic RL：环境、信用分配与异步拓扑](/tutorial/T09-agentic-rl-environment-credit-async/) · [T10 · 安全规格、全生命周期评测与发布门禁](/tutorial/T10-safety-spec-evaluation-gate/)
+- 专题内入口：[T01 · 引言：训练决策的地图与坐标系](/tutorial/t01-introduction-map/) · [T02 · Scaling 不是抄比例：三本总账](/tutorial/t02-scaling-budget-three-ledgers/) · [T09 · Agentic RL：环境、信用分配与异步拓扑](/tutorial/t09-agentic-rl-environment-credit-async/) · [T10 · 安全规格、全生命周期评测与发布门禁](/tutorial/t10-safety-spec-evaluation-gate/)
 - 案例与数据：[GLM-5.3 官方发布](https://z.ai/blog/glm-5.3) · [GLM-5 技术报告](https://arxiv.org/abs/2602.15763) · [Kimi K3.1 Pro 官方博客](https://www.kimi.ai/blog/kimi-k3-1-pro) · [Qwen3.8-Max 发布页](https://qwen.ai/blog?id=qwen3.8) · [Mistral Large 4 开放权重公告](https://mistral.ai/news/mistral-large-4-oss) · [Inkling 2 Small 训练账本](https://thinkingmachines.ai/news/inkling-2-small) · [Epoch AI：最终训练 Run 只占研发算力少数](https://epochai.substack.com/p/final-training-runs-account-for-a) · [Epoch AI Trends](https://epoch.ai/trends)

@@ -91,7 +91,7 @@ T06 示范 → T07 偏好 → T08 可验证 → T09 环境 → T10 门禁 → T1
 
 两条主线之间不是单向流水，而是有明确的交接物：预训练主线交付的是 Base Model、Checkpoint 和一套基础能力基线；后训练主线接收它们，交付的是有行为边界的产品候选。交接物质量不过关，后一章的任何方法都救不回来——这是全书最重要的接口约定。
 
-地图表格先不加链接，避免章节尚未就位时出现断链；预训练主线的前两站入口在这里：[T02 · 预算总账](/tutorial/T02-scaling-budget-three-ledgers/)与[T03 · 数据工程](/tutorial/T03-data-recipe-quality-synthesis/)。
+地图表格先不加链接，避免章节尚未就位时出现断链；预训练主线的前两站入口在这里：[T02 · 预算总账](/tutorial/t02-scaling-budget-three-ledgers/)与[T03 · 数据工程](/tutorial/t03-data-recipe-quality-synthesis/)。
 
 ### 预训练与后训练：同一坐标系，不同决策现场
 
@@ -155,7 +155,7 @@ T06 示范 → T07 偏好 → T08 可验证 → T09 环境 → T10 门禁 → T1
 |---|---|---|---:|---:|---|---|
 | **示范**(SFT / 蒸馏) | T06 | Prompt + 示范答案 | 否 | 否 | 写示范的人 | 上限受示范质量与覆盖约束 |
 | **偏好**(DPO / RM) | T07 | Prompt + Chosen/Rejected 偏好对 | 核心训练通常不需要 | 否 | 标注者或 AI 评审 | 偏好质量、评分器偏差与过优化 |
-| **可验证奖励**(RLVR) | T08 | Prompt + 同题多条 Rollout + Reward | 是 | 通常不需要 | 规则、答案、单元测试或 Verifier | 组要可构造、组内要有方差、要防投机 |
+| **可验证奖励**(RLVR) | T08 | Prompt + Rollout + 可验证 Reward | 是 | 取决于优化器 | 规则、答案、单元测试或 Verifier | 验证成本与防投机；采用 GRPO 时还需组采样与组内方差 |
 | **环境奖励**(Agentic RL) | T09 | 多轮交互轨迹 + 环境反馈 + Reward | 是 | 视任务而定 | 环境最终状态与过程信号 | 环境工程、长程归因、异步拓扑 |
 
 先记住一条最小区别：
@@ -451,6 +451,6 @@ Advantage(比预期基线好多少)→ 据此更新 Policy
 ## 相关链接
 
 - 本仓库方法论：[02 · 架构师的思考框架](/tutorial/architects-thinking-framework/) · [08 · 架构决策记录与演进](/tutorial/adr-and-evolution/) · [13 · 规模化的力学](/tutorial/mechanics-of-scale/)
-- 专题内入口：[T02 · 预算总账](/tutorial/T02-scaling-budget-three-ledgers/) · [T03 · 数据工程](/tutorial/T03-data-recipe-quality-synthesis/)
+- 专题内入口：[T02 · 预算总账](/tutorial/t02-scaling-budget-three-ledgers/) · [T03 · 数据工程](/tutorial/t03-data-recipe-quality-synthesis/)
 - 方法来源：[InstructGPT / RLHF](https://arxiv.org/abs/2203.02155) · [DPO](https://arxiv.org/abs/2305.18290) · [DeepSeekMath / GRPO](https://arxiv.org/abs/2402.03300) · [PPO](https://arxiv.org/abs/1707.06347)
 - 案例材料：[GLM-5 技术报告](https://arxiv.org/abs/2602.15763) · [GLM-5.2 官方说明](https://z.ai/blog/glm-5.2) · [GLM-5.3 官方模型卡](https://huggingface.co/zai-org/GLM-5.3) · [slime 使用文档](https://github.com/THUDM/slime/blob/main/docs/en/get_started/usage.md)

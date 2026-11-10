@@ -233,15 +233,16 @@ FLOPs 是物理量，账单是工程量。中间要过两道换算：
 
 ```text
 已知：训练计算量 C = 1.2e24 FLOPs（方案 B / C 的粗估值）
-假设：集群有效吞吐 = 1e15 FLOP/s（= GPU 数 × 单卡峰值 × MFU 的合计结果）
+假设：单卡有效吞吐 = 1e15 FLOP/s（= 单卡峰值 × MFU，教学假设）
+      GPU 数 = 1,000，假设吞吐随卡数线性扩展
+      集群有效吞吐 = 1,000 × 1e15 = 1e18 FLOP/s
 
-训练时长 = 1.2e24 ÷ 1e15 = 1.2e9 秒 ≈ 333,000 小时 ≈ 38 年（单条流水线视角）
+训练时长 = 1.2e24 ÷ 1e18 = 1.2e6 秒 ≈ 333 小时 ≈ 13.9 天
     ↓
-把流水线摊到 1,000 块 GPU 上并行 → 约 14 天
+总卡时 = 1,000 × (1.2e6 ÷ 3,600) ≈ 333,333 卡时
+（使用未取整的时长计算；GPU 数已计入集群吞吐，不能再除一次）
     ↓
-总卡时 = 1,000 × 14 × 24 ≈ 336,000 卡时（与"集群有效吞吐"的假设绑定）
-    ↓
-费用 = 336,000 × 你的单卡时价格
+费用 ≈ 333,333 × 你的单卡时价格
 ```
 
 这道例子的重点不是数字本身，而是敏感性：有效吞吐假设减半，天数与卡时都翻倍；MFU 从 45% 掉到 30%，账单就涨 50%。**训练账里最大的不确定性往往不是 6ND，而是你对自己 MFU 的诚实程度。**
@@ -761,6 +762,6 @@ K3 未披露 Token 与卡时，连"抄"的对象都不完整；GLM-5 披露 Toke
 
 ## 相关链接
 
-- 本仓库方法论：[引言：训练决策的地图与坐标系](/tutorial/T01-introduction-map/) · [13 · 规模化的力学](/tutorial/mechanics-of-scale/) · [08 · 架构决策记录与演进](/tutorial/adr-and-evolution/)
+- 本仓库方法论：[引言：训练决策的地图与坐标系](/tutorial/t01-introduction-map/) · [13 · 规模化的力学](/tutorial/mechanics-of-scale/) · [08 · 架构决策记录与演进](/tutorial/adr-and-evolution/)
 - 方法来源：[Chinchilla：Training Compute-Optimal LLMs](https://arxiv.org/abs/2203.15556) · [细粒度 MoE 的 Scaling 律](https://arxiv.org/abs/2402.07871) · [Scaling Inference-Efficient Language Models](https://arxiv.org/abs/2501.18107)
 - 案例与数据：[GLM-5 技术报告](https://arxiv.org/abs/2602.15763) · [T²（Train-to-Test）Scaling](https://arxiv.org/abs/2604.01411) · [Inkling 2 Small 训练账本](https://thinkingmachines.ai/news/inkling-2-small) · [Epoch AI：最终训练 Run 占研发算力少数](https://epochai.substack.com/p/final-training-runs-account-for-a) · [LFM2.5-350M 发布说明](https://www.liquid.ai/blog/lfm2-5-350m-no-size-left-behind)

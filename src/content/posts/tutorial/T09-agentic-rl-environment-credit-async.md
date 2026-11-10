@@ -760,7 +760,7 @@ Terminal-Bench 跨版本不可比（TB 2.0/3.0/4.0 是三把不同的尺子）�
 
 ## 相关链接
 
-- 本系列：[T01 · 引言：训练决策的地图与坐标系](/tutorial/T01-introduction-map/) · [T08 · 可验证强化学习：前提、归因与健康](/tutorial/T08-rlvr-prerequisites-attribution-health/) · [T10 · 防线不是一道墙：安全规格、全生命周期评测与发布门禁](/tutorial/T10-safety-spec-evaluation-gate/) · [T05 · 训练系统：从一步训练到分布式拓扑](/tutorial/T05-training-system-distributed-topology/)
+- 本系列：[T01 · 引言：训练决策的地图与坐标系](/tutorial/t01-introduction-map/) · [T08 · 可验证强化学习：前提、归因与健康](/tutorial/t08-rlvr-prerequisites-attribution-health/) · [T10 · 防线不是一道墙：安全规格、全生命周期评测与发布门禁](/tutorial/t10-safety-spec-evaluation-gate/) · [T05 · 训练系统：从一步训练到分布式拓扑](/tutorial/t05-training-system-distributed-topology/)
 - 主案例：[GLM-5 技术报告](https://arxiv.org/abs/2602.15763) · [GLM-5.2 官方说明](https://z.ai/blog/glm-5.2)
 - 异步 RL 生态：[Hugging Face · Keep the Tokens Flowing（16 个异步训练项目综述）](https://huggingface.co/blog/async-rl-training-landscape) · [vLLM · vime 发布（slime × vLLM 合流）](https://vllm.ai/blog/2026-06-09-announcing-vime) · [slime（THUDM）](https://github.com/THUDM/slime)
 - 账本与评测：[Inkling 2 Small 训练账本](https://thinkingmachines.ai/news/inkling-2-small) · [Agent Arena 榜单](https://arena.ai/leaderboard/agent) · [Kimi K3.1 Pro 模型页](https://huggingface.co/moonshotai/Kimi-K3.1-Pro)

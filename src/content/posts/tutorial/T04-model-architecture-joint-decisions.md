@@ -747,7 +747,7 @@ K3 的 896 选 16、GLM-5.2 的 IndexShare 都是「万亿容量 + 长程任务 
 
 ## 相关链接
 
-- 本系列：[T01 · 引言：训练决策的地图与坐标系](/tutorial/T01-introduction-map/) · [T02 · Scaling 不是抄比例：三本总账](/tutorial/T02-scaling-budget-three-ledgers/) · [T03 · 数据不是越多越好](/tutorial/T03-data-recipe-quality-synthesis/) · [T05 · 训练系统：从一步训练到分布式拓扑](/tutorial/T05-training-system-distributed-topology/)
+- 本系列：[T01 · 引言：训练决策的地图与坐标系](/tutorial/t01-introduction-map/) · [T02 · Scaling 不是抄比例：三本总账](/tutorial/t02-scaling-budget-three-ledgers/) · [T03 · 数据不是越多越好](/tutorial/t03-data-recipe-quality-synthesis/) · [T05 · 训练系统：从一步训练到分布式拓扑](/tutorial/t05-training-system-distributed-topology/)
 - 架构披露：[Kimi K3 技术报告](https://arxiv.org/abs/2607.24653) · [GLM-5 技术报告](https://arxiv.org/abs/2602.15763) · [GLM-5.2 官方博客（IndexShare）](https://z.ai/blog/glm-5.2) · [Mistral Large 4 开源公告](https://mistral.ai/news/mistral-large-4-oss)
 - 分类学与机制：[注意力变体视觉指南（Raschka Magazine）](https://magazine.sebastianraschka.com/p/visual-attention-variants) · [GLM-5.2 IndexShare 第三方拆解](https://sebastianraschka.com/blog/2026/glm-5-2-indexshare.html)
 - 配置区间与生态：[长上下文窗口汇总（口径以官方文档为准）](https://codingscape.com/blog/llms-with-largest-context-windows) · [DeepSeek V4 混合芯片栈（MIT Technology Review）](https://www.technologyreview.com/2026/04/24/1136422/why-deepseeks-v4-matters)
