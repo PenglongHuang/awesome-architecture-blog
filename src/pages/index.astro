@@ -3,10 +3,10 @@ import { getCollection } from 'astro:content'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import BrandMark from '../components/BrandMark.astro'
 import CourseCard from '../components/CourseCard.astro'
+import PostList from '../components/PostList.astro'
 import { SERIES } from '../data/series'
 import { COURSES } from '../data/courses'
-import { sortByDateDesc, postHref, getSeries, seriesHref, postsInSeries } from '../lib/posts'
-import { readingMinutes } from '../lib/reading-time'
+import { sortByDateDesc, postHref, seriesHref, postsInSeries } from '../lib/posts'
 import { href } from '../lib/urls'
 
 const all = await getCollection('posts')
@@ -40,7 +40,6 @@ const channels = [
           <strong>理解复杂，<br />做出判断。</strong>
           <span class="reading-object__foot">从一个好问题开始 <span aria-hidden="true">↗</span></span>
         </span>
-        <span class="reading-object__label" aria-hidden="true"><span>打开新的视角</span><svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
       </a>
     </section>
 
@@ -53,23 +52,19 @@ const channels = [
       </a>)}
     </section>
 
-    <div class="home-reading-grid">
-      <section class="home-feature" aria-labelledby="featured-title">
-        <div class="section-heading"><h2 id="featured-title">从这里读起</h2><span class="section-note">给判断力一个起点</span></div>
-        <a class="featured-story" href={firstHref}>
-          <span class="pill">入门篇 · 第一章</span><h3>{first?.data.title.replace(/^\d+\s*·\s*/, '') ?? '为什么先有架构思维'}</h3>
-          <p>当 AI 能够熟练地写出代码，决定该写什么、系统该长什么样，变得越来越重要。先从这个问题开始。</p>
-          <div class="story-meta"><span>{first ? `约 ${readingMinutes(first.body ?? '')} 分钟阅读` : '入门阅读'}</span><span>打开文章 <span aria-hidden="true">↗</span></span></div>
-        </a>
-      </section>
-      <aside class="home-series" aria-labelledby="series-title"><div class="section-heading"><h2 id="series-title">按系列探索</h2><a href={href('/tutorial/')} aria-label="查看全部教程系列">全部 <span aria-hidden="true">↗</span></a></div>
-        {tutorialSeries.slice(0,4).map(s => <a class="series-shortcut" href={seriesHref(s.id)}><span><strong>{s.title}</strong><small>{all.filter(p=>p.data.series===s.id).length} 篇文章</small></span><span aria-hidden="true">↗</span></a>)}
-      </aside>
-    </div>
+    <section class="home-path" aria-labelledby="path-title">
+      <div class="section-heading"><div><h2 id="path-title">按系列阅读</h2><p>从架构思维出发，一路读到 AI 时代的工程判断。</p></div><a href={href('/tutorial/')}>查看全部教程 <span aria-hidden="true">↗</span></a></div>
+      <div class="path-list">
+        {tutorialSeries.map(s => <a class="path-item" href={seriesHref(s.id)}>
+          <span class="path-item__body"><strong>{s.title}</strong><small>{s.description}</small></span>
+          <span class="path-item__meta">{all.filter(p=>p.data.series===s.id).length} 篇<span aria-hidden="true">↗</span></span>
+        </a>)}
+      </div>
+    </section>
 
     <section class="home-courses" aria-labelledby="course-title"><div class="section-heading"><div><h2 id="course-title">走进真实项目</h2><p>沿着源码，把架构理解得再深一点。</p></div><a class="quiet-link" href={href('/learning/')}>全部课程 <span aria-hidden="true">↗</span></a></div><div class="course-grid">{COURSES.map(course => <CourseCard course={course} />)}</div></section>
 
-    <section class="home-recent" aria-labelledby="recent-title"><div class="section-heading"><h2 id="recent-title">最近更新</h2><span class="section-note">保持好奇，持续思考</span></div><div class="recent-stories">{recent.map(p => <a class="recent-story" href={postHref(p)}><span class="pill">{getSeries(p.data.series).title}</span><h3>{p.data.title.replace(/^(案例\s*)?\d+\s*·\s*/, '')}</h3><p>{p.data.description}</p><div class="story-meta"><time datetime={p.data.pubDate.toISOString()}>{p.data.pubDate.toISOString().slice(0,10)}</time><span aria-hidden="true">↗</span></div></a>)}</div></section>
+    <section class="home-recent" aria-labelledby="recent-title"><div class="section-heading"><h2 id="recent-title">最近更新</h2><span class="section-note">保持好奇，持续思考</span></div><PostList posts={recent} stripOrder /></section>
 
   </div>
 </BaseLayout>
