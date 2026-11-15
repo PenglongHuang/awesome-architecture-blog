@@ -55,9 +55,9 @@ coverAlt: "展示文章核心架构的数据流图"
 5. 新文章的 `series` 填新 id，`order` 从 1 连续递增；同一系列的发布日期按顺序递增。
 6. 系列页会自动生成文章列表、CollectionPage / ItemList 结构化数据和延伸阅读，不需要手工添加 Sitemap URL。
 
-## 新增架构地图或系统设计案例
+## 新增架构设计图或系统设计案例
 
-- 架构地图放在 `src/content/posts/templates/<slug>/README.md`，并在 `series.json` 的对应系列中更新 `explicitOrder`（如果该系列使用显式顺序）。
+- 架构设计图放在 `src/content/posts/templates/<slug>/README.md`，并在 `series.json` 的对应系列中更新 `explicitOrder`（如果该系列使用显式顺序）。
 - 系统设计案例放在 `src/content/posts/cases/<slug>/README.md`，并更新 cases 系列的 `explicitOrder`。
 - Frontmatter 的 `kind` 分别使用 `template` 或 `case`；URL 由内容路由生成。
 - 架构图要有图题、Alt 或相邻文字解释；不要只放一张没有上下文的图片。

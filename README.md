@@ -6,14 +6,15 @@
 
 **线上入口：** [GitHub Pages](https://penglonghuang.github.io/awesome-architecture-blog/) · [自建镜像](http://118.196.50.229/awesome-architecture-blog/)
 
-持续更新的中文架构知识库，包含教程、真实系统架构地图、端到端系统设计、交互式项目课程与可交互架构总览图。
+持续更新的中文架构知识库，包含系列教程、真实系统架构设计、端到端系统设计、交互式项目课程与可交互架构总览图。首页以「四站导览轨道」按需求分流（想系统学 / 想看懂真实系统 / 正在做设计决策 / 想跟着源码实战），并设编辑精选轮播推荐重点专题。
 
 ## 站点内容
 
 | 板块 | 路径 | 内容 |
 |---|---|---|
-| [入门教程](https://penglonghuang.github.io/awesome-architecture-blog/tutorial/) | `/tutorial/` | 从架构思维到实战的入门教程 |
-| [架构地图](https://penglonghuang.github.io/awesome-architecture-blog/templates/) | `/templates/` | 真实系统的架构地图 |
+| [首页](https://penglonghuang.github.io/awesome-architecture-blog/) | `/` | 四站导览轨道 + 编辑精选 + 最近更新 |
+| [系列教程](https://penglonghuang.github.io/awesome-architecture-blog/tutorial/) | `/tutorial/` | 按系列组织的架构教程，9 个系列由浅入深 |
+| [架构设计](https://penglonghuang.github.io/awesome-architecture-blog/templates/) | `/templates/` | 真实系统的架构设计图 |
 | [系统设计](https://penglonghuang.github.io/awesome-architecture-blog/cases/) | `/cases/` | 端到端的系统设计推演 |
 | [项目学习](https://penglonghuang.github.io/awesome-architecture-blog/learning/) | `/learning/` | 3 门交互式项目课程：LiteLLM / LLM2Jev / Pi |
 | [搜索](https://penglonghuang.github.io/awesome-architecture-blog/search/) | `/search/` | Pagefind 本地静态索引 |
@@ -34,7 +35,7 @@
 - 内容构建时编译为 HTML
 - 搜索由 Pagefind 在浏览器本地用 WASM 完成
 - 评论由 giscus 承载，数据存在 GitHub Discussions
-- 主题、Quiz、课程筛选、目录等交互使用少量原生 JS；主题提供明亮 / 暗黑 / 羊皮纸 / 护眼绿 / 纯白五种风格，由站点与课程页共用的 `public/theme.css` + `public/theme.js` 承载
+- 主题、Quiz、课程筛选、目录、首页精选轮播等交互使用少量原生 JS；主题提供明亮 / 暗黑 / 羊皮纸 / 护眼绿 / 纯白五种风格，由站点与课程页共用的 `public/theme.css` + `public/theme.js` 承载
 
 ## 内容生产管线
 
@@ -146,8 +147,8 @@ src/
 ├── content/posts/              # Markdown 文章（tutorial / templates / cases）
 ├── content.config.ts           # 内容集合与 frontmatter schema
 ├── data/
-│   ├── series.json             # 14 个系列的定义与匹配规则
-│   ├── series.ts               # 频道配置
+│   ├── series.json             # 15 个系列的定义、匹配规则与精选标记（featured/featuredOrder/featuredTags）
+│   ├── series.ts               # 频道配置（CHANNELS 为频道中文名的唯一事实源）
 │   └── courses.ts              # 3 门课程的元数据、方向/形式/难度与标签注册表
 ├── pages/                      # 路由与页面（含 RSS、about、404）
 ├── components/
@@ -173,7 +174,7 @@ tests/                          # 单元测试与 E2E
 
 ## 内容开发指南
 
-新增文章、专题、架构地图或项目课程时，按 [内容开发指南](docs/content-authoring.md) 同步更新站点结构、SEO 元数据与 GEO 内容要素。
+新增文章、专题、架构设计图或项目课程时，按 [内容开发指南](docs/content-authoring.md) 同步更新站点结构、SEO 元数据与 GEO 内容要素。
 
 ## 搜索与评论
 
