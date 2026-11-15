@@ -8,13 +8,14 @@ import RelatedKnowledge from '../RelatedKnowledge.astro'
 import StructuredData from '../StructuredData.astro'
 import type { Post } from '../../lib/posts'
 import { getSeries, postsInSeries, seriesHref, postHref } from '../../lib/posts'
+import { CHANNELS } from '../../data/series'
 import { readingMinutes } from '../../lib/reading-time'
 
 interface Props { post: Post }
 const { post } = Astro.props
 const { Content, headings } = await render(post)
 const series = getSeries(post.data.series)
-const channelLabel = series.channel === 'tutorial' ? '入门教程' : series.channel === 'templates' ? '架构地图' : '系统设计'
+const channelLabel = CHANNELS[series.channel].title
 const showSeriesCrumb = series.title !== channelLabel && series.title !== `${channelLabel}篇`
 const all = await getCollection('posts')
 const siblings = postsInSeries(all, post.data.series)

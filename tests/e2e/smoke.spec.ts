@@ -3,34 +3,37 @@ import { COURSES } from '../../src/data/courses'
 
 const courseCount = COURSES.length
 
-test('首页 → 系列 → 文章', async ({ page }) => {
+test('首页轨道 → 系列 → 文章', async ({ page }) => {
   await page.goto('')
   await expect(page.getByRole('heading', { name: /先看清系统/ })).toBeVisible()
-  await page.locator('.home-path').getByRole('link', { name: /入门篇/ }).click()
+  await page.locator('.home-rail').getByRole('link', { name: /系列教程/ }).click()
+  await page.getByRole('link', { name: /入门篇/ }).click()
   await expect(page.getByRole('heading', { name: '入门篇' })).toBeVisible()
   await page.getByRole('link', { name: /为什么先有架构思维/ }).click()
   await expect(page.getByRole('heading', { name: /为什么先有架构思维/ })).toBeVisible()
   await expect(page.locator('.toc-desktop b')).toHaveText('本页目录')
 })
 
-test('新导航名称并进入项目学习', async ({ page }) => {
+test('首页轨道导览并进入项目学习', async ({ page }) => {
   await page.goto('')
   await expect(page.locator('.masthead').getByRole('link', { name: 'AI架构师之路', exact: true })).toBeVisible()
-  await expect(page.getByRole('navigation', { name: '主导航' }).getByRole('link', { name: '入门教程', exact: true })).toBeVisible()
-  await expect(page.locator('[data-course-card]')).toHaveCount(courseCount)
+  // 首页导航栏不展示入口链接，由大屏轨道承担导览
+  await expect(page.getByRole('navigation', { name: '按需求选择入口' }).getByRole('link')).toHaveCount(4)
+  await expect(page.locator('.home-featured').getByRole('link', { name: /基础模型训练决策专题/ })).toBeVisible()
 
-  await page.getByRole('navigation', { name: '主导航' }).getByRole('link', { name: '系统设计', exact: true }).click()
+  await page.locator('.home-rail').getByRole('link', { name: /系统设计/ }).click()
   await expect(page).toHaveURL(/cases\/$/)
   await expect(page.getByRole('heading', { name: '把架构从答案写成推理过程' })).toBeVisible()
 
-  const mapLink = page.getByRole('navigation', { name: '主导航' }).getByRole('link', { name: '架构地图', exact: true })
+  const mapLink = page.getByRole('navigation', { name: '主导航' }).getByRole('link', { name: '架构设计', exact: true })
   await expect(mapLink).toBeVisible()
   await mapLink.click()
   await expect(page).toHaveURL(/templates\/$/)
   await expect(page.getByRole('heading', { name: '真实系统长什么样' })).toBeVisible()
 
-  await page.getByRole('link', { name: '项目学习' }).click()
+  await page.getByRole('navigation', { name: '主导航' }).getByRole('link', { name: '项目学习', exact: true }).click()
   await expect(page).toHaveURL(/learning\/$/)
+  await expect(page.locator('[data-course-card]')).toHaveCount(courseCount)
   await expect(page.getByRole('heading', { name: /在真实项目里/ })).toBeVisible()
 })
 

@@ -1,24 +1,26 @@
 ---
 import BrandMark from './BrandMark.astro'
+import { CHANNELS } from '../data/series'
 const base = import.meta.env.BASE_URL
 const path = Astro.url.pathname
 const items = [
-  { href: `${base}tutorial/`, label: '入门教程', match: '/tutorial/' },
-  { href: `${base}templates/`, label: '架构地图', match: '/templates/' },
-  { href: `${base}cases/`, label: '系统设计', match: '/cases/' },
+  ...Object.values(CHANNELS).map(c => ({ href: `${base}${c.href.replace(/^\//, '')}`, label: c.title, match: c.href })),
   { href: `${base}learning/`, label: '项目学习', match: '/learning/' },
 ]
+// 首页由大屏轨道承担导览，导航栏只留品牌 + 搜索 + 主题切换
+const rest = path.startsWith(base) ? path.slice(base.length) : path
+const isHome = rest === '' || rest === 'index.html'
 ---
 <header class="masthead frame">
   <div class="grid">
     <a class="masthead__brand" href={base} aria-label="AI架构师之路"><span class="masthead__mark"><BrandMark /></span><span>AI架构师之路<small>理解系统，也理解取舍。</small></span></a>
-    <nav class="masthead__nav" aria-label="主导航">
+    {!isHome && <nav class="masthead__nav" aria-label="主导航">
       {items.map((it) => (
         <a href={it.href} aria-current={path.includes(it.match) ? 'page' : undefined}>{it.label}</a>
       ))}
-    </nav>
+    </nav>}
     <div class="masthead__actions">
-      <a class="nav-search" href={`${base}search/`} aria-label="搜索"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.7"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>搜索</span><kbd aria-hidden="true">/</kbd></a>
+      <a class="nav-search" href={`${base}search/`} aria-label="搜索"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.7"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="nav-search__ph">搜索文章、架构图、系统设计案例…</span><kbd aria-hidden="true">⌘K</kbd></a>
       <button id="theme-toggle" class="theme-toggle" data-theme-toggle type="button" aria-label="选择主题风格"><span data-theme-icon aria-hidden="true">●</span></button>
     </div>
   </div>

@@ -4,6 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro'
 import PostList from '../PostList.astro'
 import StructuredData from '../StructuredData.astro'
 import { getSeries, postsInSeries, seriesHref, postHref } from '../../lib/posts'
+import { CHANNELS } from '../../data/series'
 
 interface Props { seriesId: string }
 const { seriesId } = Astro.props
@@ -40,7 +41,7 @@ const breadcrumbSchema = {
   '@type': 'BreadcrumbList',
   itemListElement: [
     { '@type': 'ListItem', position: 1, name: '首页', item: siteRoot },
-    { '@type': 'ListItem', position: 2, name: series.channel === 'tutorial' ? '入门教程' : '架构地图', item: channelUrl },
+    { '@type': 'ListItem', position: 2, name: CHANNELS[series.channel].title, item: channelUrl },
     { '@type': 'ListItem', position: 3, name: series.title, item: seriesUrl },
   ],
 }
