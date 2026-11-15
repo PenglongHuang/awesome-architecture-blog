@@ -36,6 +36,9 @@
     "channel": "tutorial",
     "title": "技术栈选型篇",
     "description": "语言、数据库、缓存、API、云原生、可观测性怎么选。",
+    "featured": true,
+    "featuredOrder": 4,
+    "featuredTags": ["数据库选型", "缓存", "云原生"],
     "order": 5,
     "match": "^tutorial/(2[7-9]|3[0-4])-"
   },
@@ -44,6 +47,9 @@
     "channel": "tutorial",
     "title": "AI 原生组织篇",
     "description": "超级个体、共享上下文、工作流、责任与治理。",
+    "featured": true,
+    "featuredOrder": 3,
+    "featuredTags": ["超级个体", "工作流", "治理"],
     "order": 6,
     "match": "^tutorial/(3[5-9]|40)-"
   },
@@ -52,6 +58,9 @@
     "channel": "tutorial",
     "title": "AI 时代的人类自我保护篇",
     "description": "在善用 AI 提升效率的同时，守住注意力、思考力、判断力与主体性。",
+    "featured": true,
+    "featuredOrder": 2,
+    "featuredTags": ["认知风险", "能力保护", "协作手册"],
     "order": 7,
     "match": "^tutorial/4[1-3]-"
   },
@@ -60,6 +69,9 @@
     "channel": "tutorial",
     "title": "基础模型训练决策专题",
     "description": "训练一个模型，究竟要做哪些决定？11 篇文章串起预算、数据、架构、后训练与发布，附阅读地图、合同助手教学案例和可复用的决策模板。",
+    "featured": true,
+    "featuredOrder": 1,
+    "featuredTags": ["Scaling 预算", "数据配方", "RLVR", "决策模板"],
     "order": 8,
     "match": "^tutorial/T[0-9]+-"
   },
@@ -80,6 +92,9 @@
     "channel": "templates",
     "title": "经典 / 通用系统",
     "description": "电商、支付、搜索、抢票等 16 张真实系统地图。",
+    "featured": true,
+    "featuredOrder": 5,
+    "featuredTags": ["电商", "支付", "搜索", "抢票"],
     "order": 9,
     "match": "^templates/(ai-chat-product|browser-extension|standard-web-app|mobile-app|ecommerce-platform|social-feed|video-streaming|realtime-chat|url-shortener|payment-system|search-engine|ride-hailing|collaborative-doc|cloud-storage|notification-system|online-ticketing)/README\\.md$",
     "explicitOrder": [

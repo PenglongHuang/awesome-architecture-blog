@@ -1,70 +1,115 @@
 ---
 import { getCollection } from 'astro:content'
 import BaseLayout from '../layouts/BaseLayout.astro'
-import BrandMark from '../components/BrandMark.astro'
-import CourseCard from '../components/CourseCard.astro'
 import PostList from '../components/PostList.astro'
-import { SERIES } from '../data/series'
+import { SERIES, CHANNELS } from '../data/series'
 import { COURSES } from '../data/courses'
-import { sortByDateDesc, postHref, seriesHref, postsInSeries } from '../lib/posts'
+import { sortByDateDesc, seriesHref } from '../lib/posts'
 import { href } from '../lib/urls'
 
 const all = await getCollection('posts')
 const recent = sortByDateDesc(all).slice(0, 4)
-const first = postsInSeries(all, 'foundations')[0]
-const firstHref = first ? postHref(first) : href('/tutorial/')
 const countTutorial = all.filter(p => p.data.kind === 'tutorial').length
 const countTemplates = all.filter(p => p.data.kind === 'template').length
 const countCases = all.filter(p => p.data.kind === 'case').length
-const tutorialSeries = SERIES.filter(s => s.channel === 'tutorial').sort((a,b) => a.order-b.order)
-const channels = [
-  { title: '入门教程', desc: '建立思考系统的方式。', count: `${countTutorial} 篇教程`, path: '/tutorial/', icon: 'book' },
-  { title: '架构地图', desc: '看懂真实系统的组织。', count: `${countTemplates} 张地图`, path: '/templates/', icon: 'layers' },
-  { title: '系统设计', desc: '从真实约束走向取舍。', count: `${countCases} 个案例`, path: '/cases/', icon: 'compass' },
+const seriesCount: Record<string, number> = {}
+for (const p of all) seriesCount[p.data.series] = (seriesCount[p.data.series] ?? 0) + 1
+
+const stops = [
+  { num: '01', title: CHANNELS.tutorial.title, fit: '适合：想系统学架构的人', gain: `${SERIES.filter(s => s.channel === 'tutorial').length} 个系列由浅入深，从架构思维一路读到 AI 时代的工程判断。`, meta: `${countTutorial} 篇`, path: '/tutorial/' },
+  { num: '02', title: CHANNELS.templates.title, fit: '适合：想看懂真实系统的人', gain: '看别人怎么设计：电商、支付、Claude Code 等真实系统的组织结构。', meta: `${countTemplates} 篇`, path: '/templates/' },
+  { num: '03', title: CHANNELS.cases.title, fit: '适合：正在做设计决策的人', gain: `学自己怎么设计：${countCases} 个案例，从真实约束走到取舍的完整推理。`, meta: `${countCases} 篇`, path: '/cases/' },
+  { num: '04', title: '项目学习', fit: '适合：想跟着源码实战的人', gain: '沿真实项目的源码走一遍，把架构理解再往深推一层。', meta: `${COURSES.length} 篇`, path: '/learning/' },
 ]
+const featured = SERIES.filter(s => s.featured).sort((a, b) => (a.featuredOrder ?? 99) - (b.featuredOrder ?? 99))
 ---
 <BaseLayout title="AI架构师之路" description="面向软件工程师的中文架构知识库，涵盖软件架构教程、真实系统架构图、系统设计案例与 AI Agent 工程实践。">
   <div class="home frame">
     <section class="home-hero" aria-label="AI架构师之路">
-      <div class="home-hero__copy">
-        <p class="home-hero__intro"><span aria-hidden="true"></span> 一份持续生长的架构阅读集</p>
-        <h1>先看清系统，<br />再动手写代码。</h1>
-        <p class="home-hero__description">给已经会写代码，正在学着判断系统的人。<br class="desktop-break" />在阅读、拆解和实践中，建立自己的判断力。</p>
-        <div class="home-hero__actions"><a class="button" href={firstHref}>从第一章开始 <span aria-hidden="true">↗</span></a><a class="quiet-link" href="#knowledge">探索知识库 <span aria-hidden="true">↓</span></a></div>
+      <div class="home-hero__top">
+        <div>
+          <p class="home-hero__intro"><span aria-hidden="true"></span> 一份持续生长的架构阅读集</p>
+          <h1>先看清系统，<br />再动手写代码。</h1>
+        </div>
+        <p class="home-hero__hint">不知道从哪开始？<br class="desktop-break" />四个方向并行，按你的需求选一个入口，随时换道。</p>
       </div>
-      <a class="reading-object" href={firstHref} aria-label="阅读第一章：为什么先有架构思维">
-        <span class="reading-object__back" aria-hidden="true"></span>
-        <span class="reading-object__cover">
-          <span class="reading-object__edition">架构师之路 <span>阅读集</span></span>
-          <BrandMark class="reading-object__symbol" />
-          <strong>理解复杂，<br />做出判断。</strong>
-          <span class="reading-object__foot">从一个好问题开始 <span aria-hidden="true">↗</span></span>
-        </span>
-      </a>
-    </section>
-
-    <section class="knowledge" id="knowledge" aria-label="探索知识库">
-      {channels.map(c => <a class="knowledge-card" href={href(c.path)}>
-        <span class="knowledge-card__icon" aria-hidden="true">
-          {c.icon==='book' ? <svg viewBox="0 0 24 24" fill="none"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1m0-15c3-2 6-2 9-1v15c-3-1-6-1-9 1V5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> : c.icon==='layers' ? <svg viewBox="0 0 24 24" fill="none"><path d="m3 8 9-5 9 5-9 5-9-5Zm0 5 9 5 9-5M3 18l9 5 9-5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> : <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="m16 8-2 6-6 2 2-6 6-2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>}
-        </span>
-        <div><h2>{c.title}</h2><p>{c.desc}</p></div><span class="knowledge-card__count">{c.count}<span aria-hidden="true">↗</span></span>
-      </a>)}
-    </section>
-
-    <section class="home-path" aria-labelledby="path-title">
-      <div class="section-heading"><div><h2 id="path-title">按系列阅读</h2><p>从架构思维出发，一路读到 AI 时代的工程判断。</p></div><a href={href('/tutorial/')}>查看全部教程 <span aria-hidden="true">↗</span></a></div>
-      <div class="path-list">
-        {tutorialSeries.map(s => <a class="path-item" href={seriesHref(s.id)}>
-          <span class="path-item__body"><strong>{s.title}</strong><small>{s.description}</small></span>
-          <span class="path-item__meta">{all.filter(p=>p.data.series===s.id).length} 篇<span aria-hidden="true">↗</span></span>
+      <nav class="home-rail" aria-label="按需求选择入口">
+        {stops.map(s => <a class="home-rail__stop" href={href(s.path)}>
+          <span class="home-rail__num">{s.num}</span>
+          <h2>{s.title}</h2>
+          <p class="home-rail__fit">{s.fit}</p>
+          <span class="home-rail__gain">{s.gain}</span>
+          <span class="home-rail__meta"><b>{s.meta}</b> · 前往 <i aria-hidden="true">↗</i></span>
         </a>)}
-      </div>
+      </nav>
     </section>
 
-    <section class="home-courses" aria-labelledby="course-title"><div class="section-heading"><div><h2 id="course-title">走进真实项目</h2><p>沿着源码，把架构理解得再深一点。</p></div><a class="quiet-link" href={href('/learning/')}>全部课程 <span aria-hidden="true">↗</span></a></div><div class="course-grid">{COURSES.map(course => <CourseCard course={course} />)}</div></section>
+    {featured.length > 0 && <section class="home-featured" aria-labelledby="featured-title">
+      <div class="section-heading">
+        <div><h2 id="featured-title">编辑精选</h2><p>每一期重点推荐的内容，随写作节奏更换。</p></div>
+        {featured.length > 2 && <div class="featured-ctl">
+          <button type="button" class="featured-arrow featured-arrow--prev" data-featured-prev aria-label="上一组精选" disabled>
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M16.5 10h-13m5.5-5.5L3.5 10l5.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button type="button" class="featured-arrow featured-arrow--next" data-featured-next aria-label="下一组精选">
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3.5 10h13M11 4.5l5.5 5.5-5.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <span class="featured-page" data-featured-page aria-live="polite">1 / 1</span>
+        </div>}
+      </div>
+      <div class="featured-carousel">
+        <div class="featured-track" data-featured-track tabIndex={0} aria-label="精选内容列表">
+          {featured.map(s => {
+            const n = seriesCount[s.id] ?? 0
+            return <a class="featured-card" href={seriesHref(s.id)}>
+              <span class="featured-card__badge">精选</span>
+              <span class="featured-card__k">{CHANNELS[s.channel].title} · {n} 篇</span>
+              <h3>{s.title}</h3>
+              <p>{s.description}</p>
+              {s.featuredTags && <div class="featured-card__tags">{s.featuredTags.map(t => <span>{t}</span>)}</div>}
+              <span class="featured-card__go">开始阅读 <i aria-hidden="true">↗</i></span>
+            </a>
+          })}
+        </div>
+      </div>
+    </section>}
 
     <section class="home-recent" aria-labelledby="recent-title"><div class="section-heading"><h2 id="recent-title">最近更新</h2><span class="section-note">保持好奇，持续思考</span></div><PostList posts={recent} stripOrder /></section>
 
   </div>
 </BaseLayout>
+<script>
+  const track = document.querySelector<HTMLElement>('[data-featured-track]')
+  const prev = document.querySelector<HTMLButtonElement>('[data-featured-prev]')
+  const next = document.querySelector<HTMLButtonElement>('[data-featured-next]')
+  const page = document.querySelector<HTMLElement>('[data-featured-page]')
+  if (track && prev && next) {
+    // 布局读数只在 init/resize 时测量，滚动回调里直接用缓存
+    let pageWidth = track.clientWidth
+    let maxScroll = track.scrollWidth - track.clientWidth
+    let pageCount = maxScroll > 0 ? Math.ceil(maxScroll / pageWidth) + 1 : 1
+    let lastAtStart = prev.disabled
+    let lastAtEnd = next.disabled
+    let lastPageText = ''
+    const sync = () => {
+      const atStart = track.scrollLeft <= 2
+      const atEnd = track.scrollLeft >= maxScroll - 2
+      const current = maxScroll > 0 ? Math.min(pageCount, Math.round((track.scrollLeft / maxScroll) * (pageCount - 1)) + 1) : 1
+      const pageText = `${current} / ${pageCount}`
+      if (atStart !== lastAtStart) { prev.disabled = atStart; lastAtStart = atStart }
+      if (atEnd !== lastAtEnd) { next.disabled = atEnd; lastAtEnd = atEnd }
+      if (page && pageText !== lastPageText) { page.textContent = pageText; lastPageText = pageText }
+    }
+    const remeasure = () => {
+      pageWidth = track.clientWidth
+      maxScroll = track.scrollWidth - track.clientWidth
+      pageCount = maxScroll > 0 ? Math.ceil(maxScroll / pageWidth) + 1 : 1
+      sync()
+    }
+    prev.addEventListener('click', () => track.scrollBy({ left: -pageWidth, behavior: 'smooth' }))
+    next.addEventListener('click', () => track.scrollBy({ left: pageWidth, behavior: 'smooth' }))
+    track.addEventListener('scroll', sync, { passive: true })
+    window.addEventListener('resize', remeasure)
+    sync()
+  }
+</script>
