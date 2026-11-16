@@ -10,4 +10,3 @@
 .site-footer .grid { display: flex; justify-content: flex-end; }
 .site-footer__cols { display: flex; justify-content: flex-end; align-items: baseline; flex-wrap: wrap; gap: 9px 20px; }
 .site-footer__cols .spacer { display: none; }
-

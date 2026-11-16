@@ -18,4 +18,3 @@
 .post-list__date { flex: none; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .post-list__title { font-size: 16px; font-weight: 500; min-width: 0; }
 .post-list__series { margin-left: auto; font-size: 11px; color: var(--muted); white-space: nowrap; }
-

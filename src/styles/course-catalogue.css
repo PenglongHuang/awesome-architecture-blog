@@ -32,4 +32,3 @@
 .course-filter__clear { border: 0; background: none; color: var(--accent); font-size: 12px; padding: 4px 0; }
 .course-empty { grid-column: 1/-1; padding: 35px; background: var(--card-paper); border-radius: 20px; color: var(--muted); }
 .course-empty p { margin-bottom: 15px; }
-

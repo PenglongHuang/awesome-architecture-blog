@@ -21,4 +21,3 @@
 .theme-toggle [data-theme-icon] { font-size: 16px; line-height: 1; display: grid; place-items: center; }
 .theme-toggle [data-theme-icon] svg { width: 16px; height: 16px; }
 .theme-toggle:hover { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--rule-line)); }
-

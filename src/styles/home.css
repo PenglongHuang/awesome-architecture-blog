@@ -46,4 +46,3 @@
 .featured-card__go { display: inline-flex; align-items: center; gap: 8px; margin-top: auto; color: var(--accent); font-size: 13px; font-weight: 600; }
 .featured-card__go i { font-style: normal; transition: transform .25s ease; }
 .featured-card:hover .featured-card__go i { transform: translate(4px, -4px); }
-
