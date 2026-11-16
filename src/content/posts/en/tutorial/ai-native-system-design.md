@@ -1,0 +1,215 @@
+---
+title: "22 · AI-Native System Design"
+description: "Design an autonomous agent that plans, calls tools and resolves tasks while respecting permissions, budgets and review boundaries."
+series: "practice"
+order: 5
+pubDate: 2026-03-20
+kind: "tutorial"
+tags: ["Design in practice","Tutorials"]
+locale: "en"
+translationKey: "tutorial/ai-native-system-design"
+sourceHash: "ae506eafea61bd7f3c2043be9155b68affdf343e11b769c46f67d5ef0dfb982d"
+---
+
+> The thesis in one line: **[ch. 19](/en/tutorial/full-design-walkthrough/)'s customer-service bot was "conversation + controlled actions"; this chapter pushes autonomy one level higher — designing an autonomous Agent that can plan for itself, call tools, and drive an entire ticket to resolution across multiple steps. Every notch of added autonomy makes the three new constraints from [ch. 17](/en/tutorial/architecture-judgment-in-llm-era/) bite harder — and "putting brakes on unleashed autonomy" is the whole craft of AI-native system design.**
+
+---
+
+> **🎯 Practice track, ch. 5 (finale) · This chapter drills one thing**
+>
+> Take the three new constraints from [ch. 17](/en/tutorial/architecture-judgment-in-llm-era/) and the agentic hard rock, and **land them in one complete AI-native design**. This is the finish line of the practice track and the bridge into the **AI Collaboration Design track (ch. 23–26)**.
+>
+> | What you should be able to do after reading | How this chapter trains it |
+> |---|---|
+> | Instantly judge "workflow or autonomous Agent?" | Section 1: the most important decision |
+> | Turn the nondeterminism / context / cost triangle into concrete design | Section 2 |
+> | See why "autonomous Agent = the entire advanced track, stacked" | Section 3: attaching brakes to the hard rock, item by item |
+
+---
+
+## Opening: from "controlled actions" to "autonomous"
+
+Back to that AI customer-service bot. In [ch. 19](/en/tutorial/full-design-walkthrough/), the model could only "propose" — the actual refund was executed by deterministic code. **Autonomy was low, so it was safe.**
+
+Now the product wants to go further: **when a complex ticket arrives ("the shoes I bought last week came unglued after one wear — I want either a refund or a replacement"), let the Agent handle it end-to-end** — look up the order, check logistics, pull the warranty policy, assign responsibility, decide refund vs. re-ship, execute the action, reply to the customer, and only escalate to a human if it gets stuck.
+
+```
+   The autonomy ladder (higher = more capable, more hard rock stacked on top):
+
+   One-shot Q&A  ─▶  Conversation + controlled actions (ch. 19)  ─▶  Deterministic workflow  ─▶  Autonomous Agent (this chapter)
+   "you ask, I answer"    "model proposes, code executes"             "fixed steps, node decisions"     "plans its own next step"
+                                                                                                        ▲
+                                                         Most capable — but also most expensive, slowest, hardest to control, most dangerous
+```
+
+> **This is the core tension of this chapter**: autonomy is a double-edged sword. It lets an Agent handle open-ended tasks, but **every notch upward multiplies the three constraints from [ch. 17](/en/tutorial/architecture-judgment-in-llm-era/) — nondeterminism, cost, context — and every piece of distributed hard rock from the advanced track.** AI-native system design is, at its core, **"solve the problem at the lowest autonomy you can get away with" + "for the part you must unleash, pack it full of brakes."**
+
+---
+
+## 1. The most important judgment: workflow, or autonomous Agent?
+
+Before drawing any boxes, make this decision first — it matters more than every design decision that follows it combined.
+
+> **Anthropic's core advice in *Building Effective Agents*: if a deterministic workflow can solve it, don't reach for an autonomous Agent.** Workflows are predictable, controllable, and cheap; Agents are flexible but more expensive, slower, and less controllable. This is the same restraint as [ch. 04](/en/tutorial/ten-core-patterns/)'s "use a monolith before microservices" and [ch. 10](/en/tutorial/hard-truths-of-distributed-systems/)'s "avoid distribution if you don't need it."
+
+```
+   Which one? — a decision tree:
+
+   Are the task's steps basically fixed and can be pre-orchestrated?
+     │
+     ├─ Yes ──▶ Use a 【deterministic workflow】
+     │          [Receive ticket]→[Classify]→[Retrieve policy]→[Generate solution]→[Human/auto execute]
+     │          ✓ Predictable, debuggable, cheap, evaluable  ← 80% of "intelligent" requirements stop here
+     │
+     └─ No (open-ended task, must adapt on the fly, steps vary by situation)
+            │
+            ▼  Only then use an 【autonomous Agent】 (and immediately pack it full of the brakes below)
+```
+
+**Applying the judgment to our ticket scenario**: most tickets (check logistics, refund shipping, change address) are **fixed flows** — use a workflow. Only the **small minority of complex tickets** where responsibility is ambiguous, multi-source verification is needed, or there's a genuine refund-vs.-replace judgment call are worth handing to an autonomous Agent.
+
+> **Architectural wisdom**: **don't reach for an autonomous Agent just because it sounds more advanced.** Solidify what can be solidified into workflows (cheap, controllable, evaluable), and leave only the genuinely open-ended minority for autonomous Agents — this is the first and most cost-effective judgment in AI-native design. Predictability is an engineering virtue.
+
+---
+
+## 2. Landing the three new constraints from [ch. 17](/en/tutorial/architecture-judgment-in-llm-era/)
+
+Having decided "this small minority of complex tickets gets an autonomous Agent," you now have to face the three new constraints head-on.
+
+### Constraint 1: Nondeterminism → eval-driven + guardrails + rollback
+
+Traditional systems rely on "same input → same output" assertions; an Agent running the same ticket twice may take **different paths both times**. Three things to do:
+
+| Measure | How to design it |
+|---|---|
+| **Eval-driven** | Accumulate a representative set of tickets with expected handling notes; turn it into an eval set. Before changing a prompt, switching a model, or modifying a tool, run evals in CI (rules + LLM-as-judge) — if the score drops, don't ship (carrying forward [ch. 20 ADR-005](/en/tutorial/evolution-playbook-mvp-to-scale/)) |
+| **Guardrails + human-in-the-loop checkpoints** | Uncertain outputs must have a backstop **before they cause side effects**: irreversible actions like refunds or re-ships require human-in-the-loop approval; low-confidence outputs escalate to a human agent |
+| **Observability + rollback** | Every step (planning, tool call, result) is fully traced — replayable and reversible |
+
+### Constraint 2: Context engineering → manage context as a "memory hierarchy"
+
+An Agent running fifteen steps will blow its context; stuffing too much in is expensive and causes "lost in the middle," while too little leaves it without grounding. Manage it as the "memory hierarchy" from [ch. 17](/en/tutorial/architecture-judgment-in-llm-era/):
+
+```
+   ┌───────────────────────────────────────────────┐
+   │ Context window (priciest/fastest, working memory) │ ← only put in "what this step truly needs"
+   ├───────────────────────────────────────────────┤
+   │ Retrieval RAG (pull policy / past tickets on demand) │ ← chained RAG (the approach from ch. 18/19)
+   ├───────────────────────────────────────────────┤
+   │ Long-term memory (cross-ticket, on disk)          │ ← this customer's history, resolved similar tickets
+   └───────────────────────────────────────────────┘
+```
+
+The core trade-off is still the same three paths (no silver bullet): **long context vs RAG vs fine-tuning** — stuffing the whole policy in is simple but costly and blurry; RAG is precise but needs maintained retrieval quality; fine-tuning changes behavior but is rigid. For long tasks, **periodically compress / summarize** prior steps to prevent the context from expanding without bound (mirrored by [Claude Code's automatic context compaction](/en/templates/claude-code/)).
+
+### Constraint 3: The cost / latency / quality triangle → routing + caching + hard caps
+
+Agents are the biggest money-burners: **cost rises linearly with step count** — a ticket that takes fifteen steps equals fifteen model calls. The remedies all feel familiar:
+
+- **Model routing**: small model for simple subtasks (classification, extraction); the large model only for "judgment calls."
+- **Caching**: repeated policy retrievals, identical sub-questions — cache and reuse.
+- **Hard caps (most critical)**: **set "max N steps / max $X / timeout T" per task** — exceed any and stop, escalate to human. This is both cost control and the lifeline for "preventing runaway" in the next section.
+
+---
+
+## 3. The agentic hard rock: attaching brakes to unleashed autonomy, item by item
+
+[Ch. 17](/en/tutorial/architecture-judgment-in-llm-era/) has a key insight: **an autonomous Agent is precisely the superposition of every preceding chapter's hard rock.** So "designing an Agent" = "attaching the advanced track's brakes one by one":
+
+| The difficulty in an agent system | Which advanced chapter it actually is | What brake to attach |
+|---|---|---|
+| The action loop can spin in place and burn money endlessly | The load shedding / circuit breaking of [12 · Resilience](/en/tutorial/designing-for-failure/) | **Step / cost / timeout caps + loop-detection**, stop when exceeded |
+| Tool calls have side effects; multi-step tasks are like distributed transactions | [11 · The Engineering of Data Consistency](/en/tutorial/data-consistency-engineering/) — Saga / idempotency | Make tools **idempotent**; multi-step actions compensatable with rollback (same logic as [ch. 19](/en/tutorial/full-design-walkthrough/)'s refund gate) |
+| Long tasks run for a long time, nodes can crash, must be resumable | The partial failure of [10 · Distributed Hard Truths](/en/tutorial/hard-truths-of-distributed-systems/) | **Checkpoint persistence** (durable execution) — interrupted tasks can resume |
+| Multi-agent collaboration = distribution + fan-out amplification | [10](/en/tutorial/hard-truths-of-distributed-systems/) / [13 · The Mechanics of Scale](/en/tutorial/mechanics-of-scale/) | Start with a single Agent; only split into multi-agent when it can't cope; control fan-out |
+| Prompt injection is the #1 threat; tool permissions must be least-privilege | [16 · Security & Multi-Tenancy](/en/tutorial/security-and-multi-tenancy/) | Tool **sandbox + least privilege**; treat all external content as untrusted |
+| Incrementally evolving from a working prototype to a controllable system | [14 · Evolving & Splitting Large Systems](/en/tutorial/evolving-and-splitting-large-systems/) | Shadow-mode validation, gradual rollout (same as [ch. 21](/en/tutorial/splitting-and-migration-in-practice/)) |
+
+Assemble all these brakes into the architecture, and you get the full picture of an Agent platform:
+
+```
+   Complex ticket: "Shoe came unglued — want a refund or a replacement"
+        │
+        ▼
+   ┌──────────────────────────────────────────────────────────────────┐
+   │  Orchestrator                                                      │
+   │   ┌──────────────────── Action loop ───────────────────────┐     │
+   │   │ ① Plan: what is the next step?                           │     │
+   │   │ ② Call tool (look up order / logistics / warranty policy) │     │
+   │   │    — sandboxed execution                                  │     │
+   │   │ ③ Observe result → feed back to model                    │     │
+   │   │ ④ Not done? Go back to ① (subject to [≤N steps / ≤$X /  │     │
+   │   │    timeout T] caps)                                       │     │
+   │   └───────────┬──────────────┬────────────────────┬──────────┘     │
+   │         ┌─────▼────┐  ┌──────▼──────────┐  ┌──────▼──────┐       │
+   │         │Tool sandbox│  │   Memory         │  │ Checkpoint  │       │
+   │         │Least priv. │  │Short+RAG+Long    │  │ Long tasks  │       │
+   │         │            │  │                  │  │ resumable   │       │
+   │         └────────────┘  └──────────────────┘  └─────────────┘      │
+   │                                                                      │
+   │   ⚠ Irreversible actions (refund / re-ship) ──▶ 【Human-in-the-loop checkpoint】before execution │
+   └──────────────────────────────┬───────────────────────────────────────┘
+                                  ▼ full trace written to observability system
+                              Result delivered / escalated to human agent
+```
+
+> **Architectural wisdom**: **an Agent action loop without control valves is a runaway machine that burns your money — and might cause damage on the way.** The soul is not in "making it more autonomous" but in the ring of **control valves** wrapped around the autonomy — step/cost/timeout caps, sandbox, least privilege, human-in-the-loop checkpoints, full-trace observability. Read the four real Agent maps — [Claude Code](/en/templates/claude-code/), [Codex](/en/templates/codex/), [OpenClaw](/en/templates/openclaw/), [Hermes](/en/templates/hermes/) — and you'll find their "soul" is entirely about how to put brakes on unleashed autonomy. And the design principles of those brakes, you've already finished learning in the advanced track.
+
+---
+
+## 📌 Real case: the industry consensus on the tool side — "don't unleash if you don't have to"
+
+- **Anthropic's *Building Effective Agents***: repeatedly emphasizes **"keep it simple; don't reach for an autonomous Agent if a workflow will do"** and "only add complexity when you need it." This isn't conservatism — it's engineering maturity, identical in spirit to the consistent restraint running through this entire repo (don't use it until you need it).
+- **Four real Agent products** ([Claude Code](/en/templates/claude-code/) / [Codex](/en/templates/codex/) / [OpenClaw](/en/templates/openclaw/) / [Hermes](/en/templates/hermes/)): without exception, they pour the bulk of their design into **putting brakes on autonomy** — sandbox, dual-layer permissions, budget/step caps, heartbeat-means-money-burned, human-in-the-loop checkpoints. Capability comes from the model; **safety comes from the architecture.**
+
+📎 [Anthropic: Building Effective Agents](https://www.anthropic.com/research/building-effective-agents) · [AI Agent Platform template](/en/templates/ai-agent-platform/)
+
+---
+
+## 🎯 Quick check
+
+```quiz
+{
+  "question": "You're adding 'automatic handling of complex tickets' to a customer-service system. What is the first judgment recommended by industry practice (e.g. Anthropic)?",
+  "options": [
+    "Go straight to multi-agent collaboration — the more autonomous, the more advanced",
+    "First ask whether the task can be solved by a deterministic workflow — solidify what can be solidified into a workflow (cheap, controllable, evaluable), and only hand the genuinely open-ended, must-adapt-on-the-fly minority to an autonomous Agent",
+    "Hand all tickets to a single fully-autonomous Agent to avoid the need for classification"
+  ],
+  "answer": 1,
+  "explanation": "If a deterministic workflow can solve it, don't reach for an autonomous Agent. Workflows are predictable, cheap, and evaluable — they cover the majority of needs. Autonomous Agents are flexible but expensive, slow, and hard to control; keep them for the genuinely open-ended minority. Predictability is an engineering virtue — this is the first judgment in AI-native design."
+}
+```
+
+```quiz
+{
+  "question": "In an autonomous Agent's action loop, which 'brake' is the least dispensable?",
+  "options": [
+    "Give it a larger context window",
+    "Hard step/cost/timeout caps + human-in-the-loop checkpoints for irreversible actions + tool sandbox with least privilege",
+    "Call the model more times to improve output quality"
+  ],
+  "answer": 1,
+  "explanation": "An Agent action loop without control valves is a runaway machine that burns money and may cause damage. The higher the autonomy, the harder the brakes must be: step/cost/timeout caps prevent runaway burns, human-in-the-loop checkpoints guard irreversible actions, and sandbox + least privilege block privilege escalation induced by prompt injection. These are exactly the advanced-track hard rock from ch. 10–16, stacked onto the Agent."
+}
+```
+
+---
+
+## Chapter summary
+
+- **The first judgment in AI-native design: workflow vs. autonomous Agent** — solidify what can be solidified into workflows (cheap, controllable, evaluable); leave only the genuinely open-ended minority for autonomous Agents. Don't unleash if you don't have to.
+- **Landing the three new constraints from [ch. 17](/en/tutorial/architecture-judgment-in-llm-era/)**: ① nondeterminism → eval as a gate + guardrails/human-in-the-loop + rollback; ② context engineering → manage it as a "memory hierarchy" (window / RAG / long-term memory + compression); ③ cost/latency/quality triangle → model routing + caching + **step/cost/timeout hard caps**.
+- **Autonomous Agent = the entire advanced track, stacked**: the action loop needs load shedding ([12](/en/tutorial/designing-for-failure/)), tools must be idempotent ([11](/en/tutorial/data-consistency-engineering/)), long tasks need checkpoints ([10](/en/tutorial/hard-truths-of-distributed-systems/)), multi-agent is distributed fan-out ([13](/en/tutorial/mechanics-of-scale/)), prompt injection is the #1 threat ([16](/en/tutorial/security-and-multi-tenancy/)). Designing an Agent = attaching these brakes one by one.
+- **The soul is in the control valves, not the autonomy**: capability comes from the model, safety comes from the architecture — the four real Agent products' design focus is entirely on putting brakes on unleashed autonomy.
+
+> **🏁 Practice track finale · Bridging forward**: you've now walked a complete loop through an AI system — **reading the map ([18](/en/tutorial/deconstructing-unfamiliar-systems/)) → designing ([19](/en/tutorial/full-design-walkthrough/)) → evolving ([20](/en/tutorial/evolution-playbook-mvp-to-scale/)) → splitting and migrating ([21](/en/tutorial/splitting-and-migration-in-practice/)) → AI-native design (22)**. But throughout this journey, one protagonist kept reappearing: **evals, guardrails, human-in-the-loop checkpoints, specs, constraints** — all of them are about "how humans feed judgment to AI, and how humans audit AI's output." That is exactly the theme introduced by [23 · Spec as Architecture](/en/tutorial/spec-as-architecture/), opening the next track, **🤝 AI Collaboration Design (ch. 23–26)**: **after learning to design, learn to collaborate with AI in landing and reviewing the work — without losing control.** It and [architecture-copilot](https://github.com/study8677/architecture-copilot) are the same product line.
+
+---
+
+## Related links
+
+- The theoretical source of the three new constraints: [17 · Architecting in the age of LLMs](/en/tutorial/architecture-judgment-in-llm-era/)
+- The same system's backstory: [19 · Full design walkthrough: medium complexity](/en/tutorial/full-design-walkthrough/) (controlled actions) → this chapter (autonomous Agent)
+- Sources of the hard rock: [10](/en/tutorial/hard-truths-of-distributed-systems/) / [11](/en/tutorial/data-consistency-engineering/) / [12](/en/tutorial/designing-for-failure/) / [13](/en/tutorial/mechanics-of-scale/) / [16](/en/tutorial/security-and-multi-tenancy/)
+- Real-world reference: [AI Agent Platform template](/en/templates/ai-agent-platform/) · Four real Agents: [Claude Code](/en/templates/claude-code/) / [Codex](/en/templates/codex/) / [OpenClaw](/en/templates/openclaw/) / [Hermes](/en/templates/hermes/)

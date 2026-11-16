@@ -1,18 +1,4 @@
 ---
-import { getCollection } from 'astro:content'
-import BaseLayout from '../../layouts/BaseLayout.astro'
-import PostList from '../../components/PostList.astro'
-import { postsForLocale, sortByDateDesc, seriesHref } from '../../lib/posts'
-import { href } from '../../lib/urls'
-const posts = postsForLocale(await getCollection('posts'), 'en')
+import HomePage from '../../components/pages/HomePage.astro'
 ---
-<BaseLayout locale="en" title="AI Architect's Path">
-  <div class="page-head frame"><div class="grid">
-    <p class="page-head__side">English edition · Foundations pilot</p>
-    <h1 class="page-head__title">Understand the system.<br />Then build it.</h1>
-    <p class="page-head__intro">Start with nine chapters on architectural thinking: requirements, constraints, data and the trade-offs that shape a system.</p>
-    <p class="page-head__intro"><a class="button" href={seriesHref('foundations', 'en')}>Read Foundations →</a></p>
-    <p class="translation-note">English currently covers the Foundations series. <a href={href('/tutorial/')} hreflang="zh-CN">Browse all tutorials (Chinese)</a> or explore <a href={href('/learning/')} hreflang="zh-CN">interactive courses (Chinese)</a>.</p>
-  </div></div>
-  <section class="section frame"><div class="grid"><h2 class="section__title">Latest in English</h2><PostList posts={sortByDateDesc(posts).slice(0, 4)} /></div></section>
-</BaseLayout>
+<HomePage locale="en" />

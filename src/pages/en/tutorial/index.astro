@@ -1,19 +1,4 @@
 ---
-import { getCollection } from 'astro:content'
-import BaseLayout from '../../../layouts/BaseLayout.astro'
-import PostList from '../../../components/PostList.astro'
-import { SERIES, localizedSeries } from '../../../data/series'
-import { postsForLocale, postsInSeries, seriesHref } from '../../../lib/posts'
-import { href } from '../../../lib/urls'
-const posts = postsForLocale(await getCollection('posts'), 'en')
-const series = SERIES.filter(s => s.translations?.en && posts.some(p => p.data.series === s.id)).map(s => localizedSeries(s, 'en'))
+import ChannelPage from '../../../components/pages/ChannelPage.astro'
 ---
-<BaseLayout locale="en" title="Architecture tutorials">
-  <div class="page-head frame"><div class="grid">
-    <p class="page-head__side">{posts.length} articles · English pilot</p>
-    <h1 class="page-head__title">Think like an architect</h1>
-    <p class="page-head__intro">Build architectural judgment before choosing tools. The first translated series covers the fundamentals of system design.</p>
-    <p class="translation-note">Other series are available in <a href={href('/tutorial/')} hreflang="zh-CN">the Chinese edition</a>. More translations will be added over time.</p>
-  </div></div>
-  {series.map(s => <section class="section frame"><div class="grid"><h2 class="section__title"><a href={seriesHref(s.id, 'en')}>{s.title}</a></h2><PostList posts={postsInSeries(posts, s.id, 'en')} showSeries={false} /></div></section>)}
-</BaseLayout>
+<ChannelPage channel="tutorial" locale="en" />

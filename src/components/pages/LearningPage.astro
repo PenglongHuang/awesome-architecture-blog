@@ -1,0 +1,149 @@
+---
+import { localizedCourse, courseTagLabel, courseTrackLabel, courseGroupLabel, learningCopy } from '../../data/course-locales'
+import type { Locale } from '../../lib/i18n.mjs'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import CourseCard from '../../components/CourseCard.astro'
+import CourseTagButton from '../../components/CourseTagButton.astro'
+import {
+  COURSES,
+  FEATURED_TAG_LIMIT,
+  collectCourseTracks,
+  collectTagTracks,
+  countCoursesWithTag,
+  groupCourseTags,
+  sortTagsByUsage,
+} from '../../data/courses'
+
+interface Props { locale?: Locale }
+const { locale = 'zh-CN' } = Astro.props
+const copy = learningCopy(locale)
+const tracks = collectCourseTracks()
+const tags = sortTagsByUsage()
+const tagTracks = collectTagTracks()
+const showTagCounts = COURSES.length > 1
+const featuredTags = tags.slice(0, FEATURED_TAG_LIMIT)
+const moreTags = tags.slice(FEATURED_TAG_LIMIT)
+const moreTagGroups = groupCourseTags(moreTags)
+const tagCounts = new Map(tags.map((tag) => [tag.id, countCoursesWithTag(tag.id)]))
+const trackCounts = new Map(
+  tracks.map((track) => [track.id, COURSES.filter((course) => course.track === track.id).length])
+)
+---
+<BaseLayout locale={locale} title={copy.title} description={copy.description}>
+  <div class="page-head frame">
+    <div class="grid">
+      <p class="page-head__side">{COURSES.length} {copy.interactive}</p>
+      <h1 class="page-head__title">{copy.line1}<br />{copy.line2}</h1>
+      <p class="page-head__intro">{copy.intro}</p>
+      <p class="translation-note">{copy.languageNote}</p>
+    </div>
+  </div>
+  <section class="section frame" aria-labelledby="learning-courses">
+    <div class="grid">
+      <h2 class="section__title recent__title" id="learning-courses">{copy.allCourses}</h2>
+      <div class="course-filter" data-course-filter hidden>
+        <div class="course-filter__row" role="group" aria-label={copy.trackAria}>
+          <span class="course-filter__label">{copy.track}</span>
+          <div class="course-filter__options">
+            <button type="button" class="filter-chip" data-track-filter="" aria-pressed="true">
+              {copy.all} <span class="filter-chip__count">{COURSES.length}</span>
+            </button>
+            {tracks.map((track) => (
+              <button
+                type="button"
+                class="filter-chip"
+                data-track-filter={track.id}
+                aria-pressed="false"
+              >
+                {courseTrackLabel(track.id, locale)} <span class="filter-chip__count">{trackCounts.get(track.id)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div class="course-filter__row course-filter__row--tags" role="group" aria-label={copy.tagAria}>
+          <span class="course-filter__label">{copy.tags}</span>
+          <div class="course-filter__options">
+            <button type="button" class="filter-chip" data-tag-filter="" aria-pressed="true">{copy.all}</button>
+            {tags.map((tag) => (
+              <button
+                type="button"
+                class="filter-chip filter-chip--tag filter-chip--selected"
+                data-tag-filter={tag.id}
+                data-tag-selected
+                aria-pressed="true"
+                hidden
+              >
+                {courseTagLabel(tag.id, locale)}<span class="filter-chip__x" aria-hidden="true">×</span>
+              </button>
+            ))}
+            {featuredTags.map((tag) => (
+              <CourseTagButton
+                tag={tag}
+                locale={locale}
+                tracks={[...(tagTracks.get(tag.id) ?? [])].join(' ')}
+                count={tagCounts.get(tag.id) ?? 0}
+                showCount={showTagCounts}
+              />
+            ))}
+            {moreTags.length > 0 && (
+              <button
+                type="button"
+                class="filter-chip filter-chip--more"
+                data-tag-more
+                aria-expanded="false"
+                aria-controls="tag-more-panel"
+              >
+                {copy.more} <span class="filter-chip__count" data-tag-more-count>{moreTags.length}</span>
+              </button>
+            )}
+          </div>
+        </div>
+        {moreTags.length > 0 && (
+          <div class="course-filter__more" id="tag-more-panel" data-tag-more-panel hidden>
+            {moreTagGroups.map((group) => (
+              <div class="tag-group" data-tag-group>
+                <span class="tag-group__title">{locale === 'en' ? courseGroupLabel(group.id) : group.label}</span>
+                <div class="course-filter__options">
+                  {group.tags.map((tag) => (
+                    <CourseTagButton
+                      tag={tag}
+                      locale={locale}
+                      tracks={[...(tagTracks.get(tag.id) ?? [])].join(' ')}
+                      count={tagCounts.get(tag.id) ?? 0}
+                      showCount={showTagCounts}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div class="course-filter__status">
+          <p class="course-filter__summary" data-course-summary aria-live="polite">
+            {locale === 'en' ? `Showing ${COURSES.length} courses` : `显示 ${COURSES.length} 门`}
+          </p>
+          <button type="button" class="course-filter__clear" data-course-clear hidden>{copy.clear}</button>
+        </div>
+      </div>
+      <div class="course-grid" data-course-list>
+        {COURSES.map((course) => <CourseCard course={localizedCourse(course, locale)} locale={locale} filterable />)}
+      </div>
+      <div class="course-empty" data-course-empty hidden>
+        <p>{copy.empty}</p>
+        <button type="button" class="course-filter__clear" data-course-clear-reset>{copy.allCourses}</button>
+      </div>
+    </div>
+  </section>
+  <section class="section frame" aria-labelledby="learning-how">
+    <div class="grid">
+      <div class="prose" style="grid-column: 6 / 13;">
+        <h2 class="section__title" id="learning-how" style="font-size: var(--step-head);">{copy.how}</h2>
+        <p>{copy.how1}</p>
+        <p>{copy.how2}</p>
+      </div>
+    </div>
+  </section>
+  <script>
+    import '../../scripts/course-filter'
+  </script>
+</BaseLayout>

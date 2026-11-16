@@ -1,14 +1,14 @@
 ---
 title: "08 · Architecture Decision Records (ADRs) & Evolution"
-description: "Last chapter you learned to design a system from 0. But finishing the design isn't the end — the system will grow with the business, be handed to others, and keep running long after you've forgotten \"why we did it this way.\" This chapter is about making architecture live long and grow well."
-locale: "en"
-translationKey: "tutorial/adr-and-evolution"
-sourceHash: "2d1ee9ea38a1fba9c3d1ce6f253f1f3a93fdd24df5c399a09a0e3efcd2a1e001"
+description: "Record architectural decisions, preserve their reasoning and evolve a system in response to measurable business and technical needs."
 series: "foundations"
 order: 8
 pubDate: 2026-01-30
 kind: "tutorial"
-tags: ["Foundations","Architecture"]
+tags: ["Foundations","Tutorials"]
+locale: "en"
+translationKey: "tutorial/adr-and-evolution"
+sourceHash: "2d1ee9ea38a1fba9c3d1ce6f253f1f3a93fdd24df5c399a09a0e3efcd2a1e001"
 ---
 
 > Last chapter you learned to design a system from 0. But finishing the design isn't the end — the system will grow with the business, be handed to others, and keep running long after you've forgotten "why we did it this way." This chapter is about making architecture **live long and grow well**.
@@ -112,7 +112,7 @@ Why is "why" so precious? Three reasons:
 
 > 💡 **In one line: good docs don't explain "what the code does" (the code says that itself); good docs explain "why the code does it this way" (the code never says that).** Spend your recording effort on what's gone forever once lost.
 
-This extends the first of the [root README's three reading principles](https://github.com/study8677/awesome-architecture): "Ask 'why' before 'how'. If you can't see the trade-off, you haven't understood it." — ADR turns that principle from "reading" into "writing."
+This extends the first of the [reading principles](/en/about/): "Ask 'why' before 'how'. If you can't see the trade-off, you haven't understood it." — ADR turns that principle from "reading" into "writing."
 
 ---
 
@@ -147,7 +147,7 @@ How to achieve "easy to change right"? The answer is **leaving good seams** — 
 - You make "short-code generation" an **independent module with a clear interface**. v1 uses "pre-allocated ID ranges"; if you later want a different strategy, **only this block changes — the redirect service and storage know nothing**.
 - You hide "caching" behind the redirect service's interface. v1 uses in-process cache; at scale you swap to CDN — **transparent to callers**.
 
-This is exactly the wisdom each template's **"Section 12 · Evolution Path"** conveys: in the [AI Chat Product evolution path (Chinese)](/templates/ai-chat-product/), the MVP calls an external model API directly, and only in the growth stage swaps to self-hosted inference + continuous batching — it's swappable precisely because "calling the model" was sealed behind a clean boundary from the start. **Good seams turn evolution from "rewrite" into "replace."**
+This is exactly the wisdom each template's **"Section 12 · Evolution Path"** conveys: in the [AI Chat Product evolution path](/en/templates/ai-chat-product/), the MVP calls an external model API directly, and only in the growth stage swaps to self-hosted inference + continuous batching — it's swappable precisely because "calling the model" was sealed behind a clean boundary from the start. **Good seams turn evolution from "rewrite" into "replace."**
 
 > 💡 **When designing, ask one more question: "which block is most likely to be replaced later?"** Wrap the most-likely-to-change part in the cleanest interface. This trades "a little more thought now" for "a lot less pain later."
 
@@ -299,7 +299,7 @@ The ADR in this chapter comes from **Michael Nygard's** 2011 post [*Documenting 
 
 ## Conclusion: become someone who "keeps making good judgments, and keeps recording them"
 
-You've reached the end of the tutorial. Let's return to the very beginning, to why this repo exists ([root README](https://github.com/study8677/awesome-architecture)):
+You've reached the end of the tutorial. Let's return to the very beginning, to why this repo exists ([About this site](/en/about/)):
 
 > **Writing code is disappearing, while architectural judgment is becoming scarcer and more valuable than ever.**
 
@@ -340,9 +340,9 @@ Code changes, frameworks change, even the trendy word for "architecture" will tu
 
 ## One last exercise, then you're on your own
 
-> **Read templates as ADRs.** Go back to [`templates/` (Chinese)](/templates/), pick any system, and head straight to its **Section 8, "Key Decisions & Trade-offs."**
+> **Read templates as ADRs.** Go back to [`templates/`](/en/templates/), pick any system, and head straight to its **Section 8, "Key Decisions & Trade-offs."**
 >
-> You'll find each entry there is a compressed ADR — it has context (the choice faced), a decision (the leaning), options given up, and trade-offs (the cost). Try taking [the AI Chat Product's "Decision 1: streaming vs one-shot return" (Chinese)](/templates/ai-chat-product/) and **hand-expanding it into a full ADR** using this chapter's six-block template.
+> You'll find each entry there is a compressed ADR — it has context (the choice faced), a decision (the leaning), options given up, and trade-offs (the cost). Try taking [the AI Chat Product's "Decision 1: streaming vs one-shot return"](/en/templates/ai-chat-product/) and **hand-expanding it into a full ADR** using this chapter's six-block template.
 >
 > Do that, and you'll hold both halves of this tutorial at once: **judging like an architect (07), and preserving judgments like an architect (08).** The rest is to go practice, one real system at a time.
 
@@ -352,4 +352,4 @@ Code changes, frameworks change, even the trendy word for "architecture" will tu
 
 - Previous: [07 · Designing a system from 0 to 1](/en/tutorial/designing-from-zero-to-one/) — the "why" you voice in Step ⑧ is exactly what this chapter asks you to record as ADRs
 - Echoed throughout: [06 · Quality attributes & trade-offs](/en/tutorial/quality-attributes-and-tradeoffs/) (the two rulers for when to upgrade), [04 · Ten core patterns](/en/tutorial/ten-core-patterns/) (microservice splitting & Conway's Law)
-- Back to the start: [root README](https://github.com/study8677/awesome-architecture) & [tutorial overview](/en/tutorial/) — re-read "why this repo exists," and it'll land differently
+- Back to the start: [About this site](/en/about/) & [tutorial overview](/en/tutorial/) — re-read "why this repo exists," and it'll land differently

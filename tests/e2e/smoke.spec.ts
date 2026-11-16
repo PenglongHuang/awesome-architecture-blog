@@ -17,7 +17,7 @@ test('首页轨道 → 系列 → 文章', async ({ page }) => {
 test('首页轨道导览并进入项目学习', async ({ page }) => {
   await page.goto('')
   await expect(page.locator('.masthead').getByRole('link', { name: 'AI架构师之路', exact: true })).toBeVisible()
-  // 首页导航栏不展示入口链接，由大屏轨道承担导览
+  // 顶部导航和首页轨道均提供四个入口。
   await expect(page.getByRole('navigation', { name: '按需求选择入口' }).getByRole('link')).toHaveCount(4)
   await expect(page.locator('.home-featured').getByRole('link', { name: /基础模型训练决策专题/ })).toBeVisible()
 

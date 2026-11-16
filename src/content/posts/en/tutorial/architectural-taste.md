@@ -1,14 +1,14 @@
 ---
 title: "09 · Architectural Taste: What Separates Good Architects Beyond the Framework"
-description: "The first eight chapters gave you the \"teachable\" part — frameworks, patterns, processes. But you'll soon hit a sobering fact: two people who've both memorized the framework can still produce architectures of wildly different quality. That missing part is called taste. This chapter explains what tas"
-locale: "en"
-translationKey: "tutorial/architectural-taste"
-sourceHash: "9749c76faca4104792c62a9bdba7792dc82e55c0173859cb7caaf66df0499202"
+description: "Develop architectural judgment beyond frameworks through restraint, coherent boundaries, experience and deliberate comparison."
 series: "foundations"
 order: 9
 pubDate: 2026-02-03
 kind: "tutorial"
-tags: ["Foundations","Architecture"]
+tags: ["Foundations","Tutorials"]
+locale: "en"
+translationKey: "tutorial/architectural-taste"
+sourceHash: "9749c76faca4104792c62a9bdba7792dc82e55c0173859cb7caaf66df0499202"
 ---
 
 > The first eight chapters gave you the "teachable" part — frameworks, patterns, processes. But you'll soon hit a sobering fact: **two people who've both memorized the framework can still produce architectures of wildly different quality.** That missing part is called **taste**. This chapter explains what taste is, why it determines an architecture's "personality," and how to grow it — by **comparing real-world cases**.
@@ -167,13 +167,13 @@ So, the **default taste for individuals / small teams**, five rules to remember:
 
 Taste comes from "broad exposure + deliberate reflection." Five things you can start today:
 
-1. **Read real architectures, a lot.** Read the [21 templates (Chinese)](/templates/) here as maps, then first-hand engineering blogs worth subscribing to: [Netflix TechBlog](https://netflixtechblog.com/), [Shopify Engineering](https://shopify.engineering/), [Stack Overflow / Nick Craver](https://nickcraver.com/blog/), [Martin Fowler](https://martinfowler.com/), [InfoQ](https://www.infoq.com/), [High Scalability](https://highscalability.com/).
+1. **Read real architectures, a lot.** Read the [21 templates](/en/templates/) here as maps, then first-hand engineering blogs worth subscribing to: [Netflix TechBlog](https://netflixtechblog.com/), [Shopify Engineering](https://shopify.engineering/), [Stack Overflow / Nick Craver](https://nickcraver.com/blog/), [Martin Fowler](https://martinfowler.com/), [InfoQ](https://www.infoq.com/), [High Scalability](https://highscalability.com/).
 2. **Deliberately compare similar systems.** Pick two products doing similar things, force yourself to list how their architectures differ, then answer the key question: **"which constraint difference causes this?"**
 3. **Do a "post-mortem" on every decision.** Three months later, was the trade-off right? Which assumption was wrong? (That's the value of [ADRs](/en/tutorial/adr-and-evolution/).)
 4. **Cultivate a pain reflex to complexity.** Every time you want to add something, force yourself to answer "will it die without this?"
 5. **Read "reversal / slap-in-the-face" stories specifically.** Cases like "microservices back to monolith" are the best vaccine for calibrating your trend-immunity.
 
-> **An exercise you can do right now:** open the [Social Feed template (Chinese)](/templates/social-feed/), then ask: **would Twitter and a niche community of a few thousand have the same feed architecture?** If not, which constraint causes the difference? (Hint: scale, hotspot distribution, real-time requirements…)
+> **An exercise you can do right now:** open the [Social Feed template](/en/templates/social-feed/), then ask: **would Twitter and a niche community of a few thousand have the same feed architecture?** If not, which constraint causes the difference? (Hint: scale, hotspot distribution, real-time requirements…)
 
 ---
 
@@ -210,4 +210,4 @@ Taste comes from "broad exposure + deliberate reflection." Five things you can s
 >
 > So close the tutorial and go read, compare, reflect. **We've handed you the framework; the taste, you must feed yourself, one real system at a time.**
 >
-> 👉 Start here: pick a [template (Chinese)](/templates/) and take it apart, or let [architecture-copilot](https://github.com/study8677/architecture-copilot) walk your next project's architecture through, question by question.
+> 👉 Start here: pick a [template](/en/templates/) and take it apart, or let [architecture-copilot](https://github.com/study8677/architecture-copilot) walk your next project's architecture through, question by question.

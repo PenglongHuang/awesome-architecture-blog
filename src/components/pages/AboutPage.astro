@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { getCollection } from 'astro:content'
+import { postsForLocale } from '../../lib/posts'
+import { href } from '../../lib/urls'
+import { localePath, type Locale } from '../../lib/i18n.mjs'
+import { pageCopy } from '../../data/page-copy'
+interface Props { locale?: Locale }
+const { locale = 'zh-CN' } = Astro.props
+const posts = postsForLocale(await getCollection('posts'), locale)
+const copy = pageCopy(locale).about
+const counts = { tutorial: posts.filter(p => p.data.kind === 'tutorial').length, template: posts.filter(p => p.data.kind === 'template').length, cases: posts.filter(p => p.data.kind === 'case').length }
+---
+<BaseLayout locale={locale} title={copy.title}>
+  <div class="page-head frame"><div class="grid"><p class="page-head__side">{copy.eyebrow}</p><h1 class="page-head__title">{copy.heading}</h1><p class="page-head__intro">{copy.intro}</p></div></div>
+  <section class="section frame"><div class="grid"><div class="prose">
+    <p>{locale === 'en' ? `${counts.tutorial} tutorial articles, ${counts.template} architecture maps and ${counts.cases} end-to-end design cases, alongside interactive project courses.` : `这里有 ${counts.tutorial} 篇系列教程、${counts.template} 张架构设计图、${counts.cases} 个端到端系统设计，以及可交互的项目课程。`}</p>
+    <p>{copy.author} <a href="https://github.com/PenglongHuang">Penglong Huang</a> {copy.authorAfter}</p>
+    <p><a href={href(localePath('/learning/', locale))}>{copy.courses}</a></p>
+    <h2>{copy.license}</h2><p>{copy.source} <a href="https://github.com/study8677/awesome-architecture">study8677/awesome-architecture</a>{copy.credit}</p><p>{copy.licenseFile}</p>
+  </div></div></section>
+</BaseLayout>

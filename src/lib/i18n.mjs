@@ -23,10 +23,10 @@ const messages = {
   },
   en: {
     siteName: "AI Architect's Path", ogImage: 'og-default-en.svg', tagline: 'Understand systems and their trade-offs.',
-    description: 'A software architecture knowledge base about system design, architectural decisions and trade-offs. Start with the nine-chapter Foundations series.',
-    home: 'Home', tutorials: 'Tutorials', templates: 'Architecture maps', cases: 'System design',
-    courses: 'Courses (Chinese)', about: 'About', search: 'Search', navigation: 'Main navigation',
-    searchPlaceholder: 'Search the English tutorials…', skip: 'Skip to content',
+    description: 'A bilingual knowledge base about software architecture, system design, AI engineering and the trade-offs behind good decisions.',
+    home: 'Home', tutorials: 'Tutorials', templates: 'Architecture', cases: 'System design',
+    courses: 'Courses', about: 'About', search: 'Search', navigation: 'Main navigation',
+    searchPlaceholder: 'Search articles…', skip: 'Skip to content',
     previous: 'Previous', next: 'Next', contents: 'On this page', related: 'Further reading',
     relatedTopic: 'Related topic', continueReading: 'Continue reading', updated: 'Updated',
     author: 'Author', editor: 'Editor', largeText: 'Larger text', focus: 'Focus mode',
@@ -58,7 +58,7 @@ export function localePath(path, locale = 'zh-CN') {
 }
 
 /** Static pages that have a real counterpart. Articles use translation keys instead. */
-export const SHARED_PAGES = ['/', '/tutorial/', '/search/', '/about/']
+export const SHARED_PAGES = ['/', '/tutorial/', '/templates/', '/cases/', '/learning/', '/search/', '/about/']
 
 /** @param {string} [value] @returns {Locale} */
 export function contentLocale(value) {

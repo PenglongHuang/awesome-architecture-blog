@@ -20,6 +20,7 @@ const locale = post.data.locale
 const t = messagesFor(locale)
 const series = getSeries(post.data.series, locale)
 const channelLabel = locale === 'en' ? (series.channel === 'tutorial' ? t.tutorials : t[series.channel]) : CHANNELS[series.channel].title
+const entryLabel = post.data.kind === 'tutorial' ? 'Chapter' : post.data.kind === 'template' ? 'Map' : 'Case'
 const showSeriesCrumb = series.title !== channelLabel && series.title !== `${channelLabel}篇`
 const collection = await getCollection('posts')
 const alternates = postAlternates(post, collection)
@@ -94,10 +95,10 @@ const breadcrumbSchema = {
             <a href={seriesHref(series.id, locale)}><b>{series.title}</b></a>
           </>
         )}
-        {' / '}{locale === 'en' ? `Chapter ${post.data.order}` : `第 ${post.data.order} 篇`}
+        {' / '}{locale === 'en' ? `${entryLabel} ${post.data.order}` : `第 ${post.data.order} 篇`}
       </div>
       <h1>{post.data.title}</h1>
-      {!alternates.en && locale === 'zh-CN' && <p class="translation-note" data-pagefind-ignore>本文暂无英文版。<a href={href('/en/tutorial/')}>浏览英文试点</a></p>}
+      {!alternates.en && locale === 'zh-CN' && <p class="translation-note" data-pagefind-ignore>本文暂无英文版。<a href={href('/en/tutorial/')}>浏览英文站</a></p>}
       {!(post.body ?? '').trimStart().startsWith('>') && <p class="dek">{post.data.description}</p>}
       <div class="article__meta" data-pagefind-ignore>
         <time datetime={date}>{date}</time>

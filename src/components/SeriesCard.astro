@@ -1,11 +1,13 @@
 ---
+import type { Locale } from '../lib/i18n.mjs'
+import { articleCount } from '../data/page-copy'
 import type { SeriesDef } from '../data/series'
 import { seriesHref } from '../lib/posts'
-interface Props { series: SeriesDef; count: number; index?: number }
-const { series, count } = Astro.props
+interface Props { locale?: Locale; series: SeriesDef; count: number; index?: number }
+const { series, count, locale = 'zh-CN' } = Astro.props
 ---
-<a class="series-card" href={seriesHref(series.id)}>
+<a class="series-card" href={seriesHref(series.id, locale)}>
   <h3>{series.title}</h3>
   <p>{series.description}</p>
-  <div class="series-card__count">{count} 篇文章</div>
+  <div class="series-card__count">{articleCount(count, locale)}</div>
 </a>

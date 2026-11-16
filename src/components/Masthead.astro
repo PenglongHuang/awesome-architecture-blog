@@ -1,33 +1,32 @@
 ---
 import BrandMark from './BrandMark.astro'
 import LanguageSwitch from './LanguageSwitch.astro'
-import { CHANNELS } from '../data/series'
 import { href } from '../lib/urls'
 import { messagesFor, localePath, type Locale } from '../lib/i18n.mjs'
 interface Props { locale?: Locale; alternates?: Partial<Record<Locale, string>> }
 const { locale = 'zh-CN', alternates = {} } = Astro.props
 const t = messagesFor(locale)
 const path = Astro.url.pathname
-const items = locale === 'en' ? [
-  { href: href('/en/tutorial/'), label: t.tutorials, match: '/en/tutorial/' },
-  { href: href('/en/about/'), label: t.about, match: '/en/about/' },
-  { href: href('/learning/'), label: t.courses, match: '/learning/' },
-] : [
-  ...Object.values(CHANNELS).map(c => ({ href: href(c.href), label: c.title, match: c.href })),
-  { href: href('/learning/'), label: t.courses, match: '/learning/' },
+const items = [
+  { path: '/tutorial/', label: t.tutorials },
+  { path: '/templates/', label: t.templates },
+  { path: '/cases/', label: t.cases },
+  { path: '/learning/', label: t.courses },
 ]
-const isHome = path === href(localePath('/', locale))
 ---
 <header class="masthead frame">
-  <div class="grid">
-    <a class="masthead__brand" href={href(localePath('/', locale))} aria-label={t.siteName}><span class="masthead__mark"><BrandMark /></span><span>{t.siteName}<small>{t.tagline}</small></span></a>
-    {!isHome && <nav class="masthead__nav" aria-label={t.navigation}>
-      {items.map(it => <a href={it.href} hreflang={locale === 'en' && it.match === '/learning/' ? 'zh-CN' : undefined} aria-current={path.includes(it.match) ? 'page' : undefined}>{it.label}</a>)}
-    </nav>}
+  <div class="masthead__inner">
+    <a class="masthead__brand" href={href(localePath('/', locale))} aria-label={t.siteName}>
+      <span class="masthead__mark"><BrandMark /></span>
+      <span class="masthead__wordmark"><span class="masthead__name">{t.siteName}</span><span class="masthead__short-name" aria-hidden="true">{locale === 'en' ? 'AI Architect' : t.siteName}</span><small>{t.tagline}</small></span>
+    </a>
+    <nav class="masthead__nav" aria-label={t.navigation}>
+      {items.map(item => <a href={href(localePath(item.path, locale))} aria-current={path.startsWith(href(localePath(item.path, locale))) ? 'page' : undefined}>{item.label}</a>)}
+    </nav>
     <div class="masthead__actions">
-      <a class="nav-search" href={href(localePath('/search/', locale))} aria-label={t.search}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.7"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span class="nav-search__ph">{t.searchPlaceholder}</span><kbd aria-hidden="true">⌘K</kbd></a>
+      <a class="nav-search masthead__tool" href={href(localePath('/search/', locale))} aria-label={t.search} title={`${t.search} (Ctrl/⌘ K)`}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.7"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></a>
       <LanguageSwitch locale={locale} alternates={alternates} />
-      <button id="theme-toggle" class="theme-toggle" data-theme-toggle type="button" aria-label={locale === 'en' ? 'Choose a theme' : '选择主题风格'}><span data-theme-icon aria-hidden="true">●</span></button>
+      <button id="theme-toggle" class="theme-toggle masthead__tool" data-theme-toggle type="button" aria-label={locale === 'en' ? 'Choose a theme' : '选择主题风格'}><span data-theme-icon aria-hidden="true">●</span></button>
     </div>
   </div>
 </header>

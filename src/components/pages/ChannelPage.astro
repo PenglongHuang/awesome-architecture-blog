@@ -1,0 +1,25 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import SeriesCard from '../SeriesCard.astro'
+import PostList from '../PostList.astro'
+import { SERIES, localizedSeries, type Channel } from '../../data/series'
+import { postsForLocale, sortByDateDesc, postChannel, postsInSeries } from '../../lib/posts'
+import { pageCopy, channelCopy, articleCount } from '../../data/page-copy'
+import type { Locale } from '../../lib/i18n.mjs'
+interface Props { channel: Channel; locale?: Locale }
+const { channel, locale = 'zh-CN' } = Astro.props
+const all = postsForLocale(await getCollection('posts'), locale)
+const posts = all.filter(p => postChannel(p) === channel)
+const series = SERIES.filter(s => s.channel === channel).sort((a, b) => a.order - b.order).map(s => localizedSeries(s, locale))
+const copy = channelCopy(channel, locale)
+const common = pageCopy(locale)
+const kicker = channel === 'cases' ? `${posts.length} ${common.caseUnit}` : channel === 'templates' ? `${posts.length} ${common.mapUnit} · ${series.length} ${common.seriesUnit}` : `${articleCount(posts.length, locale)} · ${series.length} ${common.seriesUnit}`
+---
+<BaseLayout locale={locale} title={copy.title} description={copy.description}>
+  <div class="page-head frame"><div class="grid"><p class="page-head__side">{kicker}</p><h1 class="page-head__title">{copy.heading}</h1><p class="page-head__intro">{copy.intro}</p></div></div>
+  {channel === 'cases' ? <section class="section frame"><div class="grid"><PostList posts={postsInSeries(posts, 'cases', locale)} showSeries={false} /></div></section> : <>
+    <section class="section frame" aria-labelledby="channel-series"><div class="grid"><h2 class="section__title" id="channel-series">{common.series}</h2><div class="series-grid">{series.map(s => <SeriesCard series={s} count={posts.filter(p => p.data.series === s.id).length} locale={locale} />)}</div></div></section>
+    <section class="section frame" aria-labelledby="channel-recent"><div class="grid"><h2 class="section__title" id="channel-recent">{common.recent}</h2><PostList posts={sortByDateDesc(posts).slice(0, 6)} /></div></section>
+  </>}
+</BaseLayout>

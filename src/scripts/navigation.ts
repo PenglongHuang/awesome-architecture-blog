@@ -17,3 +17,8 @@ document.addEventListener('keydown', (event) => {
   if (event.target instanceof Element && event.target.closest('input, textarea, [contenteditable]')) return
   focusSearch(event)
 })
+
+for (const link of document.querySelectorAll<HTMLAnchorElement>('[data-language-link]')) {
+  const syncQuery = () => { link.search = window.location.search }
+  for (const event of ['click', 'pointerdown', 'contextmenu', 'focus']) link.addEventListener(event, syncQuery)
+}

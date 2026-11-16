@@ -4,7 +4,7 @@ import { postHref, getSeries } from '../lib/posts'
 interface Props { posts: Post[]; showSeries?: boolean; stripOrder?: boolean }
 const { posts, showSeries = true, stripOrder = false } = Astro.props
 const fmt = (d: Date) => `${String(d.getMonth() + 1).padStart(2, '0')} / ${String(d.getDate()).padStart(2, '0')}`
-const title = (p: Post) => (stripOrder ? p.data.title.replace(/^(案例\s*)?\d+\s*·\s*/, '') : p.data.title)
+const title = (p: Post) => (stripOrder ? p.data.title.replace(/^(?:(?:案例|Case)\s*)?\d+\s*·\s*/i, '') : p.data.title)
 ---
 <ul class="post-list">
   {posts.map((p) => (

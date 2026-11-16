@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { fromMarkdown } from 'mdast-util-from-markdown'
 
 export function contentRevision(source) {
   return createHash('sha256').update(source.replace(/\r\n/g, '\n')).digest('hex')
@@ -10,7 +11,20 @@ export function entryIdentity(post) {
   return { locale, key: post.data.translationKey ?? `${channel}/${slug}`, channel, slug }
 }
 
-/** Validate translated pairs without requiring translations for non-pilot series. */
+function structure(body) {
+  const result = { h2: 0, h3: 0, images: 0, code: 0 }
+  function visit(node) {
+    if (node.type === 'heading' && node.depth === 2) result.h2++
+    if (node.type === 'heading' && node.depth === 3) result.h3++
+    if (node.type === 'image') result.images++
+    if (node.type === 'code') result.code++
+    for (const child of node.children ?? []) visit(child)
+  }
+  visit(fromMarkdown(body))
+  return result
+}
+
+/** Require complete translations for every series that publishes English metadata. */
 export function validateTranslations(posts, series) {
   const errors = []
   const pairs = new Map()
@@ -36,6 +50,11 @@ export function validateTranslations(posts, series) {
     }
     const definition = series.find(item => item.id === en.data.series)
     if (!definition?.translations?.en) errors.push(`${en.rel}: missing English series metadata`)
+    const sourceStructure = structure(zh.body)
+    const targetStructure = structure(en.body)
+    for (const part of ['h2', 'h3', 'images', 'code']) {
+      if (sourceStructure[part] !== targetStructure[part]) errors.push(`${en.rel}: ${part} structure differs from Chinese counterpart`)
+    }
     for (const type of ['quiz', 'decision']) {
       const count = body => [...body.matchAll(new RegExp('^```' + type + '\\n', 'gm'))].length
       if (count(en.body) !== count(zh.body)) errors.push(`${en.rel}: ${type} count differs from Chinese counterpart`)
@@ -44,11 +63,11 @@ export function validateTranslations(posts, series) {
       if (!match[2].startsWith('/en/') && !match[1].includes('(Chinese)')) errors.push(`${en.rel}: cross-language link must be marked (Chinese): ${match[2]}`)
     }
   }
-  // Each advertised English series is complete; untranslated series remain valid.
+  // Every released English series is complete; untranslated series remain valid.
   for (const definition of series.filter(item => item.translations?.en)) {
     for (const post of posts.filter(p => (p.data.locale ?? 'zh-CN') === 'zh-CN' && p.data.series === definition.id)) {
       const { key } = entryIdentity(post)
-      if (!pairs.get(key)?.has('en')) errors.push(`${post.rel}: English pilot series is missing translation ${key}`)
+      if (!pairs.get(key)?.has('en')) errors.push(`${post.rel}: English series is missing translation ${key}`)
     }
   }
   return errors

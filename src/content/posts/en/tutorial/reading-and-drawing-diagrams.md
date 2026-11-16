@@ -1,14 +1,14 @@
 ---
 title: "03 · Reading and Drawing Architecture Diagrams Well (the C4 Model)"
-description: "Last chapter you learned to think a system through. This chapter solves the next problem: how to turn the system in your head into a diagram anyone gets at a glance. More than half of an architect's job isn't designing — it's communicating. And the diagram is the workhorse of communication."
-locale: "en"
-translationKey: "tutorial/reading-and-drawing-diagrams"
-sourceHash: "e7b3853ca62e668718abeaeee40c523f1911b9ff6dde84bf7df31342f6164aa4"
+description: "Communicate architecture with C4 diagrams, appropriate levels of detail and clear relationships between components."
 series: "foundations"
 order: 3
 pubDate: 2026-01-13
 kind: "tutorial"
-tags: ["Foundations","Architecture"]
+tags: ["Foundations","Tutorials"]
+locale: "en"
+translationKey: "tutorial/reading-and-drawing-diagrams"
+sourceHash: "e7b3853ca62e668718abeaeee40c523f1911b9ff6dde84bf7df31342f6164aa4"
 ---
 
 > Last chapter you learned to think a system through. This chapter solves the next problem: **how to turn the system in your head into a diagram anyone gets at a glance.** More than half of an architect's job isn't designing — it's communicating. And the diagram is the workhorse of communication.
@@ -183,7 +183,7 @@ This layer answers: **"What independently runnable big blocks make up our system
 
 **For whom: the technical team — architects, tech leads, ops.** Because this layer maps directly onto "deployment" and "operations": each Container is usually a unit to deploy, to monitor, and possibly to scale. **This is also the layer where architectural judgment is densest** — "split into how many services," "how to shard the database," "should we add a cache" — most of the trade-offs from the last chapter show up in this diagram.
 
-> 💡 **You may have noticed: every template's "architecture overview diagram" in this repo is basically drawn at the Container layer.** Take that diagram in Section 4 of the [AI chat product template (Chinese)](/templates/ai-chat-product/): the "ingress layer, orchestration layer, inference service, session store, vector retrieval" — each is an independently runnable big block, making it a textbook Container diagram. **Learn to read Container diagrams and you'll be able to read nearly every overview diagram in this repo.**
+> 💡 **You may have noticed: every template's "architecture overview diagram" in this repo is basically drawn at the Container layer.** Take that diagram in Section 4 of the [AI chat product template](/en/templates/ai-chat-product/): the "ingress layer, orchestration layer, inference service, session store, vector retrieval" — each is an independently runnable big block, making it a textbook Container diagram. **Learn to read Container diagrams and you'll be able to read nearly every overview diagram in this repo.**
 
 ### Layer ③: Component — for those who build this part
 
@@ -305,7 +305,7 @@ A few small reminders:
 - **Use alignment and whitespace well.** Align boxes on the same level horizontally and spread them out vertically, and the diagram becomes far cleaner. A cramped ASCII diagram's readability falls off a cliff.
 - **Don't chase pixel perfection.** An ASCII diagram's goal is to "**make the structure and relationships clear**," not to be art. If it lets people see how data flows and who depends on whom, it's a success.
 
-> You don't have to memorize these characters from scratch. **The best way to learn is to "copy" straight from this repo's templates** — see how the [AI chat product template (Chinese)](/templates/ai-chat-product/) overview uses boxes and arrows, imitate it, and a few tries in you'll be fluent.
+> You don't have to memorize these characters from scratch. **The best way to learn is to "copy" straight from this repo's templates** — see how the [AI chat product template](/en/templates/ai-chat-product/) overview uses boxes and arrows, imitate it, and a few tries in you'll be fluent.
 
 ---
 
@@ -314,7 +314,7 @@ A few small reminders:
 Watching without practicing won't teach you to draw. Here's a concrete exercise, and **I strongly recommend actually doing it:**
 
 > **Exercise:**
-> 1. Open [`templates/` (Chinese)](/templates/) and pick **any** system that interests you (e.g. e-commerce, social feed, real-time chat…).
+> 1. Open [`templates/`](/en/templates/) and pick **any** system that interests you (e.g. e-commerce, social feed, real-time chat…).
 > 2. **Don't look at its overview diagram yet!** Read only its opening "one-line positioning" and "core needs," then **draw, by yourself**, a **Context diagram** for it: one box in the middle is this system, and around it are the users and the external systems it interacts with. Pen and paper or ASCII, either is fine.
 > 3. As you draw, deliberately apply this chapter's principles: do the boxes use just one abstraction level? Are the arrows labeled with direction and meaning? Did you encircle the system boundary?
 > 4. Once drawn, compare against the template's **architecture overview diagram** (which is a Container diagram).

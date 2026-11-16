@@ -212,8 +212,9 @@ function initCourseFilter(root: HTMLElement, list: HTMLElement): void {
     }
 
     if (summary) {
-      const tagSummary = state.tags.length > 1 ? ` · ${state.tags.length} 个标签` : ''
-      summary.textContent = `显示 ${visibleCount} 门${tagSummary}`
+      const english = document.documentElement.lang === 'en'
+      const tagSummary = state.tags.length > 1 ? (english ? ` · ${state.tags.length} tags` : ` · ${state.tags.length} 个标签`) : ''
+      summary.textContent = english ? `Showing ${visibleCount} ${visibleCount === 1 ? 'course' : 'courses'}${tagSummary}` : `显示 ${visibleCount} 门${tagSummary}`
     }
 
     const hasFilter = state.track !== '' || state.tags.length > 0

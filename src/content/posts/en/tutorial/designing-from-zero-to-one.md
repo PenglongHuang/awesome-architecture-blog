@@ -1,14 +1,14 @@
 ---
 title: "07 · Designing a System from 0 to 1 (a Hands-On Methodology)"
-description: "The previous six chapters gave you a mindset and a toolbox; this chapter twists them into a single follow-along pipeline that produces an architecture — and walks you through it end to end with a real example."
-locale: "en"
-translationKey: "tutorial/designing-from-zero-to-one"
-sourceHash: "6c8ad0c9c9f5bda15f690457cc0ef35d0281ad74a877dd15e7bb211fd7a8b29e"
+description: "Follow an eight-step method from requirements and constraints to a concrete architecture, using a worked example."
 series: "foundations"
 order: 7
 pubDate: 2026-01-27
 kind: "tutorial"
-tags: ["Foundations","Architecture"]
+tags: ["Foundations","Tutorials"]
+locale: "en"
+translationKey: "tutorial/designing-from-zero-to-one"
+sourceHash: "6c8ad0c9c9f5bda15f690457cc0ef35d0281ad74a877dd15e7bb211fd7a8b29e"
 ---
 
 > The previous six chapters gave you a mindset and a toolbox; this chapter twists them into a single **follow-along pipeline that produces an architecture** — and walks you through it end to end with a real example.
@@ -142,7 +142,7 @@ This step does two things:
 1. **Draw the conceptual model**: what are the core entities? what relationships among them? (User — Post — Follow relationship — Like… draw it with the plainest boxes and lines, no CREATE TABLE statements)
 2. **Pick a store shape for each kind of data**: recall the key line of [05](/en/tutorial/data-and-state/) — **different data has different "access shapes," so it should go into different store types.**
 
-Following the thinking of that table in [Section 7 of the AI chat product template (Chinese)](/templates/ai-chat-product/), you should be able to fill in a row like this for each kind of data:
+Following the thinking of that table in [Section 7 of the AI chat product template](/en/templates/ai-chat-product/), you should be able to fill in a row like this for each kind of data:
 
 | Data | Access shape | Suitable store type |
 |---|---|---|
@@ -168,7 +168,7 @@ Now, and only now, is it time to "draw boxes." But follow the order of the [03 C
 
 ### Step ⑥: Dive into key components
 
-With the first coarse diagram done, pick **1–2 "soul parts"** and drill in — not every box deserves deep digging, only the one that decides the system's success or failure. (Remember the line from the [AI chat product (Chinese)](/templates/ai-chat-product/): the soul part is the inference service, and everything else exists to "protect and feed this GPU." Every system has its "GPU.")
+With the first coarse diagram done, pick **1–2 "soul parts"** and drill in — not every box deserves deep digging, only the one that decides the system's success or failure. (Remember the line from the [AI chat product](/en/templates/ai-chat-product/): the soul part is the inference service, and everything else exists to "protect and feed this GPU." Every system has its "GPU.")
 
 When diving in, this is exactly where the [04 ten core patterns](/en/tutorial/ten-core-patterns/) come into play: this component needs decoupling? maybe **event-driven**; reads and writes differ too much? maybe go **CQRS**; need to withstand bursty traffic? insert a **message queue** in the middle to shave the peak. **Patterns aren't for showing off — they're for answering "the specific problem this component faces."**
 
@@ -411,9 +411,9 @@ This is exactly the line "**architecture grows**" among the repo's three reading
 
 ## 📌 Real-world cases: verify your reasoning against a template
 
-This chapter designed a URL shortener from 0 in eight steps. **Now go verify**: open this repo's [URL shortener template (Chinese)](/templates/url-shortener/) and compare against its Section 8 (key decisions) and Section 9 (bottlenecks) — see whether the trade-offs you made while reasoning match. If they don't, no matter — **as long as you can articulate why each is what it is, you're thinking like an architect.**
+This chapter designed a URL shortener from 0 in eight steps. **Now go verify**: open this repo's [URL shortener template](/en/templates/url-shortener/) and compare against its Section 8 (key decisions) and Section 9 (bottlenecks) — see whether the trade-offs you made while reasoning match. If they don't, no matter — **as long as you can articulate why each is what it is, you're thinking like an architect.**
 
-> Any [template (Chinese)](/templates/) can be used this way: cover the second half, reason it out yourself with the eight steps first, then compare.
+> Any [template](/en/templates/) can be used this way: cover the second half, reason it out yourself with the eight steps first, then compare.
 
 ---
 
@@ -447,7 +447,7 @@ This chapter designed a URL shortener from 0 in eight steps. **Now go verify**: 
 
 ## Now, it's your turn
 
-> **Hands-on exercise**: open [`templates/` (Chinese)](/templates/), **pick any system** (e-commerce, social feed, real-time chat, video streaming…), **cover Sections 4–9 first**, and reason it out from scratch with these eight steps yourself — especially don't skip Step ②; tally its QPS and storage volume by hand.
+> **Hands-on exercise**: open [`templates/`](/en/templates/), **pick any system** (e-commerce, social feed, real-time chat, video streaming…), **cover Sections 4–9 first**, and reason it out from scratch with these eight steps yourself — especially don't skip Step ②; tally its QPS and storage volume by hand.
 >
 > Once you've reasoned it out, open the template and compare: did you find the "soul part" right? Do the bottlenecks you estimated match what its Section 9 says? Are the trade-offs it makes in Section 8 the same as yours? **It's fine if they differ — as long as you can articulate why each is what it is, you're already thinking like an architect.**
 
@@ -462,4 +462,4 @@ How do you keep these precious "whys," so the architecture can grow healthily al
 - Previous chapter: [06 · Quality Attributes & Trade-offs](/en/tutorial/quality-attributes-and-tradeoffs/) — the basis for judging Steps ⑦⑧ "find bottlenecks, list trade-offs" is all here
 - Next chapter: [08 · Architecture Decision Records (ADR) & Evolution](/en/tutorial/adr-and-evolution/) — record solemnly the "whys" you uttered in Step ⑧
 - Companion: [02 · The Architect's Thinking Framework](/en/tutorial/architects-thinking-framework/) (Steps ①③), [03 · Reading and Drawing Architecture Diagrams Well](/en/tutorial/reading-and-drawing-diagrams/) (Step ⑤), [05 · Data & State](/en/tutorial/data-and-state/) (Step ④)
-- Comparison practice: **Sections 3, 4, 8, 9** of every template under [`templates/` (Chinese)](/templates/) are exactly the products of these eight steps; the [AI chat product template (Chinese)](/templates/ai-chat-product/) is a fine example of walking the full process
+- Comparison practice: **Sections 3, 4, 8, 9** of every template under [`templates/`](/en/templates/) are exactly the products of these eight steps; the [AI chat product template](/en/templates/ai-chat-product/) is a fine example of walking the full process

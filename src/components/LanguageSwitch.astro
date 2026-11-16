@@ -3,11 +3,13 @@ import type { Locale } from '../lib/i18n.mjs'
 import { messagesFor } from '../lib/i18n.mjs'
 interface Props { locale: Locale; alternates: Partial<Record<Locale, string>> }
 const { locale, alternates } = Astro.props
-const target = locale === 'en' ? 'zh-CN' : 'en'
 const t = messagesFor(locale)
+const languages = [{ id: 'zh-CN' as const, short: '中', name: '简体中文' }, { id: 'en' as const, short: 'EN', name: 'English' }]
 ---
 <nav class="language-switch" aria-label={t.languageNavigation} data-pagefind-ignore>
-  {alternates[target]
-    ? <a href={alternates[target]} lang={target} hreflang={target}>{target === 'en' ? 'English' : '简体中文'}</a>
-    : <span class="language-unavailable" title={t.noTranslation}>{t.noTranslation}</span>}
+  {languages.map(language => language.id === locale
+    ? <span class="language-switch__option is-current" lang={language.id} aria-current="true" aria-label={language.name} title={language.name}>{language.short}</span>
+    : alternates[language.id]
+      ? <a class="language-switch__option" href={alternates[language.id]} lang={language.id} hreflang={language.id} aria-label={language.name} title={language.name} data-language-link>{language.short}</a>
+      : <span class="language-switch__option is-unavailable" title={t.noTranslation} aria-label={t.noTranslation}>{language.short}</span>)}
 </nav>
