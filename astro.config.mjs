@@ -4,24 +4,13 @@ import { resolve, sep, extname } from 'node:path'
 import { defineConfig } from 'astro/config'
 import { unified } from '@astrojs/markdown-remark'
 import sitemap from '@astrojs/sitemap'
+import canonicalSitemap from './src/plugins/canonical-sitemap.mjs'
+import { createSiteUrls } from './src/lib/site-urls.mjs'
 import remarkQuiz from './src/plugins/remark-quiz.mjs'
 import remarkBaseLinks from './src/plugins/remark-base-links.mjs'
 import remarkAsciiFigure from './src/plugins/remark-ascii-figure.mjs'
 import remarkCjkStrong from './src/plugins/remark-cjk-strong.mjs'
 import rehypeTableWrap from './src/plugins/rehype-table-wrap.mjs'
-
-function normalizeBase(value) {
-  const raw = (value ?? '').trim()
-  if (!raw || raw === '/') return '/'
-  return `/${raw.replace(/^\/+|\/+$/g, '')}/`
-}
-
-function normalizeSite(value) {
-  const raw = (value ?? '').trim()
-  if (!raw) return 'https://penglonghuang.github.io'
-  if (/^https?:\/\//i.test(raw)) return raw.replace(/\/$/, '')
-  return `https://${raw.replace(/^\/+/, '').replace(/\/$/, '')}`
-}
 
 // Astro's dev server does not resolve public/ directory indexes; static hosts do.
 // Keep course URLs clean in production and teach only the dev server the same rule.
@@ -72,8 +61,14 @@ function developmentSearchIndex() {
   }
 }
 
-const BASE = normalizeBase(process.env.BASE_PATH || '/awesome-architecture-blog/')
-const SITE = normalizeSite(process.env.SITE_URL)
+const urls = createSiteUrls({
+  site: process.env.SITE_URL,
+  base: process.env.BASE_PATH,
+  canonicalSite: process.env.PUBLIC_CANONICAL_SITE,
+  canonicalBase: process.env.PUBLIC_CANONICAL_BASE,
+})
+const BASE = urls.base
+const SITE = urls.site
 
 export default defineConfig({
   site: SITE,
@@ -81,20 +76,10 @@ export default defineConfig({
   trailingSlash: 'always',
   vite: {
     plugins: [courseDirectoryIndex(), developmentSearchIndex()],
-    resolve: {
-      alias: [
-        // Astro 7's content sync runs inside a Vite 8 (rolldown) module-runner
-        // that inlines CJS packages raw and dies with "require is not defined".
-        // These shims (regenerate with scripts/build-cjs-shims.mjs) give the
-        // runner self-contained ESM builds instead.
-        { find: /^picomatch$/, replacement: fileURLToPath(new URL('./scripts/shims/picomatch.mjs', import.meta.url)) },
-        { find: /^yaml$/, replacement: fileURLToPath(new URL('./scripts/shims/yaml.mjs', import.meta.url)) },
-        { find: /^eventemitter3$/, replacement: fileURLToPath(new URL('./scripts/shims/eventemitter3.mjs', import.meta.url)) },
-      ],
-    },
   },
   integrations: [
     sitemap({
+      serialize: item => ({ ...item, url: urls.canonical(new URL(item.url).pathname) }),
       customPages: [
         new URL(`${BASE}learning/litellm/`, SITE).href,
         new URL(`${BASE}learning/llm2jev/`, SITE).href,
@@ -104,6 +89,7 @@ export default defineConfig({
         new URL(`${BASE}learning/pi/architecture.html`, SITE).href,
       ],
     }),
+    canonicalSitemap(urls.canonical),
   ],
   markdown: {
     syntaxHighlight: false,

@@ -8,4 +8,6 @@ scripts/import-report.json
 .env
 .taste-skill/
 docs/private/
-docs/
+docs/*
+!docs/content-authoring.md
+!docs/maintenance.md

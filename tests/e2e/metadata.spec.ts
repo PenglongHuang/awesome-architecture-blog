@@ -1,0 +1,21 @@
+import { test, expect } from '@playwright/test'
+
+test('canonical, structured data, RSS and sitemap agree', async ({ page, request }) => {
+  await page.goto('tutorial/why-architecture-first/')
+  const canonical = await page.locator('link[rel="canonical"]').getAttribute('href')
+  expect(canonical).toBeTruthy()
+  const schemas = await page.locator('script[type="application/ld+json"]').allTextContents()
+  const article = schemas.flatMap(text => { const value = JSON.parse(text); return Array.isArray(value) ? value : [value] }).find(value => value['@type'] === 'BlogPosting')
+  expect(article.url).toBe(canonical)
+  expect(await page.locator('meta[property="og:url"]').getAttribute('content')).toBe(canonical)
+  const rss = await request.get('rss.xml')
+  expect(rss.ok()).toBe(true)
+  expect(await rss.text()).toContain(canonical!)
+  const robots = await request.get('robots.txt')
+  expect(await robots.text()).toContain(new URL('sitemap-index.xml', canonical!.replace(/tutorial\/why-architecture-first\/$/, '')).href)
+  const sitemapIndex = await request.get('sitemap-index.xml')
+  expect(sitemapIndex.ok()).toBe(true)
+  expect(await sitemapIndex.text()).toContain(canonical!.replace(/tutorial\/why-architecture-first\/$/, 'sitemap-0.xml'))
+  const sitemap = await request.get('sitemap-0.xml')
+  expect(await sitemap.text()).toContain(canonical!)
+})

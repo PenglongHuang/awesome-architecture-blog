@@ -58,7 +58,7 @@ const featured = SERIES.filter(s => s.featured).sort((a, b) => (a.featuredOrder 
         </div>}
       </div>
       <div class="featured-carousel">
-        <div class="featured-track" data-featured-track tabIndex={0} aria-label="精选内容列表">
+        <div class="featured-track" data-featured-track tabindex={0} aria-label="精选内容列表">
           {featured.map(s => {
             const n = seriesCount[s.id] ?? 0
             return <a class="featured-card" href={seriesHref(s.id)}>

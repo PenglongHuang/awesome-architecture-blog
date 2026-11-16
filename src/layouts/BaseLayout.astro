@@ -2,6 +2,7 @@
 import '../styles/global.css'
 import Masthead from '../components/Masthead.astro'
 import Footer from '../components/Footer.astro'
+import { canonicalUrl } from '../lib/urls'
 
 interface Props {
   title: string
@@ -23,24 +24,12 @@ const siteName = 'AI架构师之路'
 const fullTitle = title === siteName ? title : `${title} · ${siteName}`
 const base = import.meta.env.BASE_URL
 const path = Astro.url.pathname.replace(base, '/')
-const overrideBase = import.meta.env.PUBLIC_CANONICAL_BASE
-const overrideSite = import.meta.env.PUBLIC_CANONICAL_SITE
-const useOverride = Boolean(overrideBase && overrideSite)
-const rawCanonicalBase = useOverride ? overrideBase : base
-const canonicalBase = rawCanonicalBase === '/' ? '' : `/${String(rawCanonicalBase).split('/').filter(Boolean).join('/')}`
-const rawCanonicalSite = String(useOverride ? overrideSite : (Astro.site || 'https://penglonghuang.github.io'))
-const canonicalSite = rawCanonicalSite.endsWith('/') ? rawCanonicalSite.slice(0, -1) : rawCanonicalSite
-const pagePath = path.startsWith('/') ? path : `/${path}`
-const canonical = new URL(`${canonicalBase}${pagePath}`, canonicalSite).href
-const imageBase = canonicalBase
-const imagePath = image ? image.split('/').filter(Boolean).join('/') : 'og-default.svg'
-const imageUrl = image && (image.startsWith('https://') || image.startsWith('http://'))
-  ? image
-  : new URL(`${imageBase}/${imagePath}`, canonicalSite).href
+const canonical = canonicalUrl(Astro.url.pathname)
+const imageUrl = image && /^https?:\/\//.test(image) ? image : canonicalUrl(image || 'og-default.svg')
 const isSearchPage = path === '/search/' || path === '/search'
 const shouldNoindex = noindex || isSearchPage || path === '/404.html'
-const siteRoot = new URL(`${canonicalBase}/`, canonicalSite).href
-const logoUrl = new URL(`${imageBase}/brand-mark.svg`, canonicalSite).href
+const siteRoot = canonicalUrl('/')
+const logoUrl = canonicalUrl('brand-mark.svg')
 const siteStructuredData = JSON.stringify({
   '@context': 'https://schema.org',
   '@graph': [

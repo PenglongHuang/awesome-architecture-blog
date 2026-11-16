@@ -1,6 +1,10 @@
-const BASE = import.meta.env.BASE_URL
+import { createSiteUrls } from './site-urls.mjs'
 
-export function href(path: string): string {
-  if (/^[a-z][a-z0-9+.-]*:/i.test(path) || path.startsWith('//')) return path
-  return `${BASE}${path.replace(/^\//, '')}`
-}
+export const siteUrls = createSiteUrls({
+  site: import.meta.env.SITE_URL,
+  base: import.meta.env.BASE_URL,
+  canonicalSite: import.meta.env.PUBLIC_CANONICAL_SITE,
+  canonicalBase: import.meta.env.PUBLIC_CANONICAL_BASE,
+})
+export const href = siteUrls.href
+export const canonicalUrl = siteUrls.canonical

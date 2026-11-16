@@ -4,7 +4,11 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const COURSE_ROOT =
-  process.argv[2] || process.env.COURSE_SRC || 'D:/hpl/projects/architect/courses'
+  process.argv[2] || process.env.COURSE_SRC
+if (!COURSE_ROOT) {
+  console.error('Pass the courses directory as the first argument, or set COURSE_SRC.')
+  process.exit(1)
+}
 const source = path.join(COURSE_ROOT, 'litellm-learning/litellm-course.html')
 const destDir = path.join(ROOT, 'public/learning/litellm')
 const dest = path.join(destDir, 'index.html')

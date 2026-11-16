@@ -19,6 +19,11 @@ function walk(dir, acc = []) {
 }
 
 const errors = []
+if (SERIES_IDS.size !== SERIES.length) errors.push('series.json: duplicate series IDs')
+for (const series of SERIES) {
+  if (!['tutorial', 'templates', 'cases'].includes(series.channel)) errors.push(`series.json: invalid channel for ${series.id}`)
+}
+
 const posts = walk(POSTS).map((file) => {
   const rel = path.relative(POSTS, file).split(path.sep).join('/')
   const parsed = matter(fs.readFileSync(file, 'utf8'))
@@ -50,6 +55,9 @@ for (const post of posts) {
   if (!CHANNEL_OF_KIND[d.kind]) errors.push(`${post.rel}: invalid kind ${d.kind}`)
 
   const channel = CHANNEL_OF_KIND[d.kind] ?? 'unknown'
+  const series = SERIES.find(s => s.id === d.series)
+  if (series && series.channel !== channel) errors.push(`${post.rel}: kind ${d.kind} disagrees with series channel ${series.channel}`)
+  if (post.rel.split('/')[0] !== channel) errors.push(`${post.rel}: directory disagrees with channel ${channel}`)
   const slug = post.rel.split('/').pop().replace(/\.md$/, '')
   const key = `${channel}/${slug}`
   if (slugs.has(key)) errors.push(`${post.rel}: duplicate slug ${key}`)
