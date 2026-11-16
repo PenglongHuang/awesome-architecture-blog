@@ -1,5 +1,6 @@
 import raw from './series.json'
 import { z } from 'astro/zod'
+import type { Locale } from '../lib/i18n.mjs'
 
 export type Channel = 'tutorial' | 'templates' | 'cases'
 
@@ -14,6 +15,7 @@ export const seriesSchema = z.object({
   featured: z.boolean().optional(),
   featuredOrder: z.number().int().positive().optional(),
   featuredTags: z.array(z.string().trim().min(1)).optional(),
+  translations: z.object({ en: z.object({ title: z.string().trim().min(1), description: z.string().trim().min(1) }).optional() }).optional(),
 })
 export type SeriesDef = z.infer<typeof seriesSchema>
 const seriesListSchema = z.array(seriesSchema).min(1).refine(
@@ -27,4 +29,11 @@ export const CHANNELS: Record<Channel, { title: string; description: string; hre
   tutorial: { title: '系列教程', description: '按系列组织的架构教程，由浅入深读到 AI 时代的工程判断。', href: '/tutorial/' },
   templates: { title: '架构设计', description: '真实系统的架构设计，沿着组件、数据流和设计取舍建立理解。', href: '/templates/' },
   cases: { title: '系统设计', description: '端到端的系统设计推演与架构取舍。', href: '/cases/' },
+}
+
+export function localizedSeries(series: SeriesDef, locale: Locale = 'zh-CN'): SeriesDef {
+  if (locale === 'zh-CN') return series
+  const translation = series.translations?.en
+  if (!translation) throw new Error(`Series ${series.id} has no English metadata`)
+  return { ...series, ...translation }
 }

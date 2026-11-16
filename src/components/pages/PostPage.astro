@@ -7,29 +7,34 @@ import Comments from '../Comments.astro'
 import RelatedKnowledge from '../RelatedKnowledge.astro'
 import StructuredData from '../StructuredData.astro'
 import type { Post } from '../../lib/posts'
-import { getSeries, postsInSeries, seriesHref, postHref } from '../../lib/posts'
+import { getSeries, postsInSeries, seriesHref, postHref, postAlternates, postsForLocale } from '../../lib/posts'
+import { messagesFor, localePath } from '../../lib/i18n.mjs'
 import { CHANNELS } from '../../data/series'
-import { canonicalUrl } from '../../lib/urls'
+import { canonicalUrl, href } from '../../lib/urls'
 import { readingMinutes } from '../../lib/reading-time'
 
 interface Props { post: Post }
 const { post } = Astro.props
 const { Content, headings } = await render(post)
-const series = getSeries(post.data.series)
-const channelLabel = CHANNELS[series.channel].title
+const locale = post.data.locale
+const t = messagesFor(locale)
+const series = getSeries(post.data.series, locale)
+const channelLabel = locale === 'en' ? (series.channel === 'tutorial' ? t.tutorials : t[series.channel]) : CHANNELS[series.channel].title
 const showSeriesCrumb = series.title !== channelLabel && series.title !== `${channelLabel}篇`
-const all = await getCollection('posts')
-const siblings = postsInSeries(all, post.data.series)
+const collection = await getCollection('posts')
+const alternates = postAlternates(post, collection)
+const all = postsForLocale(collection, locale)
+const siblings = postsInSeries(all, post.data.series, locale)
 const idx = siblings.findIndex((p) => p.id === post.id)
 const prev = idx > 0 ? siblings[idx - 1] : undefined
 const next = idx >= 0 && idx < siblings.length - 1 ? siblings[idx + 1] : undefined
 const date = post.data.pubDate.toISOString().slice(0, 10)
 const modifiedDate = (post.data.updatedDate ?? post.data.pubDate).toISOString().slice(0, 10)
 const pageUrl = canonicalUrl(postHref(post))
-const seriesUrl = canonicalUrl(seriesHref(series.id))
-const siteRoot = canonicalUrl('/')
+const seriesUrl = canonicalUrl(seriesHref(series.id, locale))
+const siteRoot = canonicalUrl(localePath('/', locale))
 const imageUrl = post.data.cover && /^https?:\/\//.test(post.data.cover)
-  ? post.data.cover : canonicalUrl(post.data.cover || 'og-default.svg')
+  ? post.data.cover : canonicalUrl(post.data.cover || t.ogImage)
 const articleSchema = {
   '@context': 'https://schema.org',
   '@type': 'BlogPosting',
@@ -40,13 +45,14 @@ const articleSchema = {
   image: [imageUrl],
   datePublished: date,
   dateModified: modifiedDate,
-  inLanguage: 'zh-CN',
+  inLanguage: locale,
   articleSection: series.title,
   keywords: post.data.tags,
   isPartOf: { '@type': 'CollectionPage', name: series.title, url: seriesUrl },
   publisher: {
     '@type': 'Organization',
-    name: 'AI架构师之路',
+    '@id': `${canonicalUrl('/')}#organization`,
+    name: t.siteName,
     url: siteRoot,
     logo: { '@type': 'ImageObject', url: canonicalUrl('brand-mark.svg') },
   },
@@ -57,14 +63,16 @@ const breadcrumbSchema = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
   itemListElement: [
-    { '@type': 'ListItem', position: 1, name: '首页', item: siteRoot },
-    { '@type': 'ListItem', position: 2, name: channelLabel, item: canonicalUrl(`${series.channel}/`) },
+    { '@type': 'ListItem', position: 1, name: t.home, item: siteRoot },
+    { '@type': 'ListItem', position: 2, name: channelLabel, item: canonicalUrl(localePath(`/${series.channel}/`, locale)) },
     ...(showSeriesCrumb ? [{ '@type': 'ListItem', position: 3, name: series.title, item: seriesUrl }] : []),
     { '@type': 'ListItem', position: showSeriesCrumb ? 4 : 3, name: post.data.title, item: pageUrl },
   ],
 }
 ---
 <BaseLayout
+  locale={locale}
+  alternates={alternates}
   title={post.data.title}
   description={post.data.description}
   image={post.data.cover}
@@ -83,30 +91,31 @@ const breadcrumbSchema = {
         {showSeriesCrumb && (
           <>
             {' / '}
-            <a href={seriesHref(series.id)}><b>{series.title}</b></a>
+            <a href={seriesHref(series.id, locale)}><b>{series.title}</b></a>
           </>
         )}
-        {' / '}第 {post.data.order} 篇
+        {' / '}{locale === 'en' ? `Chapter ${post.data.order}` : `第 ${post.data.order} 篇`}
       </div>
       <h1>{post.data.title}</h1>
+      {!alternates.en && locale === 'zh-CN' && <p class="translation-note" data-pagefind-ignore>本文暂无英文版。<a href={href('/en/tutorial/')}>浏览英文试点</a></p>}
       {!(post.body ?? '').trimStart().startsWith('>') && <p class="dek">{post.data.description}</p>}
       <div class="article__meta" data-pagefind-ignore>
         <time datetime={date}>{date}</time>
-        {post.data.updatedDate && post.data.updatedDate.toISOString().slice(0, 10) !== date && <span>更新于 {modifiedDate}</span>}
-        {post.data.author && <span>作者 {post.data.author}</span>}
-        {post.data.editor && <span>编辑 {post.data.editor}</span>}
-        <span>约 {readingMinutes(post.body ?? '')} 分钟阅读</span>
-        <span>系列 {post.data.order} / {siblings.length}</span>
+        {post.data.updatedDate && post.data.updatedDate.toISOString().slice(0, 10) !== date && <span>{t.updated} {modifiedDate}</span>}
+        {post.data.author && <span>{t.author} {post.data.author}</span>}
+        {post.data.editor && <span>{t.editor} {post.data.editor}</span>}
+        <span>{locale === 'en' ? `${readingMinutes(post.body ?? '', locale)} min read` : `约 ${readingMinutes(post.body ?? '', locale)} 分钟阅读`}</span>
+        <span>{t.series} {post.data.order} / {siblings.length}</span>
       </div>
-      <div class="reading-controls" data-pagefind-ignore><button type="button" data-reading-size aria-pressed="false">大字阅读</button><button type="button" data-reading-focus aria-pressed="false">专注阅读</button></div>
+      <div class="reading-controls" data-pagefind-ignore><button type="button" data-reading-size aria-pressed="false">{t.largeText}</button><button type="button" data-reading-focus aria-pressed="false">{t.focus}</button></div>
       </header>
-      <details class="toc-mobile" data-pagefind-ignore><summary>本页目录</summary><Toc headings={headings} /></details>
+      <details class="toc-mobile" data-pagefind-ignore><summary>{t.contents}</summary><Toc headings={headings} locale={locale} /></details>
       <div class="prose"><Content /></div>
       <RelatedKnowledge post={post} allPosts={all} />
-      <PostNav prev={prev} next={next} />
-      <Comments />
+      <PostNav prev={prev} next={next} locale={locale} />
+      <Comments locale={locale} />
     </article>
-    <div class="toc-desktop"><Toc headings={headings} /></div>
+    <div class="toc-desktop"><Toc headings={headings} locale={locale} /></div>
   </div>
 </BaseLayout>
 <script>

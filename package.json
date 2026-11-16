@@ -15,7 +15,8 @@
     "validate": "node scripts/validate-content.mjs",
     "deploy:server": "bash scripts/deploy-server.sh",
     "check": "astro check",
-    "check:links": "node scripts/check-built-links.mjs"
+    "check:links": "node scripts/check-built-links.mjs",
+    "translation:hash": "node scripts/translation-hash.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.3.0",

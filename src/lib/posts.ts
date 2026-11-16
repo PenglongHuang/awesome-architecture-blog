@@ -1,11 +1,12 @@
 import type { CollectionEntry } from 'astro:content'
-import { SERIES, type Channel } from '../data/series'
+import { SERIES, localizedSeries, type Channel } from '../data/series'
 import { href } from './urls'
+import { localePath, type Locale } from './i18n.mjs'
 
 export type Post = CollectionEntry<'posts'>
 
-export function getSeries(id: string) {
-  return SERIES.find((s) => s.id === id)!
+export function getSeries(id: string, locale: Locale = 'zh-CN') {
+  return localizedSeries(SERIES.find((s) => s.id === id)!, locale)
 }
 
 export function postSlug(post: Post): string {
@@ -19,12 +20,12 @@ export function postChannel(post: Post): Channel {
 }
 
 export function postHref(post: Post): string {
-  return href(`/${postChannel(post)}/${postSlug(post)}/`)
+  return href(localePath(`/${postChannel(post)}/${postSlug(post)}/`, post.data.locale))
 }
 
-export function seriesHref(seriesId: string): string {
-  const s = getSeries(seriesId)
-  return s.channel === 'cases' ? href('/cases/') : href(`/${s.channel}/${s.id}/`)
+export function seriesHref(seriesId: string, locale: Locale = 'zh-CN'): string {
+  const s = getSeries(seriesId, locale)
+  return href(localePath(s.channel === 'cases' ? '/cases/' : `/${s.channel}/${s.id}/`, locale))
 }
 
 export function sortByOrder(posts: Post[]): Post[] {
@@ -35,6 +36,19 @@ export function sortByDateDesc(posts: Post[]): Post[] {
   return [...posts].sort((a, b) => +b.data.pubDate - +a.data.pubDate)
 }
 
-export function postsInSeries(posts: Post[], seriesId: string): Post[] {
-  return sortByOrder(posts.filter((p) => p.data.series === seriesId))
+export function postsInSeries(posts: Post[], seriesId: string, locale: Locale = 'zh-CN'): Post[] {
+  return sortByOrder(posts.filter((p) => p.data.series === seriesId && p.data.locale === locale))
+}
+
+export function postsForLocale(posts: Post[], locale: Locale = 'zh-CN'): Post[] {
+  return posts.filter(post => post.data.locale === locale)
+}
+
+export function translationKey(post: Post): string {
+  return post.data.translationKey ?? `${postChannel(post)}/${postSlug(post)}`
+}
+
+export function postAlternates(post: Post, all: Post[]): Partial<Record<Locale, string>> {
+  return Object.fromEntries(all.filter(candidate => translationKey(candidate) === translationKey(post))
+    .map(candidate => [candidate.data.locale, postHref(candidate)]))
 }

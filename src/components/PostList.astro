@@ -11,7 +11,7 @@ const title = (p: Post) => (stripOrder ? p.data.title.replace(/^(案例\s*)?\d+\
     <li>
       <span class="post-list__date">{fmt(p.data.pubDate)}</span>
       <a class="post-list__title" href={postHref(p)}>{title(p)}</a>
-      {showSeries && <span class="post-list__series">{getSeries(p.data.series).title}</span>}
+      {showSeries && <span class="post-list__series">{getSeries(p.data.series, p.data.locale).title}</span>}
     </li>
   ))}
 </ul>

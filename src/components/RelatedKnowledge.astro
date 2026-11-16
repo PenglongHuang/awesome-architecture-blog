@@ -1,4 +1,5 @@
 ---
+import { messagesFor } from '../lib/i18n.mjs'
 import type { Post } from '../lib/posts'
 import { getSeries, postHref } from '../lib/posts'
 
@@ -7,9 +8,10 @@ interface Props {
   allPosts: Post[]
 }
 const { post, allPosts } = Astro.props
+const t = messagesFor(post.data.locale)
 const currentTags = new Set(post.data.tags)
 const related = allPosts
-  .filter((candidate) => candidate.id !== post.id)
+  .filter((candidate) => candidate.id !== post.id && candidate.data.locale === post.data.locale)
   .map((candidate) => {
     const sharedTags = candidate.data.tags.filter((tag) => currentTags.has(tag)).length
     const sameSeries = candidate.data.series === post.data.series
@@ -21,12 +23,12 @@ const related = allPosts
 ---
 {related.length > 0 && (
   <section class="related-knowledge prose" data-pagefind-ignore aria-labelledby="related-knowledge-title">
-    <h2 id="related-knowledge-title">延伸阅读</h2>
+    <h2 id="related-knowledge-title">{t.related}</h2>
     <ul>
       {related.map(({ post: item, sameSeries, sharedTags }) => (
         <li>
           <a href={postHref(item)}>{item.data.title}</a>
-          <span> · {sameSeries ? getSeries(item.data.series).title : sharedTags ? '相关主题' : '继续阅读'}</span>
+          <span> · {sameSeries ? getSeries(item.data.series, item.data.locale).title : sharedTags ? t.relatedTopic : t.continueReading}</span>
         </li>
       ))}
     </ul>

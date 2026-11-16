@@ -4,27 +4,31 @@ import BaseLayout from '../../layouts/BaseLayout.astro'
 import PostList from '../PostList.astro'
 import StructuredData from '../StructuredData.astro'
 import { getSeries, postsInSeries, seriesHref, postHref } from '../../lib/posts'
+import { canonicalUrl } from '../../lib/urls'
+import { messagesFor, localePath, type Locale } from '../../lib/i18n.mjs'
 import { CHANNELS } from '../../data/series'
 
-interface Props { seriesId: string }
-const { seriesId } = Astro.props
-const series = getSeries(seriesId)
+interface Props { seriesId: string; locale?: Locale }
+const { seriesId, locale = 'zh-CN' } = Astro.props
+const t = messagesFor(locale)
+const series = getSeries(seriesId, locale)
 const all = await getCollection('posts')
-const posts = postsInSeries(all, seriesId)
-const canonicalOrigin = String(import.meta.env.PUBLIC_CANONICAL_SITE || Astro.site || Astro.url.origin)
-const canonicalPrefix = import.meta.env.PUBLIC_CANONICAL_BASE || import.meta.env.BASE_URL
-const canonicalize = (url: string) => new URL(url.replace(import.meta.env.BASE_URL, canonicalPrefix), canonicalOrigin).href
-const seriesUrl = canonicalize(seriesHref(seriesId))
-const siteRoot = new URL(canonicalPrefix, canonicalOrigin).href
-const channelUrl = new URL(`${canonicalPrefix}${series.channel}/`, canonicalOrigin).href
+const posts = postsInSeries(all, seriesId, locale)
+const seriesUrl = canonicalUrl(seriesHref(seriesId, locale))
+const siteRoot = canonicalUrl(localePath('/', locale))
+const channelUrl = canonicalUrl(localePath(`/${series.channel}/`, locale))
+const alternates = {
+  'zh-CN': seriesHref(seriesId),
+  ...(series.translations?.en && all.some(post => post.data.locale === 'en' && post.data.series === seriesId) ? { en: seriesHref(seriesId, 'en') } : {}),
+}
 const collectionSchema = {
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
   name: series.title,
   description: series.description,
   url: seriesUrl,
-  inLanguage: 'zh-CN',
-  isPartOf: { '@type': 'WebSite', name: 'AI架构师之路', url: siteRoot },
+  inLanguage: locale,
+  isPartOf: { '@type': 'WebSite', name: t.siteName, url: siteRoot },
   mainEntity: {
     '@type': 'ItemList',
     numberOfItems: posts.length,
@@ -32,7 +36,7 @@ const collectionSchema = {
       '@type': 'ListItem',
       position: index + 1,
       name: post.data.title,
-      url: canonicalize(postHref(post)),
+      url: canonicalUrl(postHref(post)),
     })),
   },
 }
@@ -40,20 +44,20 @@ const breadcrumbSchema = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
   itemListElement: [
-    { '@type': 'ListItem', position: 1, name: '首页', item: siteRoot },
-    { '@type': 'ListItem', position: 2, name: CHANNELS[series.channel].title, item: channelUrl },
+    { '@type': 'ListItem', position: 1, name: t.home, item: siteRoot },
+    { '@type': 'ListItem', position: 2, name: locale === 'en' ? (series.channel === 'tutorial' ? t.tutorials : t[series.channel]) : CHANNELS[series.channel].title, item: channelUrl },
     { '@type': 'ListItem', position: 3, name: series.title, item: seriesUrl },
   ],
 }
 ---
-<BaseLayout title={series.title} description={series.description}>
+<BaseLayout locale={locale} alternates={alternates} title={series.title} description={series.description}>
   <StructuredData slot="head" data={[collectionSchema, breadcrumbSchema]} />
   <div class="page-head frame">
     <div class="grid">
-      <p class="page-head__side">系列 · {posts.length} 篇</p>
+      <p class="page-head__side">{locale === 'en' ? `Series · ${posts.length} articles` : `系列 · ${posts.length} 篇`}</p>
       <h1 class="page-head__title">{series.title}</h1>
       <p class="page-head__intro">{series.description}</p>
-      <p class="page-head__side">本专题共 {posts.length} 篇，按顺序阅读可从基础概念逐步进入设计与实践。</p>
+      <p class="page-head__side">{locale === 'en' ? `Read these ${posts.length} chapters in order to move from foundational concepts to design and practice.` : `本专题共 ${posts.length} 篇，按顺序阅读可从基础概念逐步进入设计与实践。`}</p>
     </div>
   </div>
   <section class="section frame">

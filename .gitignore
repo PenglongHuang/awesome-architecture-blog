@@ -11,3 +11,4 @@ docs/private/
 docs/*
 !docs/content-authoring.md
 !docs/maintenance.md
+!docs/i18n.md

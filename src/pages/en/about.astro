@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { href } from '../../lib/urls'
+---
+<BaseLayout locale="en" title="About">
+  <div class="page-head frame"><div class="grid"><h1 class="page-head__title">About this site</h1><p class="page-head__intro">An architecture knowledge base about how systems work and why their designers make particular trade-offs.</p></div></div>
+  <section class="section frame"><div class="grid"><div class="prose">
+    <p>Built by <a href="https://github.com/PenglongHuang">Penglong Huang</a> with Astro. The English edition begins with the nine-chapter <a href={href('/en/tutorial/foundations/')}>Foundations series</a>.</p>
+    <p>Architecture maps, other tutorial series and interactive courses remain available in the <a href={href('/')} hreflang="zh-CN">Chinese edition</a>. Links to untranslated material are marked “Chinese”.</p>
+    <h2>How to read</h2><p>Ask why before asking how. Read each diagram as a record of constraints and trade-offs, and distinguish a system's first version from the architecture it grows into.</p>
+    <h2>Sources and license</h2><p>Articles and the initial English translations are adapted from <a href="https://github.com/study8677/awesome-architecture">study8677/awesome-architecture</a> by JingWen Fan (study8677), licensed under MIT. The original copyright and permission notice are retained in the repository's LICENSE.</p>
+    <p>Translations are maintained here alongside their Chinese counterparts. Each translated article records the Chinese revision it was checked against.</p>
+  </div></div></section>
+</BaseLayout>

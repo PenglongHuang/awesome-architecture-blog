@@ -4,9 +4,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro'
 import SeriesCard from '../../components/SeriesCard.astro'
 import PostList from '../../components/PostList.astro'
 import { SERIES } from '../../data/series'
-import { sortByDateDesc, postChannel } from '../../lib/posts'
+import { postsForLocale, sortByDateDesc, postChannel } from '../../lib/posts'
 
-const all = await getCollection('posts')
+const all = postsForLocale(await getCollection('posts'))
 const series = SERIES.filter((s) => s.channel === 'tutorial').sort((a, b) => a.order - b.order)
 const recent = sortByDateDesc(all.filter((p) => postChannel(p) === 'tutorial')).slice(0, 6)
 const count = all.filter((p) => postChannel(p) === 'tutorial').length

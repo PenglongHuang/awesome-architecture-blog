@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import matter from 'gray-matter'
+import { entryIdentity, validateTranslations } from './lib/translations.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const POSTS = path.join(ROOT, 'src/content/posts')
@@ -26,8 +27,9 @@ for (const series of SERIES) {
 
 const posts = walk(POSTS).map((file) => {
   const rel = path.relative(POSTS, file).split(path.sep).join('/')
-  const parsed = matter(fs.readFileSync(file, 'utf8'))
-  return { rel, data: parsed.data, body: parsed.content }
+  const raw = fs.readFileSync(file, 'utf8')
+  const parsed = matter(raw)
+  return { rel, data: parsed.data, body: parsed.content, raw }
 })
 
 const bySeries = new Map()
@@ -54,17 +56,16 @@ for (const post of posts) {
   }
   if (!CHANNEL_OF_KIND[d.kind]) errors.push(`${post.rel}: invalid kind ${d.kind}`)
 
-  const channel = CHANNEL_OF_KIND[d.kind] ?? 'unknown'
+  const { locale, channel, slug } = entryIdentity(post)
   const series = SERIES.find(s => s.id === d.series)
   if (series && series.channel !== channel) errors.push(`${post.rel}: kind ${d.kind} disagrees with series channel ${series.channel}`)
-  if (post.rel.split('/')[0] !== channel) errors.push(`${post.rel}: directory disagrees with channel ${channel}`)
-  const slug = post.rel.split('/').pop().replace(/\.md$/, '')
-  const key = `${channel}/${slug}`
+  const key = `${locale}/${channel}/${slug}`
   if (slugs.has(key)) errors.push(`${post.rel}: duplicate slug ${key}`)
   slugs.set(key, true)
 
-  if (!bySeries.has(d.series)) bySeries.set(d.series, [])
-  bySeries.get(d.series).push(post)
+  const group = `${locale}/${d.series}`
+  if (!bySeries.has(group)) bySeries.set(group, [])
+  bySeries.get(group).push(post)
 
   const internalMd = [...post.body.matchAll(/\]\(([^)\s]+\.md[^)]*)\)/g)]
     .filter((m) => !/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(m[1]))
@@ -94,11 +95,15 @@ for (const [seriesId, list] of bySeries) {
 for (const s of SERIES) {
   if (s.channel === 'cases' && s.id === 'cases') continue
   const hub = `${s.channel}/${s.id}`
-  if (slugs.has(hub)) errors.push(`slug collides with series id: ${hub}`)
+  for (const locale of ['zh-CN', 'en']) {
+    if (slugs.has(`${locale}/${hub}`)) errors.push(`slug collides with series id: ${locale}/${hub}`)
+  }
 }
+
+errors.push(...validateTranslations(posts, SERIES))
 
 if (errors.length) {
   console.error(errors.join('\n'))
   process.exit(1)
 }
-console.log(`validated ${posts.length} posts across ${bySeries.size} series (dynamic count)`)
+console.log(`validated ${posts.length} posts across ${bySeries.size} language/series groups`)

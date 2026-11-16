@@ -1,6 +1,12 @@
 [
   {
     "id": "foundations",
+    "translations": {
+      "en": {
+        "title": "Foundations",
+        "description": "Nine chapters on architectural thinking, system boundaries, data and the trade-offs behind good design."
+      }
+    },
     "channel": "tutorial",
     "title": "入门篇",
     "description": "为什么先有架构思维,到读懂、画好一张架构图。",

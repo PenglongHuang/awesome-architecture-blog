@@ -1,0 +1,116 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { messagesFor, type Locale } from '../../lib/i18n.mjs'
+interface Props { locale?: Locale }
+const { locale = 'zh-CN' } = Astro.props
+const t = messagesFor(locale)
+---
+<BaseLayout locale={locale} title={t.search} noindex={true}>
+  <link
+    slot="head"
+    rel="modulepreload"
+    href={`${import.meta.env.BASE_URL}_pagefind/pagefind.js`}
+  />
+  <div class="page-head frame">
+    <div class="grid">
+      <p class="page-head__side">{t.searchHeading}</p>
+      <h1 class="page-head__title">{t.search}</h1>
+      <p class="page-head__intro">{t.searchIntro}</p>
+    </div>
+  </div>
+  <section class="section frame">
+    <div class="grid">
+      <div style="grid-column: 1 / 13;">
+        <form class="search-form" id="search-form">
+          <input id="search-input" type="search" aria-label={t.searchInput} placeholder={t.searchHint} autofocus />
+          <button class="button" type="submit">{t.search}</button>
+        </form>
+        <p id="search-status" class="dek">{t.searchLoading}</p>
+        <div id="search-results"></div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    import { messagesFor } from '../../lib/i18n.mjs'
+    const t = messagesFor(document.documentElement.lang === 'en' ? 'en' : 'zh-CN')
+    const base = import.meta.env.BASE_URL
+    const input = document.getElementById('search-input') as HTMLInputElement
+    const form = document.getElementById('search-form') as HTMLFormElement
+    const results = document.getElementById('search-results')!
+    const status = document.getElementById('search-status')!
+    let pagefind: any
+    let ready: Promise<void> | null = null
+    let timer: number | undefined
+
+    function init(): Promise<void> {
+      if (!ready) {
+        ready = (async () => {
+          pagefind = await import(/* @vite-ignore */ `${base}_pagefind/pagefind.js`)
+          await pagefind.init()
+          status.textContent = t.searchReady
+        })().catch((err) => {
+          status.textContent = t.searchLoadError
+          throw err
+        })
+      }
+      return ready
+    }
+
+    function render(hits: any[]) {
+      results.replaceChildren()
+      for (const hit of hits) {
+        const row = document.createElement('div')
+        row.className = 'search-hit'
+        const heading = document.createElement('h3')
+        const link = document.createElement('a')
+        link.href = hit.url
+        link.textContent = hit.meta?.title ?? hit.url
+        heading.appendChild(link)
+        const excerpt = document.createElement('p')
+        excerpt.textContent = (hit.excerpt ?? '').replace(/<[^>]+>/g, '')
+        row.append(heading, excerpt)
+        results.appendChild(row)
+      }
+    }
+
+    async function run(query: string) {
+      const q = query.trim()
+      if (q.length < 2) {
+        results.replaceChildren()
+        status.textContent = t.searchMinimum
+        return
+      }
+      status.textContent = t.searchRunning
+      try {
+        await init()
+        const search = await pagefind.search(q)
+        const hits = await Promise.all(search.results.slice(0, 15).map((r: any) => r.data()))
+        if (hits.length === 0) {
+          const empty = document.createElement('p')
+          empty.className = 'dek'
+          empty.textContent = t.searchEmpty
+          results.replaceChildren(empty)
+          status.textContent = ''
+          return
+        }
+        render(hits)
+        status.textContent = document.documentElement.lang === 'en' ? `Showing ${hits.length} results` : `找到 ${hits.length} 条结果`
+      } catch {
+        status.textContent = t.searchError
+      }
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault()
+      clearTimeout(timer)
+      run(input.value)
+    })
+    input.addEventListener('input', () => {
+      clearTimeout(timer)
+      timer = window.setTimeout(() => run(input.value), 250)
+    })
+
+    init()
+  </script>
+</BaseLayout>

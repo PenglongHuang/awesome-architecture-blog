@@ -2,6 +2,9 @@
 // The toggle buttons open a shared picker instead of flipping light/dark,
 // so the Astro masthead and the standalone course navs stay in one code path.
 (() => {
+  const isEn = document.documentElement.lang?.startsWith('en')
+  const englishNames = { light: 'Light', dark: 'Dark', sepia: 'Sepia', green: 'Green', white: 'White' }
+  const pickerLabel = isEn ? 'Choose a theme' : '选择主题风格'
   const THEMES = [
     { id: 'light', name: '明亮' },
     { id: 'dark', name: '暗黑' },
@@ -9,6 +12,7 @@
     { id: 'green', name: '护眼绿' },
     { id: 'white', name: '纯白' },
   ]
+  if (isEn) THEMES.forEach(theme => { theme.name = englishNames[theme.id] })
   const STORAGE_KEY = 'theme'
   const root = document.documentElement
   const buttons = () => [...document.querySelectorAll('[data-theme-toggle]')]
@@ -24,8 +28,8 @@
   function syncButtons(expanded) {
     for (const button of buttons()) {
       button.querySelector('[data-theme-icon]').textContent = '●'
-      button.setAttribute('aria-label', '选择主题风格')
-      button.setAttribute('title', '选择主题风格')
+      button.setAttribute('aria-label', pickerLabel)
+      button.setAttribute('title', pickerLabel)
       button.setAttribute('aria-haspopup', 'menu')
       button.setAttribute('aria-expanded', String(expanded))
     }
@@ -100,7 +104,7 @@
     picker = document.createElement('div')
     picker.className = 'theme-picker'
     picker.setAttribute('role', 'menu')
-    picker.setAttribute('aria-label', '主题风格')
+    picker.setAttribute('aria-label', isEn ? 'Theme styles' : '主题风格')
     for (const theme of THEMES) {
       const option = document.createElement('button')
       option.type = 'button'
