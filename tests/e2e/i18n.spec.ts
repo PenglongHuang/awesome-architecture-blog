@@ -233,7 +233,7 @@ test('completed long-form English articles render without Chinese leftovers or m
   }
 })
 
-test('shared pages switch language and keyboard search opens the current-language index', async ({ page }) => {
+test('shared pages switch language and keyboard search opens the current-language index', async ({ page, request }) => {
   for (const path of ['', 'tutorial/', 'templates/', 'cases/', 'learning/', 'search/', 'about/']) {
     await page.goto(`en/${path}`)
     await page.locator('[data-language-link]').click()
@@ -249,4 +249,9 @@ test('shared pages switch language and keyboard search opens the current-languag
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex,follow')
     await expect(page.locator('[data-language-link]')).toBeVisible()
   }
+  const sitemap = await request.get('sitemap-0.xml')
+  expect(sitemap.ok()).toBe(true)
+  const xml = await sitemap.text()
+  expect(xml).not.toMatch(/\/(?:search|404(?:\.html)?)\/?<\/loc>/)
+  expect(xml).toContain('/en/tutorial/why-architecture-first/')
 })

@@ -134,10 +134,9 @@ test('课程卡片标签支持键盘筛选', async ({ page }) => {
   const tag = page.locator('[data-course-card] [data-tag-filter]').first()
   await expect(tag).toHaveAttribute('role', 'button')
 
-  await tag.focus()
-  await page.keyboard.press('Enter')
+  await tag.press('Enter')
 
-  expect(new URL(page.url()).searchParams.get('tag')).toBe('ai-gateway')
+  await expect(page).toHaveURL(/(?:\?|&)tag=ai-gateway(?:&|$)/)
   await expect(
     page.locator('[data-course-filter]').getByRole('button', { name: 'AI 网关' })
   ).toHaveAttribute('aria-pressed', 'true')
