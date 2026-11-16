@@ -13,7 +13,9 @@
     "import": "node scripts/import-content.mjs",
     "import:course": "node scripts/import-course.mjs",
     "validate": "node scripts/validate-content.mjs",
-    "deploy:server": "bash scripts/deploy-server.sh"
+    "deploy:server": "bash scripts/deploy-server.sh",
+    "check": "astro check",
+    "check:links": "node scripts/check-built-links.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.3.0",
@@ -22,9 +24,11 @@
     "astro": "^7.4.0"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.12",
     "@playwright/test": "^1.64.1",
     "gray-matter": "^4.0.3",
     "pagefind": "^1.5.2",
+    "parse5": "^8.1.1",
     "typescript": "^5.9.3",
     "unist-util-visit": "^5.0.0",
     "vitest": "^5.0.5",

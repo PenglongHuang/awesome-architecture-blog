@@ -13,6 +13,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      BASE_PATH: ${{ vars.BASE_PATH }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -25,6 +27,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm validate
       - run: pnpm test
+      - run: pnpm check
       - run: pnpm build
         env:
           SITE_URL: ${{ vars.SITE_URL }}
@@ -33,6 +36,19 @@ jobs:
           PUBLIC_CANONICAL_BASE: ${{ vars.PUBLIC_CANONICAL_BASE }}
           PUBLIC_GISCUS_REPO_ID: ${{ vars.GISCUS_REPO_ID }}
           PUBLIC_GISCUS_CATEGORY_ID: ${{ vars.GISCUS_CATEGORY_ID }}
+      - run: pnpm check:links
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+        env:
+          E2E_SKIP_BUILD: '1'
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-report-deploy
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
       - uses: actions/upload-artifact@v4
         with:
           name: site-dist

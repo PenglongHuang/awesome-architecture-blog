@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { expect, it } from 'vitest'
-import { parseAllDocuments } from '../../scripts/shims/yaml.mjs'
+import { parseAllDocuments } from 'yaml'
 
 it('preserves pnpm 12 manager and project locks matching the manifest', () => {
   const root = new URL('../../', import.meta.url)

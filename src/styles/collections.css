@@ -1,0 +1,20 @@
+/* Shared collection pages. Existing content and links stay server rendered. */
+.page-head { padding-top: 32px; padding-bottom: 35px; }
+.page-head .grid { display: flex; flex-direction: column; align-items: flex-start; max-width: 850px; }
+.page-head__side { font-size: 12px; color: var(--accent); margin: 0 0 14px; }
+.page-head__title { max-width: 22ch; line-height: 1.5; }
+.page-head__intro { max-width: 720px; font-size: 15px; color: var(--muted); margin-top: 17px; line-height: 1.9; }
+.section { padding-bottom: var(--section-gap); }
+.section__title { grid-column: 1/-1; font-size: 23px; margin-bottom: 24px; }
+.series-grid { grid-column: 1/-1; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; }
+.series-card { display: flex; flex-direction: column; gap: 14px; padding: 26px; border-radius: 20px; background: var(--card-paper); box-shadow: var(--shadow); min-height: 195px; }
+.series-card:hover { box-shadow: var(--shadow-raised); }
+.series-card h3 { font-size: 19px; }
+.series-card p { color: var(--muted); font-size: 13px; line-height: 1.85; }
+.series-card__count { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--accent); padding-top: 10px; margin-top: auto; }
+.series-card__count::after { content: '↗'; font-size: 18px; }
+.post-list { grid-column: 1/-1; list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.post-list li { display: flex; align-items: baseline; gap: 22px; padding: 23px 26px; background: var(--card-paper); border-radius: 15px; box-shadow: var(--shadow); }
+.post-list__date { flex: none; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.post-list__title { font-size: 16px; font-weight: 500; min-width: 0; }
+.post-list__series { margin-left: auto; font-size: 11px; color: var(--muted); white-space: nowrap; }

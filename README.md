@@ -127,7 +127,9 @@ BASE_PATH=/ pnpm dev
 | `pnpm dev` | 启动开发服务器 |
 | `pnpm build` | 构建站点并生成 Pagefind 索引 |
 | `pnpm preview` | 预览构建产物 |
-| `pnpm validate` | 校验文章、系列、链接与 SEO 元数据 |
+| `pnpm validate` | 校验文章、系列、排序与 SEO 元数据 |
+| `pnpm check` | 检查 Astro 和 TypeScript 类型 |
+| `pnpm check:links` | 构建后校验站内链接与锚点 |
 | `pnpm test` | 运行 Vitest 单元测试 |
 | `pnpm test:e2e` | 构建并运行 Playwright E2E |
 | `pnpm import` | 从上游 VitePress 内容重新导入文章 |
@@ -174,7 +176,7 @@ tests/                          # 单元测试与 E2E
 
 ## 内容开发指南
 
-新增文章、专题、架构设计图或项目课程时，同步更新站点结构、SEO 元数据与 GEO 内容要素（内容开发指南在本地 `docs/content-authoring.md`，不入库）。
+新增文章、专题、架构设计图或项目课程时，同步更新站点结构、SEO 元数据与 GEO 内容要素（见 [内容开发指南](docs/content-authoring.md)）。
 
 ## 搜索与评论
 
@@ -202,12 +204,15 @@ push main
   └─ build
       ├─ pnpm validate
       ├─ pnpm test
+      ├─ pnpm check
       ├─ pnpm build
+      ├─ pnpm check:links
+      ├─ pnpm test:e2e（复用构建产物）
       ├─ deploy → GitHub Pages
       └─ rsync → 自建服务器
 ```
 
-Pull request 则由 `.github/workflows/ci.yml` 运行同样的 `validate / test / build` 校验。
+Pull request 则由 `.github/workflows/ci.yml` 运行根路径与默认子路径两组 `validate / test / check / build / check:links / test:e2e` 校验，运行在 GitHub 托管的 `ubuntu-latest` runner 上。
 
 ### GitHub Pages
 
@@ -241,9 +246,11 @@ pnpm deploy:server
 - `BASE_PATH`：站点 base，默认 `/awesome-architecture-blog/`
 - `SITE_URL`：站点绝对地址
 
-canonical 覆盖由 `src/layouts/BaseLayout.astro` 读取，用于镜像站：
+URL 规则统一由 `src/lib/site-urls.mjs` 与 `src/lib/urls.ts` 提供，用于页面、结构化数据、RSS、robots 与 sitemap：
 
-- `PUBLIC_CANONICAL_BASE` / `PUBLIC_CANONICAL_SITE`：覆盖 canonical 的 base 与站点地址
+- `PUBLIC_CANONICAL_BASE` / `PUBLIC_CANONICAL_SITE`：可分别覆盖 canonical 的 base 与站点地址；未设置的字段使用实际部署配置
+
+维护与验证流程见 [维护说明](docs/maintenance.md)。
 
 ## 相关项目与许可
 

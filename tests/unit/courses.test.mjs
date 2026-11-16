@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   COURSES,
@@ -24,6 +25,15 @@ const trackLabels = new Set(COURSE_TRACKS.map((track) => track.label))
 const formatLabels = new Set(Object.values(COURSE_FORMATS))
 
 describe('course taxonomy', () => {
+  it('has unique slugs and existing course and architecture pages', () => {
+    expect(new Set(COURSES.map(course => course.slug)).size).toBe(COURSES.length)
+    for (const course of COURSES) {
+      expect(course.slug).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+      for (const file of ['index.html', 'architecture.html']) {
+        expect(existsSync(new URL(`../../public/learning/${course.slug}/${file}`, import.meta.url))).toBe(true)
+      }
+    }
+  })
   it('assigns every course to a known track, format, level, and tag', () => {
     for (const course of COURSES) {
       expect(trackIds.has(course.track)).toBe(true)
