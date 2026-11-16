@@ -1,4 +1,6 @@
+import { messagesFor } from '../lib/i18n.mjs'
 function setup(root: HTMLElement) {
+  const t = messagesFor(root.dataset.locale === 'en' ? 'en' : 'zh-CN')
   const answer = Number(root.dataset.answer)
   const opts = Array.from(root.querySelectorAll<HTMLButtonElement>('.quiz__opt'))
   const check = root.querySelector<HTMLButtonElement>('.quiz__check')!
@@ -24,7 +26,7 @@ function setup(root: HTMLElement) {
     if (done) return
     if (selected < 0) {
       feedback.hidden = false
-      feedback.textContent = '先选一个选项。'
+      feedback.textContent = t.quizChoose
       return
     }
     if (selected === answer) {
@@ -36,12 +38,12 @@ function setup(root: HTMLElement) {
       check.hidden = true
       reset.hidden = false
       feedback.hidden = false
-      feedback.textContent = '答对了。'
+      feedback.textContent = t.quizCorrect
       expl.hidden = false
     } else {
       opts[selected].classList.add('is-wrong')
       feedback.hidden = false
-      feedback.textContent = '不对,再试一次。'
+      feedback.textContent = t.quizWrong
     }
   })
 

@@ -1,10 +1,12 @@
 ---
-interface Props { headings: { depth: number; slug: string; text: string }[] }
+import { messagesFor, type Locale } from '../lib/i18n.mjs'
+interface Props { locale?: Locale; headings: { depth: number; slug: string; text: string }[] }
+const t = messagesFor(Astro.props.locale)
 const items = Astro.props.headings.filter((h) => h.depth === 2)
 ---
 {items.length > 0 && (
   <aside class="toc" data-pagefind-ignore>
-    <b>本页目录</b>
+    <b>{t.contents}</b>
     {items.map((h) => <div><a href={`#${h.slug}`}>{h.text}</a></div>)}
   </aside>
 )}

@@ -2,9 +2,12 @@
 import '../styles/global.css'
 import Masthead from '../components/Masthead.astro'
 import Footer from '../components/Footer.astro'
-import { canonicalUrl } from '../lib/urls'
+import { messagesFor, localePath, SHARED_PAGES, type Locale } from '../lib/i18n.mjs'
+import { href, canonicalUrl } from '../lib/urls'
 
 interface Props {
+  locale?: Locale
+  alternates?: Partial<Record<Locale, string>>
   title: string
   description?: string
   image?: string
@@ -13,31 +16,38 @@ interface Props {
   noindex?: boolean
 }
 const {
+  locale = 'zh-CN',
+  alternates: providedAlternates,
   title,
-  description = '面向软件工程师的中文架构知识库，涵盖软件架构教程、真实系统架构图、系统设计案例与 AI Agent 工程实践。',
+  description = messagesFor(locale).description,
   image,
   imageAlt = title,
   ogType = 'website',
   noindex = false,
 } = Astro.props
-const siteName = 'AI架构师之路'
+const t = messagesFor(locale)
+const siteName = t.siteName
 const fullTitle = title === siteName ? title : `${title} · ${siteName}`
 const base = import.meta.env.BASE_URL
-const path = Astro.url.pathname.replace(base, '/')
+const path = Astro.url.pathname.startsWith(base) ? `/${Astro.url.pathname.slice(base.length)}` : Astro.url.pathname
+const neutralPath = path.replace(/^\/en(?=\/|$)/, '') || '/'
+const alternates: Partial<Record<Locale, string>> = providedAlternates ?? (SHARED_PAGES.includes(neutralPath)
+  ? { 'zh-CN': href(localePath(neutralPath)), en: href(localePath(neutralPath, 'en')) } : {})
 const canonical = canonicalUrl(Astro.url.pathname)
-const imageUrl = image && /^https?:\/\//.test(image) ? image : canonicalUrl(image || 'og-default.svg')
-const isSearchPage = path === '/search/' || path === '/search'
+const imageUrl = image && /^https?:\/\//.test(image) ? image : canonicalUrl(image || t.ogImage)
+const isSearchPage = neutralPath === '/search/' || neutralPath === '/search'
 const shouldNoindex = noindex || isSearchPage || path === '/404.html'
-const siteRoot = canonicalUrl('/')
+const siteRoot = canonicalUrl(localePath('/', locale))
+const organizationRoot = canonicalUrl('/')
 const logoUrl = canonicalUrl('brand-mark.svg')
 const siteStructuredData = JSON.stringify({
   '@context': 'https://schema.org',
   '@graph': [
     {
       '@type': 'Organization',
-      '@id': `${siteRoot}#organization`,
+      '@id': `${organizationRoot}#organization`,
       name: siteName,
-      url: siteRoot,
+      url: organizationRoot,
       logo: { '@type': 'ImageObject', url: logoUrl },
     },
     {
@@ -45,14 +55,14 @@ const siteStructuredData = JSON.stringify({
       '@id': `${siteRoot}#website`,
       name: siteName,
       url: siteRoot,
-      inLanguage: 'zh-CN',
-      publisher: { '@id': `${siteRoot}#organization` },
+      inLanguage: locale,
+      publisher: { '@id': `${organizationRoot}#organization` },
     },
   ],
 }).replace(/</g, '\\u003c')
 ---
 <!doctype html>
-<html lang="zh-CN">
+<html lang={locale}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -60,9 +70,11 @@ const siteStructuredData = JSON.stringify({
     <meta name="description" content={description} />
     <meta name="robots" content={shouldNoindex ? 'noindex,follow' : 'index,follow,max-image-preview:large'} />
     <link rel="canonical" href={canonical} />
-    <link rel="alternate" type="application/rss+xml" title="AI架构师之路 RSS" href={`${base}rss.xml`} />
+    {Object.entries(alternates).map(([language, url]) => <link rel="alternate" hreflang={language} href={canonicalUrl(url!)} />)}
+    {alternates['zh-CN'] && alternates.en && <link rel="alternate" hreflang="x-default" href={canonicalUrl(alternates['zh-CN'])} />}
+    <link rel="alternate" type="application/rss+xml" title={`${siteName} RSS`} href={href(localePath('/rss.xml', locale))} />
     <meta property="og:site_name" content={siteName} />
-    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:locale" content={locale === 'en' ? 'en_US' : 'zh_CN'} />
     <meta property="og:type" content={ogType} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
@@ -83,7 +95,7 @@ const siteStructuredData = JSON.stringify({
         set:html={JSON.stringify({
           prerender: [
             {
-              where: { href_matches: `${base}search/` },
+              where: { href_matches: href(localePath('/search/', locale)) },
               eagerness: 'moderate',
             },
           ],
@@ -93,10 +105,10 @@ const siteStructuredData = JSON.stringify({
     <slot name="head" />
   </head>
   <body>
-    <a class="skip-link" href="#main-content">跳到正文</a>
-    <Masthead />
+    <a class="skip-link" href="#main-content">{t.skip}</a>
+    <Masthead locale={locale} alternates={alternates} />
     <main id="main-content"><slot /></main>
-    <Footer />
+    <Footer locale={locale} />
     <script>
       import '../scripts/quiz'
     </script>

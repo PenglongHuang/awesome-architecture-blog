@@ -1,4 +1,8 @@
 ---
+import { messagesFor, type Locale } from '../lib/i18n.mjs'
+interface Props { locale?: Locale }
+const { locale = 'zh-CN' } = Astro.props
+const t = messagesFor(locale)
 const repoId = import.meta.env.PUBLIC_GISCUS_REPO_ID ?? ''
 const categoryId = import.meta.env.PUBLIC_GISCUS_CATEGORY_ID ?? ''
 const enabled = Boolean(repoId && categoryId)
@@ -6,10 +10,10 @@ const enabled = Boolean(repoId && categoryId)
 {enabled ? (
   <section class="section frame" style="padding-bottom: 40px" data-pagefind-ignore>
     <div class="grid">
-      <h2 class="section__title" style="grid-column: 1 / 13; margin-bottom: 20px; font-size: var(--step-body);">评论</h2>
+      <h2 class="section__title" style="grid-column: 1 / 13; margin-bottom: 20px; font-size: var(--step-body);">{t.comments}</h2>
       <div id="giscus-host" style="grid-column: 1 / 13;"></div>
     </div>
-    <script define:vars={{ repoId, categoryId }}>
+    <script define:vars={{ repoId, categoryId, locale }}>
       (() => {
         // giscus only ships a light and a dark look; the tinted styles read as light.
         const giscusTheme = () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light')
@@ -34,7 +38,7 @@ const enabled = Boolean(repoId && categoryId)
           s.dataset.emitMetadata = '0'
           s.dataset.inputPosition = 'top'
           s.dataset.theme = giscusTheme()
-          s.dataset.lang = 'zh-CN'
+          s.dataset.lang = locale
           host.appendChild(s)
           window.addEventListener('themechange', () => {
             const frame = document.querySelector('iframe.giscus-frame')

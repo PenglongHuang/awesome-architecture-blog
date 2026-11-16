@@ -1,7 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro'
 import { getCollection } from 'astro:content'
-const posts = await getCollection('posts')
+import { postsForLocale } from '../lib/posts'
+const posts = postsForLocale(await getCollection('posts'))
 ---
 <BaseLayout title="关于">
   <div class="page-head frame">

@@ -6,6 +6,9 @@ import { SERIES_IDS } from './data/series'
 const posts = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/posts' }),
   schema: z.object({
+    locale: z.enum(['zh-CN', 'en']).default('zh-CN'),
+    translationKey: z.string().regex(/^(tutorial|templates|cases)\/[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(),
+    sourceHash: z.string().regex(/^[a-f0-9]{64}$/).optional(),
     title: z.string(),
     description: z.string(),
     series: z.enum(SERIES_IDS),

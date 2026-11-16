@@ -1,0 +1,13 @@
+---
+import type { Locale } from '../lib/i18n.mjs'
+import { messagesFor } from '../lib/i18n.mjs'
+interface Props { locale: Locale; alternates: Partial<Record<Locale, string>> }
+const { locale, alternates } = Astro.props
+const target = locale === 'en' ? 'zh-CN' : 'en'
+const t = messagesFor(locale)
+---
+<nav class="language-switch" aria-label={t.languageNavigation} data-pagefind-ignore>
+  {alternates[target]
+    ? <a href={alternates[target]} lang={target} hreflang={target}>{target === 'en' ? 'English' : '简体中文'}</a>
+    : <span class="language-unavailable" title={t.noTranslation}>{t.noTranslation}</span>}
+</nav>

@@ -74,6 +74,7 @@ export default defineConfig({
   site: SITE,
   base: BASE,
   trailingSlash: 'always',
+  i18n: { defaultLocale: 'zh-CN', locales: ['zh-CN', 'en'], routing: { prefixDefaultLocale: false } },
   vite: {
     plugins: [courseDirectoryIndex(), developmentSearchIndex()],
   },

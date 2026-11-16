@@ -1,11 +1,15 @@
 ---
-const base = import.meta.env.BASE_URL
+import { messagesFor, localePath, type Locale } from '../lib/i18n.mjs'
+import { href } from '../lib/urls'
+interface Props { locale?: Locale }
+const { locale = 'zh-CN' } = Astro.props
+const t = messagesFor(locale)
 ---
 <footer class="site-footer frame">
   <div class="grid">
     <div class="site-footer__cols">
-      <a href={`${base}about/`}>关于</a>
-      <a href={`${base}rss.xml`}>RSS</a>
+      <a href={href(localePath('/about/', locale))}>{t.about}</a>
+      <a href={href(localePath('/rss.xml', locale))}>RSS</a>
       <a href="https://github.com/PenglongHuang/awesome-architecture-blog">GitHub</a>
       <span class="spacer"></span>
       <span>© 2026 Penglong Huang · MIT</span>

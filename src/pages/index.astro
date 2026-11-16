@@ -4,10 +4,10 @@ import BaseLayout from '../layouts/BaseLayout.astro'
 import PostList from '../components/PostList.astro'
 import { SERIES, CHANNELS } from '../data/series'
 import { COURSES } from '../data/courses'
-import { sortByDateDesc, seriesHref } from '../lib/posts'
+import { postsForLocale, sortByDateDesc, seriesHref } from '../lib/posts'
 import { href } from '../lib/urls'
 
-const all = await getCollection('posts')
+const all = postsForLocale(await getCollection('posts'))
 const recent = sortByDateDesc(all).slice(0, 4)
 const countTutorial = all.filter(p => p.data.kind === 'tutorial').length
 const countTemplates = all.filter(p => p.data.kind === 'template').length

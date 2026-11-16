@@ -2,8 +2,8 @@
 import { getCollection } from 'astro:content'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import PostList from '../../components/PostList.astro'
-import { postsInSeries } from '../../lib/posts'
-const all = await getCollection('posts')
+import { postsForLocale, postsInSeries } from '../../lib/posts'
+const all = postsForLocale(await getCollection('posts'))
 const posts = postsInSeries(all, 'cases')
 ---
 <BaseLayout title="系统设计" description="通过端到端系统设计案例，练习从业务约束、核心模型、架构方案到容量、可靠性和演进策略的完整推演。">
