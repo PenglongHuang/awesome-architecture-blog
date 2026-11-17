@@ -1,0 +1,14 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { href } from '../../lib/urls'
+import { localePath, type Locale } from '../../lib/i18n.mjs'
+import { pageCopy } from '../../data/page-copy'
+interface Props { locale?: Locale }
+const { locale = 'zh-CN' } = Astro.props
+const copy = pageCopy(locale).missing
+// Astro emits the root error page as 404.html, but nested routes as directories.
+const alternates = { 'zh-CN': href('/404.html'), en: href('/en/404/') }
+---
+<BaseLayout locale={locale} title={copy.title} noindex={true} alternates={alternates} canonicalPath={alternates[locale]}>
+  <div class="page-head frame"><div class="grid"><p class="page-head__side">404</p><h1 class="page-head__title">{copy.heading}</h1><p class="page-head__intro">{copy.intro}</p><p class="page-head__intro"><a class="button" href={href(localePath('/', locale))}>{copy.home}</a> · <a href={href(localePath('/tutorial/why-architecture-first/', locale))}>{copy.start}</a></p></div></div>
+</BaseLayout>

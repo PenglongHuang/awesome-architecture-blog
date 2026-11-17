@@ -15,7 +15,7 @@ export const seriesSchema = z.object({
   featured: z.boolean().optional(),
   featuredOrder: z.number().int().positive().optional(),
   featuredTags: z.array(z.string().trim().min(1)).optional(),
-  translations: z.object({ en: z.object({ title: z.string().trim().min(1), description: z.string().trim().min(1) }).optional() }).optional(),
+  translations: z.object({ en: z.object({ title: z.string().trim().min(1), description: z.string().trim().min(1), featuredTags: z.array(z.string().trim().min(1)).optional() }).optional() }).optional(),
 })
 export type SeriesDef = z.infer<typeof seriesSchema>
 const seriesListSchema = z.array(seriesSchema).min(1).refine(

@@ -1,0 +1,125 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import PostList from '../../components/PostList.astro'
+import ArrowUpRight from '../ArrowUpRight.astro'
+import { SERIES, localizedSeries } from '../../data/series'
+import { COURSES } from '../../data/courses'
+import { postsForLocale, sortByDateDesc, seriesHref } from '../../lib/posts'
+import { href } from '../../lib/urls'
+
+import { messagesFor, localePath, type Locale } from '../../lib/i18n.mjs'
+import { pageCopy, articleCount, courseCount, channelCopy } from '../../data/page-copy'
+interface Props { locale?: Locale }
+const { locale = 'zh-CN' } = Astro.props
+const t = messagesFor(locale)
+const copy = pageCopy(locale).home
+const all = postsForLocale(await getCollection('posts'), locale)
+const recent = sortByDateDesc(all).slice(0, 4)
+const countTutorial = all.filter(p => p.data.kind === 'tutorial').length
+const countTemplates = all.filter(p => p.data.kind === 'template').length
+const countCases = all.filter(p => p.data.kind === 'case').length
+const seriesCount: Record<string, number> = {}
+for (const p of all) seriesCount[p.data.series] = (seriesCount[p.data.series] ?? 0) + 1
+
+const stops = [
+  { num: '01', title: t.tutorials, fit: copy.fit[0], gain: copy.gain[0].replace('{count}', String(SERIES.filter(s => s.channel === 'tutorial').length)), meta: articleCount(countTutorial, locale), path: '/tutorial/' },
+  { num: '02', title: t.templates, fit: copy.fit[1], gain: copy.gain[1], meta: articleCount(countTemplates, locale), path: '/templates/' },
+  { num: '03', title: t.cases, fit: copy.fit[2], gain: copy.gain[2].replace('{count}', String(countCases)), meta: articleCount(countCases, locale), path: '/cases/' },
+  { num: '04', title: t.courses, fit: copy.fit[3], gain: copy.gain[3], meta: courseCount(COURSES.length, locale), path: '/learning/' },
+]
+const featured = SERIES.filter(s => s.featured).sort((a, b) => (a.featuredOrder ?? 99) - (b.featuredOrder ?? 99)).map(s => localizedSeries(s, locale))
+---
+<BaseLayout locale={locale} title={t.siteName}>
+  <div class="home frame">
+    <section class="home-hero" aria-label={t.siteName}>
+      <div class="home-hero__top">
+        <div>
+          <p class="home-hero__intro"><span aria-hidden="true"></span> {copy.eyebrow}</p>
+          <h1>{copy.line1}<br />{copy.line2}</h1>
+        </div>
+        <p class="home-hero__hint">{copy.hint}</p>
+      </div>
+      <nav class="home-rail" aria-label={copy.guide}>
+        {stops.map(s => <a class="home-rail__stop" href={href(localePath(s.path, locale))}>
+          <span class="home-rail__num">{s.num}</span>
+          <h2>{s.title}</h2>
+          <p class="home-rail__fit">{s.fit}</p>
+          <span class="home-rail__gain">{s.gain}</span>
+          <span class="home-rail__meta"><b>{s.meta}</b> · {copy.go} <i><ArrowUpRight /></i></span>
+        </a>)}
+      </nav>
+    </section>
+
+    {featured.length > 0 && <section class="home-featured" aria-labelledby="featured-title">
+      <div class="section-heading">
+        <div><h2 id="featured-title">{copy.featured}</h2><p>{copy.featuredIntro}</p></div>
+        {featured.length > 2 && <div class="featured-ctl">
+          <button type="button" class="featured-arrow featured-arrow--prev" data-featured-prev aria-label={copy.previous} disabled>
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M16.5 10h-13m5.5-5.5L3.5 10l5.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button type="button" class="featured-arrow featured-arrow--next" data-featured-next aria-label={copy.next}>
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3.5 10h13M11 4.5l5.5 5.5-5.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <span class="featured-page" data-featured-page aria-live="polite">1 / 1</span>
+        </div>}
+      </div>
+      <div class="featured-carousel">
+        <div class="featured-track" data-featured-track tabindex={0} aria-label={copy.featuredList}>
+          {featured.map(s => {
+            const n = seriesCount[s.id] ?? 0
+            return <a class="featured-card" href={seriesHref(s.id, locale)}>
+              <span class="featured-card__badge">{copy.badge}</span>
+              <span class="featured-card__k">{channelCopy(s.channel, locale).title} · {articleCount(n, locale)}</span>
+              <h3>{s.title}</h3>
+              <p>{s.description}</p>
+              {s.featuredTags && <div class="featured-card__tags">{s.featuredTags.map(t => <span>{t}</span>)}</div>}
+              <span class="featured-card__go">{copy.read} <i><ArrowUpRight /></i></span>
+            </a>
+          })}
+        </div>
+      </div>
+    </section>}
+
+    <section class="home-recent" aria-labelledby="recent-title"><div class="section-heading"><h2 id="recent-title">{copy.recent}</h2><span class="section-note">{copy.note}</span></div><PostList posts={recent} stripOrder /></section>
+
+  </div>
+</BaseLayout>
+<script>
+  const track = document.querySelector<HTMLElement>('[data-featured-track]')
+  const prev = document.querySelector<HTMLButtonElement>('[data-featured-prev]')
+  const next = document.querySelector<HTMLButtonElement>('[data-featured-next]')
+  const page = document.querySelector<HTMLElement>('[data-featured-page]')
+  if (track && prev && next) {
+    // 布局读数只在 init/resize 时测量，滚动回调里直接用缓存
+    let pageWidth = 0
+    let maxScroll = 0
+    let pageCount = 1
+    let lastAtStart = prev.disabled
+    let lastAtEnd = next.disabled
+    let lastPageText = ''
+    const sync = () => {
+      const atStart = track.scrollLeft <= 2
+      const atEnd = track.scrollLeft >= maxScroll - 2
+      const current = maxScroll > 0 ? Math.min(pageCount, Math.round((track.scrollLeft / maxScroll) * (pageCount - 1)) + 1) : 1
+      const pageText = `${current} / ${pageCount}`
+      if (atStart !== lastAtStart) { prev.disabled = atStart; lastAtStart = atStart }
+      if (atEnd !== lastAtEnd) { next.disabled = atEnd; lastAtEnd = atEnd }
+      if (page && pageText !== lastPageText) { page.textContent = pageText; lastPageText = pageText }
+    }
+    const remeasure = () => {
+      const gap = parseFloat(getComputedStyle(track).columnGap) || 0
+      const cardWidth = track.firstElementChild?.getBoundingClientRect().width ?? track.clientWidth
+      const cardsPerPage = Math.max(1, Math.round((track.clientWidth + gap) / (cardWidth + gap)))
+      pageWidth = cardsPerPage * (cardWidth + gap)
+      maxScroll = track.scrollWidth - track.clientWidth
+      pageCount = Math.ceil(track.children.length / cardsPerPage)
+      sync()
+    }
+    prev.addEventListener('click', () => track.scrollBy({ left: -pageWidth, behavior: 'smooth' }))
+    next.addEventListener('click', () => track.scrollBy({ left: pageWidth, behavior: 'smooth' }))
+    track.addEventListener('scroll', sync, { passive: true })
+    window.addEventListener('resize', remeasure)
+    remeasure()
+  }
+</script>

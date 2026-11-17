@@ -1,0 +1,161 @@
+---
+title: "24 · Review Checklist: What AI Output Omits by Default"
+description: "Review generated systems for missing timeouts, idempotency, security, failure handling and other production requirements."
+series: "ai-collaboration"
+order: 2
+pubDate: 2026-03-27
+kind: "tutorial"
+tags: ["Working with AI","Tutorials"]
+locale: "en"
+translationKey: "tutorial/review-checklist-for-ai-output"
+sourceHash: "914e560c59727eec8c3cb960abf6522eed89ebfcd10a371a199449e14ad276cd"
+---
+
+> The thesis in one line: **AI hands you the "happy path" by default — the demo runs, but there are no timeouts, no idempotency, no degradation, no thought about sharding, no injection defense. Review is not nitpicking; it is running a fixed checklist and asking back, one item at a time, about the things AI systematically leaves out. That checklist is the previous six advanced chapters compressed onto one page.**
+
+---
+
+> **🤝 AI-collaborative design track, ch. 2 · This chapter drills one thing**
+>
+> [Chapter 23](/en/tutorial/spec-as-architecture/) is about writing constraints **before** the fact; this chapter is about reviewing AI output **after** the fact, item by item. This is exactly the "close it out with judgment" step from [Chapter 17](/en/tutorial/architecture-judgment-in-llm-era/)'s "vibe out a draft, close it out with judgment" — and closing it out does not run on inspiration, it runs on **a reusable checklist**.
+
+---
+
+## 1. Why AI output is "half-empty" by default
+
+[Chapter 17](/en/tutorial/architecture-judgment-in-llm-era/) explained the mechanism; here is the full picture: **AI is not incapable of writing robust code — it just does not write it by default.** Three reasons:
+
+```
+   ① It optimizes for "runs through"       → gives you the happy path: demo looks perfect, exceptions left bare
+   ② Training data skews heavily toward    → tutorials and sample code rarely include timeouts,
+      demos over production-grade code        idempotency, or degradation
+   ③ It does not know your non-functional  → you never said "must survive a flash sale" or
+      requirements and constraints            "money cannot be wrong," so it never considers them
+      (unless you wrote Chapter 23)
+```
+
+The result is what [Chapter 17](/en/tutorial/architecture-judgment-in-llm-era/) put plainly: **AI accelerated "output," but it did not accelerate "judgment."** The gap between prototype and production is hidden behind "well, it looks like it runs." **Review is what makes that gap explicit — measures it, and fills it.**
+
+> Key insight: **reviewing AI output and reviewing human-written code are different in emphasis.** Humans forget edge cases; AI **systematically, every single time**, ignores the non-functional requirements you did not spell out. So the most effective counter to AI is not "look more carefully" but **running the same checklist mechanically every time** — because what it omits is basically the same batch every time.
+
+---
+
+## 2. The review checklist (organized by advanced-track chapter)
+
+Every item below **maps to a specific advanced-track chapter** — you do not need to memorize it, just remember where to look (this is [Chapter 18 · Reading the Map](/en/tutorial/deconstructing-unfamiliar-systems/)'s "recognizing words vs. reading for meaning," applied in reverse).
+
+### ① Data consistency ([Chapter 11](/en/tutorial/data-consistency-engineering/))
+
+- [ ] **Idempotency**: what happens if this write runs twice? Can a duplicate request or a timeout-triggered retry result in a double charge or a duplicate order? Is there an idempotency key?
+- [ ] **Cross-service consistency**: for writes that span multiple services or databases, is Saga or Outbox in place? What is the compensation path if something fails mid-way?
+- [ ] **Transaction boundaries**: which operations need strong consistency (money, inventory) and which can be eventually consistent? Is anything that needs to be strongly consistent being done eventually consistent instead?
+- [ ] **Concurrency**: what happens when two requests modify the same record simultaneously? Is there an oversell or a lost update?
+
+### ② Resilience ([Chapter 12](/en/tutorial/designing-for-failure/))
+
+- [ ] **Timeouts**: does every external call (DB / third-party / model API) have a timeout set? (The bare call with no timeout is the single thing AI omits most often.)
+- [ ] **Retries**: are failures retried? Is it **exponential back-off**, or a naive retry storm that will hammer the downstream? Is the retried operation idempotent (otherwise it amplifies the incident)?
+- [ ] **Circuit breaking / degradation**: when a dependency goes down, does the system drag itself down too, or can it circuit-break and fall back to a safe default?
+- [ ] **Resource caps**: are there unbounded queues, uncapped concurrency, or loops with no timeout that can cause OOM or runaway behavior?
+
+### ③ Scale ([Chapter 13](/en/tutorial/mechanics-of-scale/))
+
+- [ ] **Hot spots**: are there hot keys or hot partitions? Can a celebrity user or a viral item blow up a single node?
+- [ ] **N+1 and fan-out**: are there queries inside loops? Does a single request fan out into N downstream calls?
+- [ ] **Pagination / caps**: do list endpoints paginate? Can a single call pull millions of rows?
+- [ ] **Tail latency**: P99, not P50; is there one slow path dragging the whole system down?
+
+### ④ Security ([Chapter 16](/en/tutorial/security-and-multi-tenancy/))
+
+- [ ] **Input validation**: is all external input validated? SQL injection? Command injection?
+- [ ] **Authorization and privilege escalation**: does every endpoint verify that the current user **is allowed** to perform this action? Can someone change an ID and read another user's data?
+- [ ] **Multi-tenant isolation**: are queries forced to filter by tenant? Can data leak across tenants?
+- [ ] **Secrets**: are any API keys or passwords hard-coded into the code or logged?
+- [ ] **Prompt injection (AI systems)**: are retrieval results, tool returns, and user uploads treated as untrusted input?
+
+### ⑤ AI-specific (new in this track)
+
+- [ ] **Non-determinism backstop**: is there a fallback when model output is wrong or unstable? Are there guardrails or human review before side effects are triggered ([19](/en/tutorial/full-design-walkthrough/) / [22](/en/tutorial/ai-native-system-design/))?
+- [ ] **Cost caps**: is there a per-call or per-task cap on tokens, steps, and budget to prevent runaway spend?
+- [ ] **Retrieval / hallucination**: is RAG retrieval quality being monitored? Are answers grounded in sources with citations ([18](/en/tutorial/deconstructing-unfamiliar-systems/))?
+- [ ] **Evaluability**: is there an eval to catch silent regressions after a model swap or prompt change ([Chapter 25](/en/tutorial/eval-driven-architecture/)'s whole thesis)?
+
+---
+
+## 3. How to use this checklist (and not turn it into a box-ticking ceremony)
+
+The checklist is long, but **not every item applies to every situation** — that would be its own form of over-engineering. The usage mirrors [Chapter 06 · Quality Attributes](/en/tutorial/quality-attributes-and-tradeoffs/): **first ask what this system cares about, then pick the relevant items.**
+
+```
+   First ask: what "things that bite" does this code / proposal actually touch?
+     │
+     ├─ Touches money / inventory       ──▶ Focus on ① consistency (idempotency, concurrency, oversell)
+     ├─ Calls external services / high  ──▶ Focus on ② resilience (timeouts, retries, degradation)
+       concurrency
+     ├─ Faces massive user volume        ──▶ Focus on ③ scale (hot spots, fan-out, pagination)
+     ├─ Handles user data / multi-tenant ──▶ Focus on ④ security (privilege, isolation, injection)
+     └─ Uses an LLM                      ──▶ Must check ⑤ AI-specific (backstop, cost, hallucination, eval)
+```
+
+> **The checklist is a "question template," not a "box-ticking ceremony."** Take the AI-generated plan or code, pick the relevant items, and ask "what about this one?" for each — wherever the AI cannot answer or answers weakly is where it buried a landmine. **The value of this checklist is making sure you never forget to ask those few fatal questions just because the plan looks complete.**
+
+---
+
+## 4. Feed the checklist back to AI (but make the final call yourself)
+
+Review itself is something AI can help with halfway — which neatly closes the loop back to [Chapter 23](/en/tutorial/spec-as-architecture/):
+
+- **Let AI self-review or cross-review against this checklist**: write the checklist into the prompt or `AGENTS.md` and ask AI to "check against the list item by item for anything it left out" after producing its output. An AI prone to the happy-path mistake, when **explicitly required to go through the list one by one**, will often fill in a large share of the gaps on its own.
+- **But the human makes the final call, especially for money and security**: AI self-review can catch mechanical oversights like "forgot a timeout," but it **cannot judge "is this eventual consistency actually acceptable here?"** — that requires business context and trade-off reasoning. This is exactly what [Chapter 17](/en/tutorial/architecture-judgment-in-llm-era/) and [Chapter 01](/en/tutorial/why-architecture-first/) keep saying: **judgment cannot be outsourced**.
+
+> **Architectural wisdom**: **AI accelerated "writing," not "reviewing"; and review is the step that turns a "prototype that looks like it runs" into a "production system that holds up"** (echoing Simon Willison's warning about vibe coding, as covered in [Chapter 17](/en/tutorial/architecture-judgment-in-llm-era/)). Codifying the review checklist — and even feeding it back to AI for self-inspection — is one of the highest-leverage engineering habits of the AI era, because what AI omits is almost the same batch every time.
+
+---
+
+## 🎯 Quick check
+
+```quiz
+{
+  "question": "AI generated code to 'call a third-party logistics API to query an order.' The demo passed. According to this chapter's checklist, what should you ask about first?",
+  "options": [
+    "Whether the variable names follow the team style guide",
+    "Whether there are timeouts, failure retries with exponential back-off, and a degradation fallback for when the third party goes down — these are things AI does not write by default",
+    "Whether the comments are thorough enough"
+  ],
+  "answer": 1,
+  "explanation": "AI defaults to the happy path: in the demo the third party always responds instantly and successfully. In production it will time out and misbehave. Resilience (Chapter 12) is exactly the category AI systematically omits — timeouts, retries, and degradation. Naming and comments are secondary; what matters in review is whether the code can survive failure."
+}
+```
+
+```quiz
+{
+  "question": "Which is the correct way to use the review checklist on AI output?",
+  "options": [
+    "Go through every item on the full list every time, without skipping one, before the review is done",
+    "Pick the items relevant to what the system cares about and focus the questions there (money → consistency, high concurrency → resilience, model use → AI-specific); the checklist is a question template, not a box-ticking ceremony",
+    "The checklist is too much trouble — a quick scan by feel is enough"
+  ],
+  "answer": 1,
+  "explanation": "Going through every item every time is its own form of over-engineering; scanning by feel will miss the fatal items. The right approach mirrors Chapter 06: first see what the system cares about, then press each relevant checklist item one by one. The value of the checklist is making sure you never forget to ask those few fatal questions just because the plan looks complete."
+}
+```
+
+---
+
+## Chapter summary
+
+- **AI output is half-empty by default**: it optimizes for "runs through," its training data skews toward demos, and it does not know your non-functional requirements — so it systematically omits timeouts, idempotency, degradation, sharding, and injection defense.
+- **Counter AI with a fixed checklist, not careful eyeballing**: because what it omits is basically the same batch every time. The checklist is organized by the advanced track: consistency ([11](/en/tutorial/data-consistency-engineering/)) / resilience ([12](/en/tutorial/designing-for-failure/)) / scale ([13](/en/tutorial/mechanics-of-scale/)) / security ([16](/en/tutorial/security-and-multi-tenancy/)) / AI-specific.
+- **Pick by quality attribute** ([06](/en/tutorial/quality-attributes-and-tradeoffs/)): money → check consistency; high concurrency → check resilience; using a model → must check AI-specific. The checklist is a question template, not a box-ticking ceremony.
+- **Feed it back to AI for self-review, but make the final call yourself**: AI can patch mechanical oversights, but it cannot judge "is this trade-off acceptable here" — judgment cannot be outsourced.
+- **Review = the step that turns a prototype into a trustworthy system**: AI accelerated writing, not reviewing.
+
+> **Bridging forward**: review relies on a human asking each question one by one — but **"is the answer quality stable? did it silently regress after a model swap?" is something humans cannot keep up with or assess accurately**, especially given the non-determinism of AI systems ([Chapter 17](/en/tutorial/architecture-judgment-in-llm-era/)). The next chapter, [25 · Eval-driven: bake "good enough" into architecture](/en/tutorial/eval-driven-architecture/), upgrades review from "manual, one by one" to "machine, continuously on guard": using evals as a CI gate to make "good enough" measurable and enforceable.
+
+---
+
+## Related links
+
+- Checklist sources: [11 · The engineering of data consistency](/en/tutorial/data-consistency-engineering/) / [12 · Designing for failure: resilience](/en/tutorial/designing-for-failure/) / [13 · The mechanics of scale](/en/tutorial/mechanics-of-scale/) / [16 · Security & multi-tenancy](/en/tutorial/security-and-multi-tenancy/)
+- Previous chapter: [23 · Spec as architecture: constraints for AI](/en/tutorial/spec-as-architecture/) (write constraints beforehand) · write the checklist into AGENTS.md for AI self-review
+- Supporting chapters: [06 · Quality attributes & trade-offs](/en/tutorial/quality-attributes-and-tradeoffs/) (pick by what the system cares about), [17 · Architecting in the age of LLMs](/en/tutorial/architecture-judgment-in-llm-era/) (happy path / judgment cannot be outsourced)

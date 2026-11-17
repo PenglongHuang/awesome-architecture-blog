@@ -4,7 +4,7 @@
     "translations": {
       "en": {
         "title": "Foundations",
-        "description": "Nine chapters on architectural thinking, system boundaries, data and the trade-offs behind good design."
+        "description": "Build architectural judgment: understand systems, draw useful diagrams, and reason about trade-offs."
       }
     },
     "channel": "tutorial",
@@ -19,7 +19,13 @@
     "title": "进阶篇",
     "description": "分布式硬道理、数据一致性、韧性、规模化与拆分。",
     "order": 2,
-    "match": "^tutorial/1[0-7]-"
+    "match": "^tutorial/1[0-7]-",
+    "translations": {
+      "en": {
+        "title": "Distributed systems",
+        "description": "Consistency, resilience, scalability and the boundaries of large systems."
+      }
+    }
   },
   {
     "id": "practice",
@@ -27,7 +33,13 @@
     "title": "实战篇",
     "description": "拆解陌生系统、完整设计演练、演进剧本与迁移。",
     "order": 3,
-    "match": "^tutorial/(18|19|20|21|22)-"
+    "match": "^tutorial/(18|19|20|21|22)-",
+    "translations": {
+      "en": {
+        "title": "Design in practice",
+        "description": "Deconstruct unfamiliar systems, work through complete designs, and plan evolution and migration."
+      }
+    }
   },
   {
     "id": "ai-collaboration",
@@ -35,7 +47,13 @@
     "title": "AI 协同篇",
     "description": "约束怎么写给 AI,AI 产出默认缺什么。",
     "order": 4,
-    "match": "^tutorial/2[3-6]-"
+    "match": "^tutorial/2[3-6]-",
+    "translations": {
+      "en": {
+        "title": "Working with AI",
+        "description": "Write useful specifications, review AI output and choose the right collaboration workflow."
+      }
+    }
   },
   {
     "id": "stack-selection",
@@ -44,9 +62,24 @@
     "description": "语言、数据库、缓存、API、云原生、可观测性怎么选。",
     "featured": true,
     "featuredOrder": 4,
-    "featuredTags": ["数据库选型", "缓存", "云原生"],
+    "featuredTags": [
+      "数据库选型",
+      "缓存",
+      "云原生"
+    ],
     "order": 5,
-    "match": "^tutorial/(2[7-9]|3[0-4])-"
+    "match": "^tutorial/(2[7-9]|3[0-4])-",
+    "translations": {
+      "en": {
+        "title": "Choosing the stack",
+        "description": "Choose languages, storage, caches, APIs, cloud platforms and observability tools.",
+        "featuredTags": [
+          "Databases",
+          "Caching",
+          "Cloud platforms"
+        ]
+      }
+    }
   },
   {
     "id": "ai-native-org",
@@ -55,9 +88,24 @@
     "description": "超级个体、共享上下文、工作流、责任与治理。",
     "featured": true,
     "featuredOrder": 3,
-    "featuredTags": ["超级个体", "工作流", "治理"],
+    "featuredTags": [
+      "超级个体",
+      "工作流",
+      "治理"
+    ],
     "order": 6,
-    "match": "^tutorial/(3[5-9]|40)-"
+    "match": "^tutorial/(3[5-9]|40)-",
+    "translations": {
+      "en": {
+        "title": "AI-native organizations",
+        "description": "Individuals, shared context, workflows, accountability and governance.",
+        "featuredTags": [
+          "Individuals",
+          "Workflows",
+          "Governance"
+        ]
+      }
+    }
   },
   {
     "id": "human-cognitive-resilience",
@@ -66,9 +114,24 @@
     "description": "在善用 AI 提升效率的同时，守住注意力、思考力、判断力与主体性。",
     "featured": true,
     "featuredOrder": 2,
-    "featuredTags": ["认知风险", "能力保护", "协作手册"],
+    "featuredTags": [
+      "认知风险",
+      "能力保护",
+      "协作手册"
+    ],
     "order": 7,
-    "match": "^tutorial/4[1-3]-"
+    "match": "^tutorial/4[1-3]-",
+    "translations": {
+      "en": {
+        "title": "Human judgment in the AI era",
+        "description": "Use AI effectively while protecting attention, thinking, judgment and agency.",
+        "featuredTags": [
+          "Cognitive risks",
+          "Core capabilities",
+          "Collaboration"
+        ]
+      }
+    }
   },
   {
     "id": "model-training",
@@ -77,9 +140,26 @@
     "description": "训练一个模型，究竟要做哪些决定？11 篇文章串起预算、数据、架构、后训练与发布，附阅读地图、合同助手教学案例和可复用的决策模板。",
     "featured": true,
     "featuredOrder": 1,
-    "featuredTags": ["Scaling 预算", "数据配方", "RLVR", "决策模板"],
+    "featuredTags": [
+      "Scaling 预算",
+      "数据配方",
+      "RLVR",
+      "决策模板"
+    ],
     "order": 8,
-    "match": "^tutorial/T[0-9]+-"
+    "match": "^tutorial/T[0-9]+-",
+    "translations": {
+      "en": {
+        "title": "Model training decisions",
+        "description": "Eleven chapters connect budgets, data, model architecture, post-training and release decisions, with a contract-assistant case and reusable decision templates.",
+        "featuredTags": [
+          "Scaling budgets",
+          "Data recipes",
+          "RLVR",
+          "Decision templates"
+        ]
+      }
+    }
   },
   {
     "id": "appendix",
@@ -91,7 +171,13 @@
     "explicitOrder": [
       "tutorial/术语表.md",
       "tutorial/演进触发信号.md"
-    ]
+    ],
+    "translations": {
+      "en": {
+        "title": "Reference guides",
+        "description": "An architecture glossary and measurable signals for evolving a system."
+      }
+    }
   },
   {
     "id": "classic-systems",
@@ -100,7 +186,12 @@
     "description": "电商、支付、搜索、抢票等 16 张真实系统地图。",
     "featured": true,
     "featuredOrder": 5,
-    "featuredTags": ["电商", "支付", "搜索", "抢票"],
+    "featuredTags": [
+      "电商",
+      "支付",
+      "搜索",
+      "抢票"
+    ],
     "order": 9,
     "match": "^templates/(ai-chat-product|browser-extension|standard-web-app|mobile-app|ecommerce-platform|social-feed|video-streaming|realtime-chat|url-shortener|payment-system|search-engine|ride-hailing|collaborative-doc|cloud-storage|notification-system|online-ticketing)/README\\.md$",
     "explicitOrder": [
@@ -120,7 +211,19 @@
       "templates/cloud-storage/README.md",
       "templates/notification-system/README.md",
       "templates/online-ticketing/README.md"
-    ]
+    ],
+    "translations": {
+      "en": {
+        "title": "Classic systems",
+        "description": "Architecture maps for commerce, payments, search, ticketing and other everyday systems.",
+        "featuredTags": [
+          "Commerce",
+          "Payments",
+          "Search",
+          "Ticketing"
+        ]
+      }
+    }
   },
   {
     "id": "ai-native-systems",
@@ -135,7 +238,13 @@
       "templates/ai-agent-platform/README.md",
       "templates/inference-serving/README.md",
       "templates/vector-database/README.md"
-    ]
+    ],
+    "translations": {
+      "en": {
+        "title": "AI-native systems",
+        "description": "AI gateways, RAG, agent platforms, inference serving and vector databases."
+      }
+    }
   },
   {
     "id": "coding-agents",
@@ -149,7 +258,13 @@
       "templates/codex/README.md",
       "templates/openclaw/README.md",
       "templates/hermes/README.md"
-    ]
+    ],
+    "translations": {
+      "en": {
+        "title": "Coding and autonomous agents",
+        "description": "The architectures of Claude Code, Codex, OpenClaw and Hermes."
+      }
+    }
   },
   {
     "id": "system-prompts",
@@ -160,7 +275,13 @@
     "match": "^templates/system-prompt-architecture/README\\.md$",
     "explicitOrder": [
       "templates/system-prompt-architecture/README.md"
-    ]
+    ],
+    "translations": {
+      "en": {
+        "title": "System prompt architecture",
+        "description": "Layered agent operating systems, routing decisions, skills and runtime context injection."
+      }
+    }
   },
   {
     "id": "industrial-embedded",
@@ -175,7 +296,13 @@
       "templates/industrial-edge/README.md",
       "templates/automotive-ee/README.md",
       "templates/robotics/README.md"
-    ]
+    ],
+    "translations": {
+      "en": {
+        "title": "Industrial and embedded systems",
+        "description": "Firmware, IoT, SCADA, automotive electronics and robotics."
+      }
+    }
   },
   {
     "id": "cases",
@@ -191,6 +318,12 @@
       "cases/syncroom-collaboration/README.md",
       "cases/feedstream-content/README.md",
       "cases/codepilot-agent/README.md"
-    ]
+    ],
+    "translations": {
+      "en": {
+        "title": "System design cases",
+        "description": "Six end-to-end designs that show the reasoning behind architectural decisions."
+      }
+    }
   }
 ]

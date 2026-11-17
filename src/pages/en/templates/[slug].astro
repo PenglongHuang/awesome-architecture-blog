@@ -1,0 +1,13 @@
+---
+import { getCollection } from 'astro:content'
+import { channelStaticPaths } from '../../../lib/routes'
+import SeriesPage from '../../../components/pages/SeriesPage.astro'
+import PostPage from '../../../components/pages/PostPage.astro'
+export async function getStaticPaths() {
+  return channelStaticPaths('templates', await getCollection('posts'), 'en')
+}
+const props = Astro.props as
+  | { type: 'series'; seriesId: string }
+  | { type: 'post'; post: import('../../../lib/posts').Post }
+---
+{props.type === 'series' ? <SeriesPage seriesId={props.seriesId} locale="en" /> : <PostPage post={props.post} />}

@@ -1,14 +1,14 @@
 ---
 title: "01 · Why Architectural Thinking Comes First"
-description: "Writing code is disappearing right before our eyes; deciding what to write, and what the system should look like, is what's getting more valuable. This chapter makes the case: why, starting today, you must put judgment ahead of implementation."
-locale: "en"
-translationKey: "tutorial/why-architecture-first"
-sourceHash: "1a9a0e40c11618723561d086f6c640095113efe63530300b0eabbe07a81b8500"
+description: "Understand why deciding what to build and how a system should work becomes more valuable as code generation becomes easier."
 series: "foundations"
 order: 1
 pubDate: 2026-01-06
 kind: "tutorial"
-tags: ["Foundations","Architecture"]
+tags: ["Foundations","Tutorials"]
+locale: "en"
+translationKey: "tutorial/why-architecture-first"
+sourceHash: "1a9a0e40c11618723561d086f6c640095113efe63530300b0eabbe07a81b8500"
 ---
 
 > Writing code is disappearing right before our eyes; **deciding what to write, and what the system should look like**, is what's getting more valuable. This chapter makes the case: why, starting today, you must put judgment ahead of implementation.

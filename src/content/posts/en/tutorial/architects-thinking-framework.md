@@ -1,14 +1,14 @@
 ---
 title: "02 · The Architect's Thinking Framework"
-description: "The last chapter said \"architecture is making important decisions amid trade-offs.\" This chapter hands you a method you can actually follow — turning \"gut calls\" into \"traceable reasoning.\" Any system at all can be taken apart with this one process."
-locale: "en"
-translationKey: "tutorial/architects-thinking-framework"
-sourceHash: "716f26124e56b1b67812e81664822a890dc068c2b5f53208343aaa0c12f55c66"
+description: "Apply a repeatable framework to requirements, constraints, boundaries and trade-offs, turning intuition into traceable reasoning."
 series: "foundations"
 order: 2
 pubDate: 2026-01-09
 kind: "tutorial"
-tags: ["Foundations","Architecture"]
+tags: ["Foundations","Tutorials"]
+locale: "en"
+translationKey: "tutorial/architects-thinking-framework"
+sourceHash: "716f26124e56b1b67812e81664822a890dc068c2b5f53208343aaa0c12f55c66"
 ---
 
 > The last chapter said "architecture is making important decisions amid trade-offs." This chapter hands you a method you can actually follow — turning "gut calls" into "traceable reasoning." Any system at all can be taken apart with this one process.
@@ -131,7 +131,7 @@ Say you're building an "internal reporting tool": Performance? Medium is fine. A
 
 Now say you're building a "payment system": Consistency? **Money can't be miscalculated — top priority.** Reliability? **Not a single transaction can be lost.** Security? **Red line.** — The same table, but it yields a completely different emphasis.
 
-> This checklist is exactly where each architecture template's **"quality attributes table"** comes from. When you go look at Section 3 of the [AI chat product template (Chinese)](/templates/ai-chat-product/) in a moment, you'll see it lists "time-to-first-token latency, throughput, cost, availability, security" — that's just this generic checklist applied to the specific scenario of "AI chat." **Generic framework + specific scenario = that table.**
+> This checklist is exactly where each architecture template's **"quality attributes table"** comes from. When you go look at Section 3 of the [AI chat product template](/en/templates/ai-chat-product/) in a moment, you'll see it lists "time-to-first-token latency, throughput, cost, availability, security" — that's just this generic checklist applied to the specific scenario of "AI chat." **Generic framework + specific scenario = that table.**
 
 ---
 
@@ -272,7 +272,7 @@ By the time you reach here, you have not just a solution — more importantly, *
 
 This chapter ran through the six questions with a "URL shortener service." Real-world shorteners (**Bitly**, **TinyURL**, etc.) are designed exactly this way: lopsided read/write ratio, heavy caching, KV storage, unique-ID issuance.
 
-- To see the "finished product" this framework yields, compare directly with this repo's [URL shortener template (Chinese)](/templates/url-shortener/) — its Section 3 (needs and constraints) and Section 8 (key decisions) are exactly the result of running this chapter's "six questions + trade-offs" all the way through.
+- To see the "finished product" this framework yields, compare directly with this repo's [URL shortener template](/en/templates/url-shortener/) — its Section 3 (needs and constraints) and Section 8 (key decisions) are exactly the result of running this chapter's "six questions + trade-offs" all the way through.
 
 ---
 
@@ -306,7 +306,7 @@ This chapter ran through the six questions with a "URL shortener service." Real-
 
 > This framework maps neatly onto two core sections in every architecture template: **"Core needs and constraints"** (corresponding to this chapter's needs/constraints/quality attributes) and **"Key architecture decisions and trade-offs"** (corresponding to this chapter's candidate solutions/trade-offs/decision).
 >
-> **Go verify it right now:** open any template under [`templates/` (Chinese)](/templates/) and look straight at its Section 3 and Section 8 — you'll find they're the actual products of this framework. Try reverse-engineering with this chapter's "six soul questions": its designer must have asked these very questions back then.
+> **Go verify it right now:** open any template under [`templates/`](/en/templates/) and look straight at its Section 3 and Section 8 — you'll find they're the actual products of this framework. Try reverse-engineering with this chapter's "six soul questions": its designer must have asked these very questions back then.
 >
 > Once you've thought it through, you still have to **explain it clearly** — so everyone on the team can see the system in your head. And that takes knowing how to draw.
 >

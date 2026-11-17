@@ -1,23 +1,20 @@
 ---
 import type { Course } from '../data/courses'
-import {
-  COURSE_FORMATS,
-  COURSE_LEVELS,
-  getTagLabel,
-  getTrackLabel,
-} from '../data/courses'
+import { courseTrackLabel, courseTagLabel, courseFormatLabel, courseLevelLabel } from '../data/course-locales'
+import type { Locale } from '../lib/i18n.mjs'
 import { href } from '../lib/urls'
 
 interface Props {
+  locale?: Locale
   course: Course
   filterable?: boolean
 }
 
-const { course, filterable = false } = Astro.props
+const { locale = 'zh-CN', course, filterable = false } = Astro.props
 const url = href(`/learning/${course.slug}/`)
-const trackLabel = getTrackLabel(course.track)
-const formatLabel = COURSE_FORMATS[course.format]
-const levelLabel = COURSE_LEVELS[course.level]
+const trackLabel = courseTrackLabel(course.track, locale)
+const formatLabel = courseFormatLabel(course.format, locale)
+const levelLabel = courseLevelLabel(course.level, locale)
 const tags = JSON.stringify(course.tags)
 ---
 <article
@@ -27,24 +24,25 @@ const tags = JSON.stringify(course.tags)
   data-course-tags={tags}
 >
   <div class="course-card__body">
+    {locale === 'en' && <p class="course-language">Chinese course</p>}
     <p class="course-card__kicker">{trackLabel} · {formatLabel}</p>
     <h3 class="course-card__title">
-      <a class="course-card__link" href={url}>{course.title}</a>
+      <a class="course-card__link" href={url} hreflang="zh-CN">{course.title}</a>
     </h3>
     <p class="course-card__sub">{course.subtitle}</p>
     <p class="course-card__desc">{course.description}</p>
     <div class="course-card__tags">
       {filterable
         ? course.tags.map((tag) => (
-            <span class="course-card__tag" data-tag-filter={tag}>{getTagLabel(tag)}</span>
+            <span class="course-card__tag" data-tag-filter={tag}>{courseTagLabel(tag, locale)}</span>
           ))
-        : course.tags.map((tag) => <span class="course-card__tag">{getTagLabel(tag)}</span>)}
+        : course.tags.map((tag) => <span class="course-card__tag">{courseTagLabel(tag, locale)}</span>)}
     </div>
-    <span class="course-card__cta" aria-hidden="true">进入课程 →</span>
+    <span class="course-card__cta" aria-hidden="true">{locale === 'en' ? 'Open Chinese course →' : '进入课程 →'}</span>
   </div>
   <div class="course-card__meta">
-    <span><b>{course.modules}</b><small>个模块</small></span>
-    <span><b>{course.minutes}</b><small>分钟</small></span>
-    <span><b>{levelLabel}</b><small>难度</small></span>
+    <span><b>{course.modules}</b><small>{locale === 'en' ? 'modules' : '个模块'}</small></span>
+    <span><b>{course.minutes}</b><small>{locale === 'en' ? 'minutes' : '分钟'}</small></span>
+    <span><b>{levelLabel}</b><small>{locale === 'en' ? 'level' : '难度'}</small></span>
   </div>
 </article>

@@ -80,6 +80,7 @@ export default defineConfig({
   },
   integrations: [
     sitemap({
+      filter: page => !/\/(?:search|404(?:\.html)?)\/?$/.test(new URL(page).pathname),
       serialize: item => ({ ...item, url: urls.canonical(new URL(item.url).pathname) }),
       customPages: [
         new URL(`${BASE}learning/litellm/`, SITE).href,

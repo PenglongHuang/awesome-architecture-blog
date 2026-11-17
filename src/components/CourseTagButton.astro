@@ -1,25 +1,28 @@
 ---
+import type { Locale } from '../lib/i18n.mjs'
+import { courseTagLabel } from '../data/course-locales'
 import type { CourseTag } from '../data/courses'
 
 interface Props {
+  locale?: Locale
   tag: CourseTag
   tracks?: string
   count?: number
   showCount?: boolean
 }
 
-const { tag, tracks = '', count = 0, showCount = false } = Astro.props
+const { locale = 'zh-CN', tag, tracks = '', count = 0, showCount = false } = Astro.props
 ---
 <button
   type="button"
   class="filter-chip filter-chip--tag"
   data-tag-filter={tag.id}
   data-tag-option
-  data-tag-label={tag.label}
-  data-tag-aliases={tag.aliases.join('|')}
+  data-tag-label={courseTagLabel(tag.id, locale)}
+  data-tag-aliases={[tag.label, courseTagLabel(tag.id, 'en'), ...tag.aliases].join('|')}
   data-tag-tracks={tracks}
   aria-pressed="false"
 >
-  {tag.label}
+  {courseTagLabel(tag.id, locale)}
   {showCount && <span class="filter-chip__count">{count}</span>}
 </button>

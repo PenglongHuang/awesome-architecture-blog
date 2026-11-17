@@ -48,7 +48,7 @@ describe('locale routing and collections', () => {
 })
 
 describe('translation review checks', () => {
-  it('accepts complete reviewed pairs and untranslated non-pilot series', () => {
+  it('accepts complete reviewed pairs and unpublished English series', () => {
     const { zh, en } = pair()
     expect(validateTranslations([zh, en], series)).toEqual([])
     expect(validateTranslations([{ ...zh, data: { ...zh.data, series: 'advanced' } }], [])).toEqual([])
@@ -59,7 +59,7 @@ describe('translation review checks', () => {
     expect(validateTranslations([{ ...zh, raw: 'Changed source' }, en], series).join()).toContain('stale')
     expect(validateTranslations([en], series).join()).toContain('missing Chinese counterpart')
     expect(validateTranslations([zh, en, { ...en, rel: 'en/tutorial/b.md' }], series).join()).toContain('duplicate translation key')
-    expect(validateTranslations([zh], series).join()).toContain('pilot series is missing')
+    expect(validateTranslations([zh], series).join()).toContain('English series is missing')
   })
   it('rejects mismatched component counts and accidental Chinese links', () => {
     const { zh, en } = pair()
@@ -68,6 +68,16 @@ describe('translation review checks', () => {
     expect(errors).toContain('quiz count differs')
     expect(errors).toContain('cross-language link must be marked')
     en.body = zh.body + '\n[Other article (Chinese)](/tutorial/other/)'
+    expect(validateTranslations([zh, en], series)).toEqual([])
+  })
+  it('rejects omitted sections and illustrations, without counting fenced examples as headings', () => {
+    const { zh, en } = pair()
+    zh.body = '## Section\n### Detail\n![Diagram](a.svg)\n```text\n## Not a section\n```'
+    en.body = '## Section'
+    expect(validateTranslations([zh, en], series).join()).toContain('h3 structure differs')
+    expect(validateTranslations([zh, en], series).join()).toContain('images structure differs')
+    expect(validateTranslations([zh, en], series).join()).toContain('code structure differs')
+    en.body = '## Section\n### Detail\n![Diagram](a-en.svg)\n```text\n## Not a section\n```'
     expect(validateTranslations([zh, en], series)).toEqual([])
   })
 })

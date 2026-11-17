@@ -14,6 +14,13 @@ const t = messagesFor(locale)
 const series = getSeries(seriesId, locale)
 const all = await getCollection('posts')
 const posts = postsInSeries(all, seriesId, locale)
+const readingGuide = locale === 'en'
+  ? series.channel === 'tutorial'
+    ? `Read these ${posts.length} chapters in order to move from foundational concepts to design and practice.`
+    : `Explore these ${posts.length} architecture maps and compare their components, data flows and trade-offs.`
+  : series.channel === 'tutorial'
+    ? `本专题共 ${posts.length} 篇，按顺序阅读可从基础概念逐步进入设计与实践。`
+    : `本专题共 ${posts.length} 张地图，可对照阅读各系统的组件、数据流和设计取舍。`
 const seriesUrl = canonicalUrl(seriesHref(seriesId, locale))
 const siteRoot = canonicalUrl(localePath('/', locale))
 const channelUrl = canonicalUrl(localePath(`/${series.channel}/`, locale))
@@ -57,7 +64,7 @@ const breadcrumbSchema = {
       <p class="page-head__side">{locale === 'en' ? `Series · ${posts.length} articles` : `系列 · ${posts.length} 篇`}</p>
       <h1 class="page-head__title">{series.title}</h1>
       <p class="page-head__intro">{series.description}</p>
-      <p class="page-head__side">{locale === 'en' ? `Read these ${posts.length} chapters in order to move from foundational concepts to design and practice.` : `本专题共 ${posts.length} 篇，按顺序阅读可从基础概念逐步进入设计与实践。`}</p>
+      <p class="page-head__side">{readingGuide}</p>
     </div>
   </div>
   <section class="section frame">

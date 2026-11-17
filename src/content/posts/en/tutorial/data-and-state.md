@@ -1,14 +1,14 @@
 ---
 title: "05 · Data & State: The System's Real Hard Part"
-description: "The thesis in one line: logic is easy to change, data is hard. Get the code wrong and you change a line and redeploy; but when hundreds of millions of records already lie in the database in some structure, and users' state is shifting in real time, and you want to change it — that's deadly. The real"
-locale: "en"
-translationKey: "tutorial/data-and-state"
-sourceHash: "8c84e4279ce3f8fda59ca266d8ca99dbcaa7deba35e531e64416c0a4f03de353"
+description: "Understand why data ownership, consistency, lifecycle and state transitions shape a system’s hardest architectural decisions."
 series: "foundations"
 order: 5
 pubDate: 2026-01-20
 kind: "tutorial"
-tags: ["Foundations","Architecture"]
+tags: ["Foundations","Tutorials"]
+locale: "en"
+translationKey: "tutorial/data-and-state"
+sourceHash: "8c84e4279ce3f8fda59ca266d8ca99dbcaa7deba35e531e64416c0a4f03de353"
 ---
 
 > The thesis in one line: **logic is easy to change, data is hard.** Get the code wrong and you change a line and redeploy; but when hundreds of millions of records already lie in the database in some structure, and users' state is shifting in real time, and you want to change it — that's deadly. **The real hard part of architecture has never been logic, but data and state.**
@@ -73,7 +73,7 @@ The right approach: **first look at what this data "looks like and how it's acce
 
 > Note: **a slightly complex system almost certainly uses several stores at once.** This isn't "impure" — it's precisely the mark of maturity, and it's called "polyglot persistence," i.e. "let each kind of data live in the home that suits it best."
 >
-> Recall Section 7 of the [AI chat product template (Chinese)](/templates/ai-chat-product/): relational for users/billing, document for session history, a vector store for knowledge retrieval, object storage for model weights, time-series for usage records — within one product, **five stores each do their job.** This is a living textbook of "choosing storage for the access shape."
+> Recall Section 7 of the [AI chat product template](/en/templates/ai-chat-product/): relational for users/billing, document for session history, a vector store for knowledge retrieval, object storage for model weights, time-series for usage records — within one product, **five stores each do their job.** This is a living textbook of "choosing storage for the access shape."
 
 **How to judge which to use?** Don't memorize the table — ask yourself three questions:
 

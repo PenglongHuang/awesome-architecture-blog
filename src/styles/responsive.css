@@ -6,20 +6,9 @@
 @media (max-width: 1199px) {
   .toc-desktop { display: none; }
   .toc-mobile { display: block; }
-  .masthead__nav { gap: 20px; font-size: 13.5px; }
-  .nav-search { width: auto; }
-  .nav-search__ph { display: none; }
-  .nav-search kbd { display: none; }
   .home-hero { padding: 38px 40px 34px; }
 }
 @media (max-width: 960px) {
-  .masthead { padding-top: 16px; padding-bottom: 14px; }
-  .masthead > .grid { grid-template-columns: minmax(0, 1fr) auto; gap: 12px 24px; }
-  .masthead__brand { grid-row: 1; }
-  .masthead__actions { grid-column: 2; grid-row: 1; justify-self: end; }
-  .masthead__nav { grid-column: 1 / -1; grid-row: 2; justify-self: stretch; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; text-align: center; }
-  .masthead__nav a { display: inline-flex; align-items: center; justify-content: center; padding: 10px 4px; min-height: 40px; }
-  .masthead__nav a[aria-current='page'] { text-underline-offset: 7px; }
   .home-hero { padding: 34px 32px 30px; }
   .home-hero__top { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 36px; }
   .home-hero__hint { margin: 0; text-align: left; }
@@ -31,18 +20,6 @@
 }
 @media (max-width: 600px) {
   :root { --margin: 18px; --section-gap: 32px; }
-  .masthead { padding-top: 12px; padding-bottom: 12px; }
-  .masthead > .grid { gap: 10px 16px; }
-  .masthead__brand { font-size: 17px; gap: 9px; }
-  .masthead__brand small { display: none; }
-  .masthead__mark { width: 34px; height: 34px; border-radius: 11px; }
-  .masthead__mark svg { width: 28px; height: 28px; }
-  .nav-search { width: 36px; height: 36px; min-height: 36px; padding: 0; justify-content: center; flex: none; }
-  .nav-search > span { display: none; }
-  .theme-toggle { width: 36px; min-width: 36px; height: 36px; }
-  .masthead__nav { font-size: 12.5px; }
-  .masthead__nav a { padding: 9px 2px; min-height: 38px; }
-  .masthead__nav a[aria-current='page'] { text-underline-offset: 6px; }
   .home-hero { padding: 30px 26px 26px; border-radius: 22px; }
   .home-hero h1 { font-size: 34px; line-height: 1.45; }
   .home-hero__intro { font-size: 10px; margin-bottom: 17px; }
@@ -121,8 +98,5 @@
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 @media (max-width: 360px) {
-  .masthead__brand { font-size: 16px; gap: 8px; }
-  .masthead__mark { width: 32px; height: 32px; }
-  .masthead__mark svg { width: 26px; height: 26px; }
   .home-hero h1 { font-size: 30px; }
 }

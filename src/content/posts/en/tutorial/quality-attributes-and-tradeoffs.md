@@ -1,14 +1,14 @@
 ---
 title: "06 · Quality Attributes & Trade-offs"
-description: "The thesis in one line: function decides whether a system \"works at all\"; quality attributes decide whether it's \"good to use, can withstand the load, and is worth it.\" And these attributes conflict with one another — you can't have them all. The essence of architecture is to prioritize them by the "
-locale: "en"
-translationKey: "tutorial/quality-attributes-and-tradeoffs"
-sourceHash: "18bb0ab7055bc2bfc1a9286634b1afdcf0a2fda03d6cd164124db30c64dad9d3"
+description: "Prioritize performance, reliability, security, maintainability and cost under constraints that prevent maximizing everything at once."
 series: "foundations"
 order: 6
 pubDate: 2026-01-23
 kind: "tutorial"
-tags: ["Foundations","Architecture"]
+tags: ["Foundations","Tutorials"]
+locale: "en"
+translationKey: "tutorial/quality-attributes-and-tradeoffs"
+sourceHash: "18bb0ab7055bc2bfc1a9286634b1afdcf0a2fda03d6cd164124db30c64dad9d3"
 ---
 
 > The thesis in one line: **function decides whether a system "works at all"; quality attributes decide whether it's "good to use, can withstand the load, and is worth it." And these attributes conflict with one another — you can't have them all. The essence of architecture is to prioritize them by the business, then make trade-offs with clear eyes.**
@@ -55,7 +55,7 @@ When measuring latency, **never look only at the average.** An average latency o
 
 **There's another oft-overlooked dimension: perceived latency.** The "fast" a user feels and the real total elapsed time are often not the same.
 
-> Remember the streaming output of the [AI chat product (Chinese)](/templates/ai-chat-product/)? It **didn't make total generation time shorter**, but let the user **see the first character pop out within 1 second** — worlds apart in experience. This is the magic of "perceived latency." **Any design that lets the user see feedback sooner (streaming, skeleton screens, optimistic updates, progress hints) improves perceived latency — and that often matters more than real latency.**
+> Remember the streaming output of the [AI chat product](/en/templates/ai-chat-product/)? It **didn't make total generation time shorter**, but let the user **see the first character pop out within 1 second** — worlds apart in experience. This is the magic of "perceived latency." **Any design that lets the user see feedback sooner (streaming, skeleton screens, optimistic updates, progress hints) improves perceived latency — and that often matters more than real latency.**
 
 **② How to achieve**: caching (turning recompute/remote-fetch into a near read), read-write splitting, going asynchronous (toss slow work into a queue and return first), CDN (placing content closer to the user), better data structures/indexes, precomputation. Note — you've seen these means already in [04](/en/tutorial/ten-core-patterns/) and [05](/en/tutorial/data-and-state/).
 
